@@ -7,7 +7,7 @@ syspath.append(syspath[0] + "\\modules")
 # Load environment
 import discord
 
-print("\nRunning PyCord version" + discord.__version__)
+print("\nRunning PyCord version " + discord.__version__)
 try:
     with open("settings/bottoken.txt") as file:
         bot_token = file.read()

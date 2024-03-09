@@ -9,12 +9,15 @@ class InvalidArgumentError(Exception):
     pass
 
 with open("settings/perms.json", "r") as file:
-    perms: Dict[str, List[Any]] = load(file)
+    perms: Dict[str, List[int]] = load(file)
     """Contains all permission groups used by several commands"""
 
+with open("settings/guilds.json", "r") as file:
+    guilds: List[int] = load(file)
+    """Contains all guild ids that the bot is to be used in"""
+
 def get_time() -> str:
-    """Returns the current system time in extended ISO8601 format; 20 chars long
-    """
+    """Returns the current system time in extended ISO8601 format; 20 chars long"""
 
     return datetime.now().strftime("%Y-%m-%d, %H:%M:%S")
 
