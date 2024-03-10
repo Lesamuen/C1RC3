@@ -7,7 +7,7 @@ from discord import ApplicationContext, Option
 from bot import bot_client, database_connector
 from auxiliary import guilds, log, get_time
 from dbmodels import User, ChipAccount
-from emojis import chip_emojis
+from emojis import format_chips
 
 @bot_client.slash_command(name = "open_account", description = "Open an account for you to hold your chips.", guild_ids = guilds, guild_only = True)
 async def open_account(
