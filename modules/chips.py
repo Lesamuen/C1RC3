@@ -17,6 +17,27 @@ chip_emojis: List[str] = [
     "<:chip6:1216075286005813338>"
 ]
 
+def format_chips(chips: List[str]) -> str:
+    """Formats chips into a human readable format for Discord."""
+
+    formatted = "# "
+    # If no chips, say "no chips".
+    no_chips = True
+    for chip_type in chips:
+        if chip_type != 0:
+            no_chips = False
+            break
+    if no_chips:
+        formatted += "No " + chip_emojis[0]
+    else:
+        # Chips exist, so go through every non-zero chip and list them
+        for i in range(len(chips)):
+            if chips[i] != 0:
+                formatted += str(chips[i]) + " " + chip_emojis[i] + ", "
+        formatted = formatted.removesuffix(", ")
+
+    return formatted
+
 @bot_client.slash_command(name = "open_account", description = "Open an account for you to hold your chips.", guild_ids = guilds, guild_only = True)
 async def open_account(
     context: ApplicationContext,
@@ -118,23 +139,8 @@ async def balance(
              + "\" in [" + str(context.guild) + "], [" + str(context.channel) + "]")
         
         await context.respond(".", ephemeral = True, delete_after = 0)
-        response: str = "*You feel a small tingle all over your body as C1RC3 scans your magical signature, and her face flashes green for a moment.*\n`\"Request approved. The account under the name '" + account.name + "' currently contains:\"`\n# "
-        bal: List[int] = account.get_bal()
-
-        # If no chips, say "no chips".
-        no_chips = True
-        for chips in bal:
-            if chips != 0:
-                no_chips = False
-                break
-        if no_chips:
-            response += "no " + chip_emojis[0]
-        else:
-            # Chips exist, so go through every non-zero chip and list them
-            for i in range(len(bal)):
-                if bal[i] != 0:
-                    response += str(bal[i]) + " " + chip_emojis[i] + ", "
-            response = response.removesuffix(", ")
+        response = "*You feel a small tingle all over your body as C1RC3 scans your magical signature, and her face flashes green for a moment.*\n`\"Request approved. The account under the name '" + account.name + "' currently contains:\"`\n"
+        response += format_chips(account.get_bal())
 
         await context.channel.send(response)
     else:
@@ -183,24 +189,9 @@ async def deposit(
         account.deposit(session, [phys_chips, ment_chips, arti_chips, supe_chips, merg_chips, swap_chips])
 
         await context.respond(".", ephemeral = True, delete_after = 0)
-        response: str = "*You feel a small tingle all over your body as C1RC3 scans your magical signature, and her face flashes green for a moment.*\n`\"Request approved.\"`\n*The chips you are holding gently glow before evaporating into golden light that shoots over to C1RC3, infusing into her. Her body quivers with pleasure, but she shows no emotion in her automated state.*\n`\"Your account now contains:\"`\n# "
-
-        bal: List[int] = account.get_bal()
-
-        # If no chips, say "no chips".
-        no_chips = True
-        for chips in bal:
-            if chips != 0:
-                no_chips = False
-                break
-        if no_chips:
-            response += "no " + chip_emojis[0]
-        else:
-            # Chips exist, so go through every non-zero chip and list them
-            for i in range(len(bal)):
-                if bal[i] != 0:
-                    response += str(bal[i]) + " " + chip_emojis[i] + ", "
-            response = response.removesuffix(", ")
+        
+        response = "*You feel a small tingle all over your body as C1RC3 scans your magical signature, and her face flashes green for a moment.*\n`\"Request approved.\"`\n*The chips you are holding gently glow before evaporating into golden light that shoots over to C1RC3, infusing into her. Her body quivers with pleasure, but she shows no emotion in her automated state.*\n`\"Your account now contains:\"`\n"
+        response += format_chips(account.get_bal())
 
         await context.channel.send(response)
     else:
@@ -250,24 +241,9 @@ async def withdraw(
                 + " chips from their account \"" + name + "\" in [" + str(context.guild) + "], [" + str(context.channel) + "]")
 
             await context.respond(".", ephemeral = True, delete_after = 0)
-            response: str = "*You feel a small tingle all over your body as C1RC3 scans your magical signature, and her face flashes green for a moment.*\n`\"Request approved.\"`\n*Golden light begins to condense from nowhere into C1RC3's body as she visibly shivers. A hidden compartment in her midriff suddenly slides open, containing a pile of the chips you requested.*\n`\"Your account now contains:\"`\n# "
 
-            bal: List[int] = account.get_bal()
-
-            # If no chips, say "no chips".
-            no_chips = True
-            for chips in bal:
-                if chips != 0:
-                    no_chips = False
-                    break
-            if no_chips:
-                response += "no " + chip_emojis[0]
-            else:
-                # Chips exist, so go through every non-zero chip and list them
-                for i in range(len(bal)):
-                    if bal[i] != 0:
-                        response += str(bal[i]) + " " + chip_emojis[i] + ", "
-                response = response.removesuffix(", ")
+            response = "*You feel a small tingle all over your body as C1RC3 scans your magical signature, and her face flashes green for a moment.*\n`\"Request approved.\"`\n*Golden light begins to condense from nowhere into C1RC3's body as she visibly shivers. A hidden compartment in her midriff suddenly slides open, containing a pile of the chips you requested.*\n`\"Your account now contains:\"`\n"
+            response += format_chips(account.get_bal())
 
             await context.channel.send(response)
         else:
