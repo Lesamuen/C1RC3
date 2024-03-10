@@ -58,7 +58,7 @@ async def change_name(
     if account is None:
         log(get_time() + " >> " + str(context.author) + " failed to find account \"" + name + "\" in [" + str(context.guild) + "], [" + str(context.channel) + "]")
         await context.respond(".", ephemeral = True, delete_after = 0)
-        await context.channel.send("*C1RC3 pauses for a brief moment as she scans her records.* \"Request failed. No account exists under that name.\"")
+        await context.channel.send("*C1RC3 pauses for a brief moment as she scans her records.*\n`\"Request failed. No account exists under that name.\"`")
         session.close()
         return
     
@@ -67,7 +67,7 @@ async def change_name(
         log(get_time() + " >> " + str(context.author) + " didn't change name of account \"" + name + "\" at all in ["
              + str(context.guild) + "], [" + str(context.channel) + "]")
         await context.respond(".", ephemeral = True, delete_after = 0)
-        await context.channel.send("*C1RC3 freezes as she tries to process the request.* \"Request...failed...\" *She seems uncertain.* \"That is already the name your account is under.\"")
+        await context.channel.send("*C1RC3 freezes as she tries to process the request.*\n`\"Request...failed...\"`\n*She seems uncertain.*\n`\"That is already the name your account is under.\"`")
         session.close()
         return
 
@@ -76,7 +76,7 @@ async def change_name(
         log(get_time() + " >> " + str(context.author) + " failed to change name of account \"" + name + "\" in ["
              + str(context.guild) + "], [" + str(context.channel) + "]")
         await context.respond(".", ephemeral = True, delete_after = 0)
-        await context.channel.send("*C1RC3 pauses for a brief moment as she scans her records.* \"Request failed. An account already exists under the name '" + new_name + "'.\"")
+        await context.channel.send("*C1RC3 pauses for a brief moment as she scans her records.*\n`\"Request failed. An account already exists under the name '" + new_name + "'.\"`")
         session.close()
         return
 
@@ -86,11 +86,11 @@ async def change_name(
              + "\" in [" + str(context.guild) + "], [" + str(context.channel) + "]")
         account.change_name(session, new_name)
         await context.respond(".", ephemeral = True, delete_after = 0)
-        await context.channel.send("*You feel a small tingle all over your body as C1RC3 scans your magical signature, and her face flashes green for a moment.* \"Request approved. The account under '" + name + "' is now under the name '" + new_name + "'.\"")
+        await context.channel.send("*You feel a small tingle all over your body as C1RC3 scans your magical signature, and her face flashes green for a moment.*\n`\"Request approved. The account under '" + name + "' is now under the name '" + new_name + "'.\"`")
     else:
         log(get_time() + " >> " + str(context.author) + " tried to change name of other's account \"" + name + "\" in [" + str(context.guild) + "], [" + str(context.channel) + "]")
         await context.respond(".", ephemeral = True, delete_after = 0)
-        await context.channel.send("*You feel a small tingle all over your body as C1RC3 scans your magical signature, and her face flashes red for a moment.* \"Request denied. This account does not belong to you.\"")
+        await context.channel.send("*You feel a small tingle all over your body as C1RC3 scans your magical signature, and her face flashes red for a moment.*\n`\"Request denied. This account does not belong to you.\"`")
 
     session.close()
 
@@ -108,7 +108,7 @@ async def balance(
     if account is None:
         log(get_time() + " >> " + str(context.author) + " failed to find account \"" + name + "\" in [" + str(context.guild) + "], [" + str(context.channel) + "]")
         await context.respond(".", ephemeral = True, delete_after = 0)
-        await context.channel.send("*C1RC3 pauses for a brief moment as she scans her records.* \"Request failed. No account exists under that name.\"")
+        await context.channel.send("*C1RC3 pauses for a brief moment as she scans her records.*\n`\"Request failed. No account exists under that name.\"`")
         session.close()
         return
 
@@ -118,7 +118,7 @@ async def balance(
              + "\" in [" + str(context.guild) + "], [" + str(context.channel) + "]")
         
         await context.respond(".", ephemeral = True, delete_after = 0)
-        response: str = "*You feel a small tingle all over your body as C1RC3 scans your magical signature, and her face flashes green for a moment.* \"Request approved. The account under the name '" + account.name + "' currently contains:\"\n# "
+        response: str = "*You feel a small tingle all over your body as C1RC3 scans your magical signature, and her face flashes green for a moment.*\n`\"Request approved. The account under the name '" + account.name + "' currently contains:\"`\n# "
         bal: List[int] = account.get_bal()
 
         # If no chips, say "no chips".
@@ -140,7 +140,7 @@ async def balance(
     else:
         log(get_time() + " >> " + str(context.author) + " tried to access other's account \"" + name + "\" in [" + str(context.guild) + "], [" + str(context.channel) + "]")
         await context.respond(".", ephemeral = True, delete_after = 0)
-        await context.channel.send("*You feel a small tingle all over your body as C1RC3 scans your magical signature, and her face flashes red for a moment.* \"Request denied. This account does not belong to you.\"")
+        await context.channel.send("*You feel a small tingle all over your body as C1RC3 scans your magical signature, and her face flashes red for a moment.*\n`\"Request denied. This account does not belong to you.\"`")
 
     session.close()
 
@@ -161,7 +161,7 @@ async def deposit(
     if phys_chips == 0 and ment_chips == 0 and arti_chips == 0 and supe_chips == 0 and merg_chips == 0 and swap_chips == 0:
         log(get_time() + " >> " + str(context.author) + " tried to deposit nothing in [" + str(context.guild) + "], [" + str(context.channel) + "]")
         await context.respond(".", ephemeral = True, delete_after = 0)
-        await context.channel.send("*C1RC3 freezes as she tries to process your inane request.* \"...Request accepted. You have achieved nothing.\"")
+        await context.channel.send("*C1RC3 freezes as she tries to process your inane request.*\n`\"...Request accepted. You have achieved nothing.\"`")
         return
 
     session = database_connector()
@@ -171,7 +171,7 @@ async def deposit(
     if account is None:
         log(get_time() + " >> " + str(context.author) + " failed to find account \"" + name + "\" in [" + str(context.guild) + "], [" + str(context.channel) + "]")
         await context.respond(".", ephemeral = True, delete_after = 0)
-        await context.channel.send("*C1RC3 pauses for a brief moment as she scans her records.* \"Request failed. No account exists under that name.\"")
+        await context.channel.send("*C1RC3 pauses for a brief moment as she scans her records.*\n`\"Request failed. No account exists under that name.\"`")
         session.close()
         return
 
@@ -183,7 +183,7 @@ async def deposit(
         account.deposit(session, [phys_chips, ment_chips, arti_chips, supe_chips, merg_chips, swap_chips])
 
         await context.respond(".", ephemeral = True, delete_after = 0)
-        response: str = "*You feel a small tingle all over your body as C1RC3 scans your magical signature, and her face flashes green for a moment.* \"Request approved.\" *The chips you are holding gently glow before evaporating into golden light that shoots over to C1RC3, infusing into her. Her body quivers with pleasure, but she shows no emotion in her automated state.* \"Your account now contains:\"\n# "
+        response: str = "*You feel a small tingle all over your body as C1RC3 scans your magical signature, and her face flashes green for a moment.*\n`\"Request approved.\"`\n*The chips you are holding gently glow before evaporating into golden light that shoots over to C1RC3, infusing into her. Her body quivers with pleasure, but she shows no emotion in her automated state.*\n`\"Your account now contains:\"`\n# "
 
         bal: List[int] = account.get_bal()
 
@@ -206,7 +206,7 @@ async def deposit(
     else:
         log(get_time() + " >> " + str(context.author) + " tried to access other's account \"" + name + "\" in [" + str(context.guild) + "], [" + str(context.channel) + "]")
         await context.respond(".", ephemeral = True, delete_after = 0)
-        await context.channel.send("*You feel a small tingle all over your body as C1RC3 scans your magical signature, and her face flashes red for a moment.* \"Request denied. This account does not belong to you.\"")
+        await context.channel.send("*You feel a small tingle all over your body as C1RC3 scans your magical signature, and her face flashes red for a moment.*\n`\"Request denied. This account does not belong to you.\"`")
 
     session.close()
 
@@ -227,7 +227,7 @@ async def withdraw(
     if phys_chips == 0 and ment_chips == 0 and arti_chips == 0 and supe_chips == 0 and merg_chips == 0 and swap_chips == 0:
         log(get_time() + " >> " + str(context.author) + " tried to withdraw nothing in [" + str(context.guild) + "], [" + str(context.channel) + "]")
         await context.respond(".", ephemeral = True, delete_after = 0)
-        await context.channel.send("*C1RC3 freezes as she tries to process your inane request.* \"...Request accepted. You have achieved nothing.\"")
+        await context.channel.send("*C1RC3 freezes as she tries to process your inane request.*\n`\"...Request accepted. You have achieved nothing.\"`")
         return
 
     session = database_connector()
@@ -237,7 +237,7 @@ async def withdraw(
     if account is None:
         log(get_time() + " >> " + str(context.author) + " failed to find account \"" + name + "\" in [" + str(context.guild) + "], [" + str(context.channel) + "]")
         await context.respond(".", ephemeral = True, delete_after = 0)
-        await context.channel.send("*C1RC3 pauses for a brief moment as she scans her records.* \"Request failed. No account exists under that name.\"")
+        await context.channel.send("*C1RC3 pauses for a brief moment as she scans her records.*\n`\"Request failed. No account exists under that name.\"`")
         session.close()
         return
 
@@ -250,7 +250,7 @@ async def withdraw(
                 + " chips from their account \"" + name + "\" in [" + str(context.guild) + "], [" + str(context.channel) + "]")
 
             await context.respond(".", ephemeral = True, delete_after = 0)
-            response: str = "*You feel a small tingle all over your body as C1RC3 scans your magical signature, and her face flashes green for a moment.* \"Request approved.\" *Golden light begins to condense from nowhere into C1RC3's body as she visibly shivers. A hidden compartment in her midriff suddenly slides open, containing a pile of the chips you requested.* \"Your account now contains:\"\n# "
+            response: str = "*You feel a small tingle all over your body as C1RC3 scans your magical signature, and her face flashes green for a moment.*\n`\"Request approved.\"`\n*Golden light begins to condense from nowhere into C1RC3's body as she visibly shivers. A hidden compartment in her midriff suddenly slides open, containing a pile of the chips you requested.*\n`\"Your account now contains:\"`\n# "
 
             bal: List[int] = account.get_bal()
 
@@ -273,10 +273,10 @@ async def withdraw(
         else:
             log(get_time() + " >> " + str(context.author) + " withdrew too many chips from their account \"" + name + "\" in [" + str(context.guild) + "], [" + str(context.channel) + "]")
             await context.respond(".", ephemeral = True, delete_after = 0)
-            await context.channel.send("*You feel a small tingle all over your body as C1RC3 scans your magical signature, and her face flashes green for a moment. However, she soon shakes her head.* \"Request denied. You do not have enough chips in your account for that withdrawal.\"")
+            await context.channel.send("*You feel a small tingle all over your body as C1RC3 scans your magical signature, and her face flashes green for a moment. However, she soon shakes her head.*\n`\"Request denied. You do not have enough chips in your account for that withdrawal.\"`")
     else:
         log(get_time() + " >> " + str(context.author) + " tried to access other's account \"" + name + "\" in [" + str(context.guild) + "], [" + str(context.channel) + "]")
         await context.respond(".", ephemeral = True, delete_after = 0)
-        await context.channel.send("*You feel a small tingle all over your body as C1RC3 scans your magical signature, and her face flashes red for a moment.* \"Request denied. This account does not belong to you.\"")
+        await context.channel.send("*You feel a small tingle all over your body as C1RC3 scans your magical signature, and her face flashes red for a moment.*\n`\"Request denied. This account does not belong to you.\"")
 
     session.close()
