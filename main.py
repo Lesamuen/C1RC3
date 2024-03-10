@@ -49,6 +49,7 @@ from bot import bot_client
 from auxiliary import log, get_time
 import dbmodels
 import admin
+import chips
 
 print("\nAll bot modules successfully loaded!\nNow initiating connection to Discord servers...")
 

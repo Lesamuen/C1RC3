@@ -19,13 +19,13 @@ async def admin_shutdown(context: ApplicationContext):
         await bot_client.close()
         quit()
     else:
-        await context.respond("\"Permission denied.\"")
+        await context.respond("\"Permission denied. You have no administrator privilege.\"")
         log(get_time() + " >> " + str(context.author) + " permission denied in [" + str(context.guild) + "], [" + str(context.channel) + "]")
 
 @bot_client.slash_command(name = "scan", description = "Scans the user, and internalizes key information.", guild_ids = guilds, guild_only = True)
 async def scan(context: ApplicationContext):
     """Adds the command /scan"""
 
-    await context.respond("\"Scanning protocol activated. Please stand still.\"\n*C1RC3's eyes seem to glow a bit brighter, before a bright red cone of light shoots out and hovers from the top of your body to the very floor.*\n\"Scanning protocol complete. C1RC3 thanks you for your contribution.\"")
+    await context.respond("\"Scanning protocol activated. Please stand still.\"\n*C1RC3's eyes seem to glow a bit brighter, before a bright red cone of light shoots out and hovers from the top of your body to the very floor.*\n\"Scanning protocol complete. C1RC3 and the Casino by extension thanks you for your contribution.\"")
     log(get_time() + " >> " + str(context.author) + " scanned themselves in [" + str(context.guild) + "], [" + str(context.channel) + "]")
     log("id: " + str(context.author.id) + "\nname: " + str(context.author))
