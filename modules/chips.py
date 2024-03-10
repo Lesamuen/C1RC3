@@ -7,36 +7,7 @@ from discord import ApplicationContext, Option
 from bot import bot_client, database_connector
 from auxiliary import guilds, log, get_time
 from dbmodels import User, ChipAccount
-
-chip_emojis: List[str] = [
-    "<:chip1:1216075094947004617>",
-    "<:chip2:1216075127481962606>",
-    "<:chip3:1216075181898993664>",
-    "<:chip4:1216075196763734027>",
-    "<:chip5:1216075227726086305>",
-    "<:chip6:1216075286005813338>"
-]
-
-def format_chips(chips: List[str]) -> str:
-    """Formats chips into a human readable format for Discord."""
-
-    formatted = "# "
-    # If no chips, say "no chips".
-    no_chips = True
-    for chip_type in chips:
-        if chip_type != 0:
-            no_chips = False
-            break
-    if no_chips:
-        formatted += "No " + chip_emojis[0]
-    else:
-        # Chips exist, so go through every non-zero chip and list them
-        for i in range(len(chips)):
-            if chips[i] != 0:
-                formatted += str(chips[i]) + " " + chip_emojis[i] + ", "
-        formatted = formatted.removesuffix(", ")
-
-    return formatted
+from emojis import chip_emojis
 
 @bot_client.slash_command(name = "open_account", description = "Open an account for you to hold your chips.", guild_ids = guilds, guild_only = True)
 async def open_account(
