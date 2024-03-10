@@ -96,6 +96,7 @@ class User(SQLBase):
         else:
             return False
 
+'''
 class ChipAccount(SQLBase):
     # TODO
     """Represents a chips account belonging to a single character.
@@ -213,3 +214,4 @@ class ChipAccount(SQLBase):
 
         self.name = new
         session.commit()
+'''
