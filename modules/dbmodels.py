@@ -1,7 +1,7 @@
 """Contains all SQLAlchemy ORM models"""
 
 from typing import List, Optional, Tuple, Dict
-from datetime import datetime, timedelta
+from json import dumps, loads
 
 from sqlalchemy import ForeignKey, select, insert, update, delete
 from sqlalchemy.orm import Mapped, mapped_column, relationship, Session
@@ -24,8 +24,8 @@ class User(SQLBase):
     [STATIC] find_user(session: Session, id: str) -> User
         Returns the User object corresponding to the given Discord ID
 
-    add_chips(session: Session, chip: int) -> None
-        Adds a number of chips to user's currency
+    create_account(session: Session, name: str) -> bool
+        Tries to open a chip account under the given name
     """
 
     __tablename__ = "user"
@@ -65,15 +65,12 @@ class User(SQLBase):
         else:
             return found_user
         
-    def create_account(self, session: Session, username: str, name: str) -> bool:
-        """Tries to open a chip account under the given username
+    def create_account(self, session: Session, name: str) -> bool:
+        """Tries to open a chip account under the given name
 
         ### Parameters
         session: Session
             Database session scope
-
-        username: str
-            Username of the new account
 
         name: str
             In-character name that the account is going under
@@ -84,56 +81,76 @@ class User(SQLBase):
 
         found_account = session.execute(
             select(ChipAccount)
-            .where(ChipAccount.username == username)
+            .where(ChipAccount.name == name)
             ).scalar()
         
         if found_account is None:
             # Create new account
-            new_account = ChipAccount(owner_id = self.id, username = username, name = name)
+            new_account = ChipAccount(owner_id = self.id, name = name)
             session.add(new_account)
             session.commit()
             return True
         else:
             return False
 
-'''
+
 class ChipAccount(SQLBase):
-    # TODO
     """Represents a chips account belonging to a single character.
 
     ### Attributes
+    [PRIMARY] str: name
+        Unique name that the account is under
+
+    [FOREIGN] owner_id: int
+        ID of User who owns this account
+
+    [BACKREF] owner: User
+        Direct reference to User who owns this account
+
+    chips: str
+        Jsonified array of chips of each type within the account
         
     ### Methods
+    [STATIC] find_account(session: Session, username: str) -> ChipAccount | None
+        Returns the ChipAccount if it exists
+
+    get_bal() -> List[int]
+        Returns the balance unjsonified
     
+    deposit(session: Session, amount: List[int]) -> None
+        Deposit an amount of chips into the account
+
+    withdraw(session: Session, amount: List[int]) -> bool
+        Withdraw an amount of chips from the account
+    
+    change_name(session: Session, new: str) -> None
+        Change the name of the account
     """
 
     __tablename__ = "account"
 
-    username: Mapped[str] = mapped_column(primary_key = True)
-    """Unique username of the account; no two characters can have the same account, even under different users"""
+    name: Mapped[str] = mapped_column(primary_key = True)
+    """Unique name that the account is under"""
 
     owner_id: Mapped[int] = mapped_column(ForeignKey("user.id", ondelete = "CASCADE"))
     """ID of User who owns this account"""
 
     owner: Mapped["User"] = relationship(back_populates = "accounts")
     """Direct reference to User who owns this account"""
-
-    name: Mapped[str]
-    """Given name of character that owns this account"""
     
-    chips: Mapped[int] = mapped_column(default = 0)
-    """How many chips the account contains"""
+    chips: Mapped[str] = mapped_column(default = "[0, 0, 0, 0, 0, 0]")
+    """Jsonified array of chips of each type within the account"""
 
     @staticmethod
-    def find_account(session: Session, username: str) -> "ChipAccount | None":
+    def find_account(session: Session, name: str) -> "ChipAccount | None":
         """Returns the ChipAccount if it exists
         
         ### Parameters
         session: Session
             Database session scope
 
-        username: str
-            Username to search for
+        name: str
+            Name of account to search for
 
         ### Returns
         ChipAccount with matching username or None if not found.
@@ -141,60 +158,84 @@ class ChipAccount(SQLBase):
 
         return session.execute(
             select(ChipAccount)
-            .where(ChipAccount.username == username)
+            .where(ChipAccount.name == name)
             ).scalar()
     
-    def deposit(self, session: Session, amount: int) -> None:
+    def get_bal(self) -> List[int]:
+        """Returns the balance unjsonified
+        
+        ### Returns
+        A list of integers containing each type of chip in the account
+        """
+
+        return loads(self.chips)
+
+    def deposit(self, session: Session, amount: List[int]) -> None:
         """Deposit an amount of chips into the account
 
         ### Parameters
         session: Session
             Database session scope
 
-        amount: int
-            Amount of chips to add to the balance
+        amount: List[int]
+            Amount of each type of chips to add to the balance
 
         ### Throws
         InvalidArgumentError
-            Amount given is negative
+            Amount given is negative or not enough chip arguments
         """
 
-        if amount < 0:
+        for chips in amount:
+            if chips < 0:
+                raise InvalidArgumentError
+        
+        current_chips: List[int] = loads(self.chips)
+        if len(amount) != len(current_chips):
             raise InvalidArgumentError
         
-        self.chips += amount
+        for i in range(len(amount)):
+            current_chips[i] += amount[i]
+
+        self.chips = dumps(current_chips)
         session.commit()
     
-    def withdraw(self, session: Session, amount: int) -> bool:
+    def withdraw(self, session: Session, amount: List[int]) -> bool:
         """Withdraw an amount of chips from the account
 
         ### Parameters
         session: Session
             Database session scope
 
-        amount: int
-            Amount of chips to take from the balance
+        amount: List[int]
+            Amount of each type of chips to remove from the balance
 
         ### Returns
-        True if successful, False if there were not enough chips in the account
+            True if successful, false if any amount of chips was more than balance
 
         ### Throws
         InvalidArgumentError
-            Amount given is negative
+            Amount given is negative or not enough chip arguments
         """
 
-        if amount < 0:
-            raise InvalidArgumentError
-
-        if amount > self.chips:
-            return False
+        for chips in amount:
+            if chips < 0:
+                raise InvalidArgumentError
         
-        self.chips -= amount
+        current_chips: List[int] = loads(self.chips)
+        if len(amount) != len(current_chips):
+            raise InvalidArgumentError
+        
+        for i in range(len(amount)):
+            if amount[i] > current_chips[i]:
+                return False
+            current_chips[i] -= amount[i]
+
+        self.chips = dumps(current_chips)
         session.commit()
 
         return True
 
-    def changename(self, session: Session, new: str) -> None:
+    def change_name(self, session: Session, new: str) -> None:
         """Change the name of the account
 
         ### Parameters
@@ -214,4 +255,3 @@ class ChipAccount(SQLBase):
 
         self.name = new
         session.commit()
-'''
