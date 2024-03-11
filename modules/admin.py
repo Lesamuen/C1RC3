@@ -1,11 +1,9 @@
 """Contains several bot commands for admining or debugging"""
 
-from discord import ApplicationContext, Option
-from discord import User as DiscordUser
+from discord import ApplicationContext
 
 from bot import bot_client, database_connector
 from auxiliary import perms, guilds, log, get_time
-from dbmodels import User
 
 admin_cmds = bot_client.create_group("admin", "Commands to affect behind the scenes stuff for C1RC3")
 
