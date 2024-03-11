@@ -125,12 +125,12 @@ async def balance(
 async def deposit(
     context: ApplicationContext,
     name: Option(str, description = "The name the account is under", required = True, min_length = 1),
-    phys_chips: Option(int, description = "The amount of physical chips to deposit", required = True, min_value = 0, default = 0),
-    ment_chips: Option(int, description = "The amount of mental chips to deposit", required = True, min_value = 0, default = 0),
-    arti_chips: Option(int, description = "The amount of artificial chips to deposit", required = True, min_value = 0, default = 0),
-    supe_chips: Option(int, description = "The amount of supernatural chips to deposit", required = True, min_value = 0, default = 0),
-    merg_chips: Option(int, description = "The amount of merging chips to deposit", required = True, min_value = 0, default = 0),
-    swap_chips: Option(int, description = "The amount of swap chips to deposit", required = True, min_value = 0, default = 0)
+    phys_chips: Option(int, description = "The amount of physical chips to deposit", min_value = 0, default = 0),
+    ment_chips: Option(int, description = "The amount of mental chips to deposit", min_value = 0, default = 0),
+    arti_chips: Option(int, description = "The amount of artificial chips to deposit", min_value = 0, default = 0),
+    supe_chips: Option(int, description = "The amount of supernatural chips to deposit", min_value = 0, default = 0),
+    merg_chips: Option(int, description = "The amount of merging chips to deposit", min_value = 0, default = 0),
+    swap_chips: Option(int, description = "The amount of swap chips to deposit", min_value = 0, default = 0)
 ):
     """Adds the command /deposit"""
 
@@ -179,12 +179,12 @@ async def deposit(
 async def withdraw(
     context: ApplicationContext,
     name: Option(str, description = "The name the account is under", required = True, min_length = 1),
-    phys_chips: Option(int, description = "The amount of physical chips to withdraw", required = True, min_value = 0, default = 0),
-    ment_chips: Option(int, description = "The amount of mental chips to withdraw", required = True, min_value = 0, default = 0),
-    arti_chips: Option(int, description = "The amount of artificial chips to withdraw", required = True, min_value = 0, default = 0),
-    supe_chips: Option(int, description = "The amount of supernatural chips to withdraw", required = True, min_value = 0, default = 0),
-    merg_chips: Option(int, description = "The amount of merging chips to withdraw", required = True, min_value = 0, default = 0),
-    swap_chips: Option(int, description = "The amount of swap chips to withdraw", required = True, min_value = 0, default = 0)
+    phys_chips: Option(int, description = "The amount of physical chips to withdraw", min_value = 0, default = 0),
+    ment_chips: Option(int, description = "The amount of mental chips to withdraw", min_value = 0, default = 0),
+    arti_chips: Option(int, description = "The amount of artificial chips to withdraw", min_value = 0, default = 0),
+    supe_chips: Option(int, description = "The amount of supernatural chips to withdraw", min_value = 0, default = 0),
+    merg_chips: Option(int, description = "The amount of merging chips to withdraw", min_value = 0, default = 0),
+    swap_chips: Option(int, description = "The amount of swap chips to withdraw", min_value = 0, default = 0)
 ):
     """Adds the command /withdraw"""
 
