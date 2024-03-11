@@ -36,3 +36,23 @@ def log(out: str) -> None:
 
     with open("logs/" + datetime.now().strftime("%Y-%m-%d") + ".txt", "a") as log_file:
         log_file.write(out + "\n")
+
+def all_zero(arr: List[int]) -> bool:
+    """Checks if a list of integers contains nothing but 0's.
+    
+    ### Parameters
+    arr: List[int]
+        The list of integers to be tested
+
+    ### Returns
+    True
+        Every value is 0
+    False
+        At least one value is nonzero
+    """
+
+    for num in arr:
+        if num != 0:
+            return False
+
+    return True

@@ -5,7 +5,7 @@ from typing import List
 from discord import ApplicationContext, Option
 
 from bot import bot_client, database_connector
-from auxiliary import guilds, log, get_time
+from auxiliary import guilds, log, get_time, all_zero
 from dbmodels import User, ChipAccount
 from emojis import format_chips
 
@@ -134,8 +134,11 @@ async def deposit(
 ):
     """Adds the command /deposit"""
 
+    # Grab chip params
+    chips: List[int] = list(locals().values())[2:8]
+
     # If every single parameter is 0
-    if phys_chips == 0 and ment_chips == 0 and arti_chips == 0 and supe_chips == 0 and merg_chips == 0 and swap_chips == 0:
+    if all_zero(chips):
         log(get_time() + " >> " + str(context.author) + " tried to deposit nothing in [" + str(context.guild) + "], [" + str(context.channel) + "]")
         await context.respond(".", ephemeral = True, delete_after = 0)
         await context.channel.send("*C1RC3 freezes as she tries to process your inane request.*\n`\"...Request accepted. You have achieved nothing.\"`")
@@ -154,7 +157,7 @@ async def deposit(
 
     # Check if account belongs to the person sending the command
     if account.owner_id == context.author.id:
-        log(get_time() + " >> " + str(context.author) + " deposited " + str(phys_chips) + "|" + str(ment_chips) + "|" + str(arti_chips) + "|" + str(supe_chips) + "|" + str(merg_chips) + "|" + str(swap_chips) 
+        log(get_time() + " >> " + str(context.author) + " deposited " + str(chips) 
              + " chips to their account \"" + name + "\" in [" + str(context.guild) + "], [" + str(context.channel) + "]")
         
         account.deposit(session, [phys_chips, ment_chips, arti_chips, supe_chips, merg_chips, swap_chips])
@@ -185,8 +188,11 @@ async def withdraw(
 ):
     """Adds the command /withdraw"""
 
+    # Grab chip params
+    chips: List[int] = list(locals().values())[2:8]
+
     # If every single parameter is 0
-    if phys_chips == 0 and ment_chips == 0 and arti_chips == 0 and supe_chips == 0 and merg_chips == 0 and swap_chips == 0:
+    if all_zero(chips):
         log(get_time() + " >> " + str(context.author) + " tried to withdraw nothing in [" + str(context.guild) + "], [" + str(context.channel) + "]")
         await context.respond(".", ephemeral = True, delete_after = 0)
         await context.channel.send("*C1RC3 freezes as she tries to process your inane request.*\n`\"...Request accepted. You have achieved nothing.\"`")
@@ -208,7 +214,7 @@ async def withdraw(
         success: bool = account.withdraw(session, [phys_chips, ment_chips, arti_chips, supe_chips, merg_chips, swap_chips])
 
         if success:
-            log(get_time() + " >> " + str(context.author) + " withdrew " + str(phys_chips) + "|" + str(ment_chips) + "|" + str(arti_chips) + "|" + str(supe_chips) + "|" + str(merg_chips) + "|" + str(swap_chips) 
+            log(get_time() + " >> " + str(context.author) + " withdrew " + str(chips) 
                 + " chips from their account \"" + name + "\" in [" + str(context.guild) + "], [" + str(context.channel) + "]")
 
             await context.respond(".", ephemeral = True, delete_after = 0)
