@@ -1,17 +1,17 @@
 """Contains all Discord-emoji related stuff like decks and chips"""
 
-from typing import List
+from typing import List, Tuple
 
-chip_emojis: List[str] = [
+chip_emojis: Tuple[str] = (
     "<:chip1:1216075094947004617>",
     "<:chip2:1216075127481962606>",
     "<:chip3:1216075181898993664>",
     "<:chip4:1216075196763734027>",
     "<:chip5:1216075227726086305>",
-    "<:chip6:1216075286005813338>"
-]
+    "<:chip6:1216075286005813338>",
+)
 
-standard_deck: List[str] = [
+standard_deck: Tuple[str] = (
     '<:b2:1212795165467742208><:male:1212794904355405876>',
     '<:b3:1212795166583431208><:male:1212794904355405876>',
     '<:b4:1212795167795449916><:male:1212794904355405876>',
@@ -63,8 +63,8 @@ standard_deck: List[str] = [
     '<:pj:1212797652995940362><:female:1212794934109671494>',
     '<:pq:1212797657035046992><:female:1212794934109671494>',
     '<:pk:1212797655101472849><:female:1212794934109671494>',
-    '<:pa:1212795346418278460><:female:1212794934109671494>'
-]
+    '<:pa:1212795346418278460><:female:1212794934109671494>',
+)
 
 def format_chips(chips: List[int]) -> str:
     """Formats chips into a human readable format for Discord."""
