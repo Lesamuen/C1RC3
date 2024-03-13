@@ -218,15 +218,15 @@ async def bj_stand(
             await context.respond(".", ephemeral = True, delete_after = 0)
             await context.channel.send("PLACEHOLDER: you're not part of this game")
         elif not game.is_midround():
-            log(get_time() + " >> " + str(context.author) + " hit in Blackjack outside of a round in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+            log(get_time() + " >> " + str(context.author) + " stood in Blackjack outside of a round in [" + str(context.guild) + "], [" + str(context.channel) + "]")
             await context.respond(".", ephemeral = True, delete_after = 0)
             await context.channel.send("PLACEHOLDER: round hasn't started")
         elif game.get_turn() != context.author.id:
-            log(get_time() + " >> " + str(context.author) + " hit in Blackjack outside of their turn in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+            log(get_time() + " >> " + str(context.author) + " stood in Blackjack outside of their turn in [" + str(context.guild) + "], [" + str(context.channel) + "]")
             await context.respond(".", ephemeral = True, delete_after = 0)
             await context.channel.send("PLACEHOLDER: not your turn")
         else:
-            log(get_time() + " >> " + str(context.author) + " hit in Blackjack in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+            log(get_time() + " >> " + str(context.author) + " stood in Blackjack in [" + str(context.guild) + "], [" + str(context.channel) + "]")
             await context.respond(".", ephemeral = True, delete_after = 0)
             await context.channel.send("PLACEHOLDER: " + player.name + " stood")
             player.stand(session)
