@@ -63,7 +63,7 @@ async def on_ready():
 async def on_disconnect():
     log("\n" + get_time() + " >> Lost connection to Discord!\n")
 @bot_client.listen()
-async def on_connect():
-    log("\n" + get_time() + " >> Regained connection to Discord!\n")
+async def on_resume():
+    log("\n" + get_time() + " >> Resumed connection to Discord!\n")
 
 bot_client.run(bot_token)
