@@ -50,6 +50,8 @@ from auxiliary import log, get_time
 import dbmodels
 import admin
 import chips
+import game
+import blackjack
 
 print("\nAll bot modules successfully loaded!\nNow initiating connection to Discord servers...")
 
