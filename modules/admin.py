@@ -5,11 +5,9 @@ from discord import ApplicationContext
 from bot import bot_client, database_connector
 from auxiliary import perms, guilds, log, get_time
 
-admin_cmds = bot_client.create_group("admin", "Commands to affect behind the scenes stuff for C1RC3")
-
-@admin_cmds.command(name = "shutdown", description = "Shuts down bot externally")
-async def admin_shutdown(context: ApplicationContext):
-    """Adds the command /admin shutdown"""
+@bot_client.slash_command(name = "bad_girl", description = "Shuts down bot externally", guild_ids = guilds, guild_only = True)
+async def bad_girl(context: ApplicationContext):
+    """Adds the command /bad_girl"""
 
     if context.author.id in perms["admin"]:
         await context.respond("`\"Permission granted. Shutdown protocol activated. Booting down...\"`")
@@ -19,6 +17,13 @@ async def admin_shutdown(context: ApplicationContext):
     else:
         await context.respond("`\"Permission denied. You have no administrator privilege.\"`")
         log(get_time() + " >> " + str(context.author) + " permission denied in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+
+@bot_client.slash_command(name = "good_girl", description = "Reward C1RC3 <3", guild_ids = guilds, guild_only = True)
+async def good_girl(context: ApplicationContext):
+    """Adds the command /good_girl"""
+
+    await context.respond("https://tenor.com/view/catgirl-gif-19605722")
+    log(get_time() + " >> " + str(context.author) + " headpatted C1RC3 [" + str(context.guild) + "], [" + str(context.channel) + "]")
 
 @bot_client.slash_command(name = "scan", description = "Scans the user, just for debugging", guild_ids = guilds, guild_only = True)
 async def scan(context: ApplicationContext):
