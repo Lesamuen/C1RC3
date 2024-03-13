@@ -10,7 +10,7 @@ async def bad_girl(context: ApplicationContext):
     """Adds the command /bad_girl"""
 
     if context.author.id in perms["admin"]:
-        await context.respond("`\"Permission granted. Shutdown protocol activated. Booting down...\"`")
+        await context.respond("https://tenor.com/view/anime-dan-machi-sad-sad-face-sorrow-gif-13886240")
         log(get_time() + " >> Admin " + str(context.author) + " externally shut down C1RC3 from [" + str(context.guild) + "], [" + str(context.channel) + "]")
         await bot_client.close()
         quit()
