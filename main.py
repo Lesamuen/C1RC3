@@ -58,9 +58,12 @@ print("\nAll bot modules successfully loaded!\nNow initiating connection to Disc
 # Initialize bot loop
 @bot_client.listen()
 async def on_ready():
-    log("\n" + get_time() + " >> Successfully logged in as " + str(bot_client.user))
+    log("\n" + get_time() + " >> Successfully logged in as " + str(bot_client.user) + "\n")
 @bot_client.listen()
 async def on_disconnect():
-    log("\n" + get_time() + " >> Lost connection to Discord!")
+    log("\n" + get_time() + " >> Lost connection to Discord!\n")
+@bot_client.listen()
+async def on_connect():
+    log("\n" + get_time() + " >> Regained connection to Discord!\n")
 
 bot_client.run(bot_token)
