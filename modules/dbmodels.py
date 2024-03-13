@@ -549,7 +549,7 @@ class Blackjack(Game):
                 states[1] += 1
             elif player.state == "bust":
                 states[2] += 1
-                
+
         # If all but one player have busted, that player auto wins
         if states[2] == len(self.players) - 1:
             return True
@@ -667,7 +667,7 @@ class BlackjackPlayer(Player):
         # Calculate hand value
         hand_value = self.hand_value()
         if hand_value == 0:
-            self.state == "bust"
+            self.state = "bust"
 
         session.commit()
         return bool(hand_value)
