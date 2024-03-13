@@ -4,7 +4,7 @@ from typing import List, Optional, Tuple, Dict
 from json import dumps, loads
 from random import sample
 
-from sqlalchemy import ForeignKey, select, insert, update, delete
+from sqlalchemy import ForeignKey, ForeignKeyConstraint, select, insert, update, delete
 from sqlalchemy.orm import Mapped, mapped_column, relationship, Session
 
 from bot import SQLBase
@@ -541,17 +541,26 @@ class Blackjack(Game):
     def is_all_done(self) -> bool:
         """Test whether every player has stood/busted"""
 
+        states = [0, 0, 0]
         for player in self.players:
             if player.state == "hit":
-                return False
-
-        return True
+                states[0] += 1
+            elif player.state == "stand":
+                states[1] += 1
+            elif player.state == "bust":
+                states[2] += 1
+                
+        # If all but one player have busted, that player auto wins
+        if states[2] == len(self.players) - 1:
+            return True
+        # Otherwise, more than 1 player is still hitting/standing; end play when all are standing/busting
+        if states[0] == 0:
+            return True
+        
+        return False
     
     def next_turn(self, session: Session) -> None:
         """Advance the turn counter"""
-
-        if self.is_all_done():
-            return
 
         self.curr_turn = (self.curr_turn + 1) % len(self.players)
         while self.players[self.curr_turn].state != "hit":
@@ -602,7 +611,9 @@ class Blackjack(Game):
             else:
                 for i in range(len(bet)):
                     bet[i] *= 3
-
+            self.current_bet = dumps(bet)
+            session.commit()
+        
         return (win_con, winners)
 
 class BlackjackPlayer(Player):
@@ -614,9 +625,16 @@ class BlackjackPlayer(Player):
     """ #TODO
 
     __tablename__ = "blackjack_player"
+    __table_args__ = (
+        ForeignKeyConstraint(["user_id", "game_id"], ["player.user_id", "player.game_id"]),
+        )
+    
 
-    user_id: Mapped[int] = mapped_column(ForeignKey("player.user_id"), primary_key = True)
+    user_id: Mapped[int] = mapped_column(primary_key = True)
     """User ID of the player"""
+
+    game_id: Mapped[int] = mapped_column(primary_key = True)
+    """ID of the game the Player is playing in"""
 
     hand: Mapped[str] = mapped_column(default = "[]")
     """Jsonified list of cards within player's hand"""
