@@ -401,6 +401,12 @@ class Player(SQLBase):
         """Get chips unjsonified"""
 
         return loads(self.chips)
+    
+    def set_chips(self, session: Session, amount: List[int]) -> None:
+        """Sets players chips"""
+
+        self.chips = dumps(amount)
+        session.commit()
 
     def pay_chips(self, session: Session, amount: List[int]) -> None:
         """Gives a player chips"""

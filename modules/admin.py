@@ -1,10 +1,13 @@
 """Contains several bot commands for admining or debugging"""
 
-from discord import ApplicationContext
+from typing import List
+
+from discord import ApplicationContext, Option, Member
 
 from bot import bot_client, database_connector
 from auxiliary import perms, guilds, log, get_time
 from dbmodels import Game
+from emojis import format_chips
 
 admin_cmds = bot_client.create_group("admin", "Commands that only an admin can use", guild_ids = guilds, guild_only = True)
 
@@ -39,7 +42,44 @@ async def force_end_game(
 
     session.close()
 
-@admin_cmds.command(name = "bad_girl", description = "Shuts down bot externally", )
+@admin_cmds.command(name = "set_chips", description = "Admin command to manually set chips in a game", guild_ids = guilds, guild_only = True)
+async def force_end_game(
+    context: ApplicationContext,
+    user: Option(Member, description = "User whose chips you are editting", required = True),
+    phys_chips: Option(int, description = "The amount of physical chips to set", min_value = 0, default = 0),
+    ment_chips: Option(int, description = "The amount of mental chips to set", min_value = 0, default = 0),
+    arti_chips: Option(int, description = "The amount of artificial chips to set", min_value = 0, default = 0),
+    supe_chips: Option(int, description = "The amount of supernatural chips to set", min_value = 0, default = 0),
+    merg_chips: Option(int, description = "The amount of merging chips to set", min_value = 0, default = 0),
+    swap_chips: Option(int, description = "The amount of swap chips to set", min_value = 0, default = 0)
+):
+    """Adds the command /admin set_chips"""
+
+    session = database_connector()
+
+    # Extract chip args
+    chips: List[int] = list(locals().values())[2:8]
+
+    game = Game.find_game(session, context.channel_id)
+    if game is None:
+        log(get_time() + " >> Admin " + str(context.author) + " tried to set chips with no game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+        await context.respond(".", ephemeral = True, delete_after = 0)
+        await context.channel.send("`\"Administrator-level Access detected. Request failed. There is no game at this table.\"`")
+    else:
+        player = game.is_playing(session, user.id)
+        if player is None:
+            log(get_time() + " >> Admin " + str(context.author) + " tried to set chips for a non-player in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+            await context.respond(".", ephemeral = True, delete_after = 0)
+            await context.channel.send("`\"Administrator-level Access detected. Request failed. This person is not playing at this table.\"`")
+        else:
+            player.set_chips(session, chips)
+            log(get_time() + " >> Admin " + str(context.author) + " set chips to " + str(chips) + " for " + str(user) + " in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+            await context.respond(".", ephemeral = True, delete_after = 0)
+            await context.channel.send("`\"Administrator-level Access detected. " + player.name + " has been granted the following chips:\"`\n## " + format_chips(chips))
+
+    session.close()
+
+@admin_cmds.command(name = "bad_girl", description = "Admin command to shut C1RC3 down", )
 async def bad_girl(context: ApplicationContext):
     """Adds the command /bad_girl"""
 
