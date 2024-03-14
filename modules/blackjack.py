@@ -148,8 +148,11 @@ async def bj_hand(
             message = "`\"Here are your opponents' current hands:\"`\n"
             for other_player in game.players:
                 if other_player != player:
-                    message += "**" + other_player.name + "**: " + format_cards(standard_deck, other_player.get_hand()) + "\n"
-            message += "`\"Here is your current hand:\"`\n# " + format_cards(standard_deck, player.get_hand()) + "\n## Total Value: " + str(player.hand_value())
+                    other_hand = other_player.get_hand()
+                    if len(other_hand) >= 2:
+                        other_hand[1] = 52
+                    message += "**" + other_player.name + "**: " + format_cards(standard_deck, other_hand) + "\n"
+            message += "\n`\"Here is your current hand:\"`\n# " + format_cards(standard_deck, player.get_hand()) + "\n## Total Value: " + str(player.hand_value())
             await context.respond(message, ephemeral = True, delete_after = 30)
 
     session.close()
