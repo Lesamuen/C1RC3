@@ -160,7 +160,7 @@ async def deposit(
         log(get_time() + " >> " + str(context.author) + " deposited " + str(chips) 
              + " chips to their account \"" + name + "\" in [" + str(context.guild) + "], [" + str(context.channel) + "]")
         
-        account.deposit(session, [phys_chips, ment_chips, arti_chips, supe_chips, merg_chips, swap_chips])
+        account.deposit(session, chips)
 
         await context.respond(".", ephemeral = True, delete_after = 0)
         
@@ -211,7 +211,7 @@ async def withdraw(
 
     # Check if account belongs to the person sending the command
     if account.owner_id == context.author.id:
-        success: bool = account.withdraw(session, [phys_chips, ment_chips, arti_chips, supe_chips, merg_chips, swap_chips])
+        success: bool = account.withdraw(session, chips)
 
         if success:
             log(get_time() + " >> " + str(context.author) + " withdrew " + str(chips) 
