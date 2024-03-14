@@ -110,7 +110,7 @@ async def balance(
              + "\" in [" + str(context.guild) + "], [" + str(context.channel) + "]")
         
         await context.respond(".", ephemeral = True, delete_after = 0)
-        response = "*You feel a small tingle all over your body as C1RC3 scans your magical signature, and her face flashes green for a moment.*\n`\"Request approved. The account under the name '" + account.name + "' currently contains:\"`\n"
+        response = "*You feel a small tingle all over your body as C1RC3 scans your magical signature, and her face flashes green for a moment.*\n`\"Request approved. The account under the name '" + account.name + "' currently contains:\"`\n# "
         response += format_chips(account.get_bal())
 
         await context.channel.send(response)
@@ -164,7 +164,7 @@ async def deposit(
 
         await context.respond(".", ephemeral = True, delete_after = 0)
         
-        response = "*You feel a small tingle all over your body as C1RC3 scans your magical signature, and her face flashes green for a moment.*\n`\"Request approved.\"`\n*The chips you are holding gently glow before evaporating into golden light that shoots over to C1RC3, infusing into her. Her body quivers with pleasure, but she shows no emotion in her automated state.*\n`\"Your account now contains:\"`\n"
+        response = "*You feel a small tingle all over your body as C1RC3 scans your magical signature, and her face flashes green for a moment.*\n`\"Request approved.\"`\n*The chips you are holding gently glow before evaporating into golden light that shoots over to C1RC3, infusing into her. Her body quivers with pleasure, but she shows no emotion in her automated state.*\n`\"Your account now contains:\"`\n# "
         response += format_chips(account.get_bal())
 
         await context.channel.send(response)
@@ -219,7 +219,7 @@ async def withdraw(
 
             await context.respond(".", ephemeral = True, delete_after = 0)
 
-            response = "*You feel a small tingle all over your body as C1RC3 scans your magical signature, and her face flashes green for a moment.*\n`\"Request approved.\"`\n*Golden light begins to condense from nowhere into C1RC3's body as she visibly shivers. A hidden compartment in her midriff suddenly slides open, containing a pile of the chips you requested.*\n`\"Your account now contains:\"`\n"
+            response = "*You feel a small tingle all over your body as C1RC3 scans your magical signature, and her face flashes green for a moment.*\n`\"Request approved.\"`\n*Golden light begins to condense from nowhere into C1RC3's body as she visibly shivers. A hidden compartment in her midriff suddenly slides open, containing a pile of the chips you requested.*\n`\"Your account now contains:\"`\n# "
             response += format_chips(account.get_bal())
 
             await context.channel.send(response)

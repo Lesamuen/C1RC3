@@ -301,6 +301,9 @@ class Game(SQLBase):
         session.delete(self)
         session.commit()
 
+    def get_bet(self) -> List[int]:
+        return loads(self.current_bet)
+
     def set_bet(self, session: Session, bet: List[int]) -> None:
         """Sets current_bet"""
 
@@ -530,15 +533,6 @@ class Blackjack(Game):
         
         session.commit()
         return player
-    
-    def get_names(self) -> List[str]:
-        """Gets names of players in round turn order"""
-
-        names: List[str] = []
-        for i in range(len(self.players)):
-            names.append(self.players[(i + self.round_turn) % len(self.players)].name)
-        
-        return names
     
     def get_turn_name(self) -> str:
         """Get name of player whose turn it is"""

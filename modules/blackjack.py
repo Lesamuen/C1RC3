@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from bot import bot_client, database_connector
 from auxiliary import perms, guilds, log, get_time, all_zero
 from dbmodels import Blackjack, BlackjackPlayer, Game
-from emojis import standard_deck, format_cards
+from emojis import standard_deck, format_cards, format_chips
 from game import bet, concede, chips, use, convert
 
 bj_cmds = bot_client.create_group("bj", "Commands to run the game of Blackjack", guild_ids = guilds, guild_only = True)
@@ -27,33 +27,34 @@ async def bj_join(
         if game.type != "blackjack":
             log(get_time() + " >> " + str(context.author) + " tried to join a non-Blackjack game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
             await context.respond(".", ephemeral = True, delete_after = 0)
-            await context.channel.send("PLACEHOLDER: non-bj game in channel already")
+            await context.channel.send("`\"There is already a different game running at this table.\"`")
         else:
             # Try to join existing game
             if game.is_full():
                 log(get_time() + " >> " + str(context.author) + " tried to join a full Blackjack game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
                 await context.respond(".", ephemeral = True, delete_after = 0)
-                await context.channel.send("PLACEHOLDER: game full")
+                await context.channel.send("`\"This table is already full.\"`")
             elif game.is_midround():
                 # Can't join game in the middle of a round
                 log(get_time() + " >> " + str(context.author) + " tried to join a Blackjack game mid-round in [" + str(context.guild) + "], [" + str(context.channel) + "]")
                 await context.respond(".", ephemeral = True, delete_after = 0)
-                await context.channel.send("PLACEHOLDER: round currently ongoing")
+                await context.channel.send("`\"This table is in the middle of a round; please wait until the round is over before joining.\"`")
             else:
                 if (player := game.join_game(session, context.author.id, name)) is not None:
                     log(get_time() + " >> " + str(context.author) + " joined a Blackjack game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
                     await context.respond(".", ephemeral = True, delete_after = 0)
-                    await context.channel.send("PLACEHOLDER: " + player.name + " successfully joined game")
+                    await context.channel.send("*C1RC3 nods.* `\"Request accepted. " + player.name + ", please be seated before the round begins.\"`")
                 else:
                     log(get_time() + " >> " + str(context.author) + " tried to rejoin a Blackjack game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
                     await context.respond(".", ephemeral = True, delete_after = 0)
-                    await context.channel.send("PLACEHOLDER: already in game")
+                    await context.channel.send("*C1RC3 stays silent for a couple of seconds as she tries to process your request.\n`\"...You are already part of this table.\"`")
     else:
         # Create new game if no game exists yet
         player = Blackjack.create_game(session, context.channel_id).join_game(session, context.author.id, name)
         log(get_time() + " >> " + str(context.author) + " started a Blackjack game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
         await context.respond(".", ephemeral = True, delete_after = 0)
-        await context.channel.send("PLACEHOLDER: " + player.name + " started new game")
+        await context.channel.send("*C1RC3 approaches you as you ring the bell on the table, and takes her place at the dealer's stand.*\n`\"Your request has been processed.\"`\n*She turns to the rest of the floor, as she announces with her voice amplified,*\n`\""
+             + player.name + " has begun a new blackjack game!\"`")
 
     session.close()
 
@@ -95,12 +96,21 @@ async def bj_bet(
             game.set_bet(session, chips)
 
             shuffled = game.start_round(session)
-            if shuffled:
-                await context.channel.send("PLACEHOLDER: deck was shuffled")
 
-            await context.channel.send("PLACEHOLDER: bets aligned. round start")
-            await context.channel.send("PLACEHOLDER: insert cards here (just use /bj hand for now)")
-            await context.channel.send("PLACEHOLDER: first turn is " + game.get_turn_name())
+            message = "`\"The players have agreed on a bet. The round shall now begin.\"`\n"
+            if shuffled:
+                message += "*Before C1RC3 begins to draw cards, she places all of the cards into a compartment that slides open in her arm, and shuts it."\
+                    " A moment of whirring later, she opens it again and pulls out a newly shuffled deck.*\n"
+            message += "*She begins to draw cards from the deck, deftly placing them down in front of each player.*\n"
+            for player in game.players:
+                message += "## __" + player.name + "__\n"
+                hand = player.get_hand
+                if len(hand) >= 2:
+                    hand[1] = 52
+                message += "# " + format_cards(standard_deck, hand) + "\n"
+            message += "`\"The first turn goes to " + game.get_turn_name() + " this round.\"`"
+            
+            await context.channel.send(message)
 
     session.close()
 
@@ -116,24 +126,24 @@ async def bj_hand(
     if game is None:
         log(get_time() + " >> " + str(context.author) + " looked at their Blackjack hand with no game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
         await context.respond(".", ephemeral = True, delete_after = 0)
-        await context.channel.send("PLACEHOLDER: no game here")
+        await context.channel.send("`\"There is no game running at this table at the moment.\"`")
     elif game.type != "blackjack":
         log(get_time() + " >> " + str(context.author) + " looked at their Blackjack hand with a different game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
         await context.respond(".", ephemeral = True, delete_after = 0)
-        await context.channel.send("PLACEHOLDER: not blackjack")
+        await context.channel.send("`\"There is a different type of game running at this table at the moment; you may be at the wrong table.\"`")
     else:
         player: BlackjackPlayer = game.is_playing(session, context.author.id)
         if player is None:
             log(get_time() + " >> " + str(context.author) + " looked at their Blackjack hand with a game they're not part of in [" + str(context.guild) + "], [" + str(context.channel) + "]")
             await context.respond(".", ephemeral = True, delete_after = 0)
-            await context.channel.send("PLACEHOLDER: you're not part of this game")
+            await context.channel.send("*C1RC3 stares at you for a few seconds.* `\"You cannot look at your hand in a game you are not a part of.\"`")
         elif not game.is_midround():
             log(get_time() + " >> " + str(context.author) + " looked at their Blackjack hand outside of a round in [" + str(context.guild) + "], [" + str(context.channel) + "]")
             await context.respond(".", ephemeral = True, delete_after = 0)
-            await context.channel.send("PLACEHOLDER: round hasn't started")
+            await context.channel.send("`\"" + player.name + ", you currently do not have a hand; please bet and begin the round before I can deal you cards.\"`")
         else:
             log(get_time() + " >> " + str(context.author) + " looked at their Blackjack hand in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-            await context.respond("PLACEHOLDER: your cards; this message will disappear in 30 seconds\n" + format_cards(standard_deck, player.get_hand()), ephemeral = True, delete_after = 30)
+            await context.respond("`\"Here are your cards. Please do not reveal them to any other player:\"`\n# " + format_cards(standard_deck, player.get_hand()), ephemeral = True, delete_after = 30)
 
     session.close()
 
@@ -149,45 +159,48 @@ async def bj_hit(
     if game is None:
         log(get_time() + " >> " + str(context.author) + " hit in Blackjack with no game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
         await context.respond(".", ephemeral = True, delete_after = 0)
-        await context.channel.send("PLACEHOLDER: no game here")
+        await context.channel.send("`\"There is no game running at this table at the moment.\"`")
     elif game.type != "blackjack":
         log(get_time() + " >> " + str(context.author) + " hit in Blackjack while it wasn't Blackjack in [" + str(context.guild) + "], [" + str(context.channel) + "]")
         await context.respond(".", ephemeral = True, delete_after = 0)
-        await context.channel.send("PLACEHOLDER: not blackjack")
+        await context.channel.send("`\"There is a different type of game running at this table at the moment; you may be at the wrong table.\"`")
     else:
         player: BlackjackPlayer = game.is_playing(session, context.author.id)
         if player is None:
             log(get_time() + " >> " + str(context.author) + " hit in a Blackjack game they're not part of in [" + str(context.guild) + "], [" + str(context.channel) + "]")
             await context.respond(".", ephemeral = True, delete_after = 0)
-            await context.channel.send("PLACEHOLDER: you're not part of this game")
+            await context.channel.send("*C1RC3 stares at you for a few seconds.* `\"You cannot be dealt cards in a game you are not a part of.\"`")
         elif not game.is_midround():
             log(get_time() + " >> " + str(context.author) + " hit in Blackjack outside of a round in [" + str(context.guild) + "], [" + str(context.channel) + "]")
             await context.respond(".", ephemeral = True, delete_after = 0)
-            await context.channel.send("PLACEHOLDER: round hasn't started")
+            await context.channel.send("`\"" + player.name + ", you currently do not have a hand; please bet and begin the round before I can deal you cards.\"`")
         elif game.get_turn() != context.author.id:
             log(get_time() + " >> " + str(context.author) + " hit in Blackjack outside of their turn in [" + str(context.guild) + "], [" + str(context.channel) + "]")
             await context.respond(".", ephemeral = True, delete_after = 0)
-            await context.channel.send("PLACEHOLDER: not your turn")
+            await context.channel.send("`\"" + player.name + ", it is currently not your turn. You may not hit yet.\"`")
         else:
             # No need to test for hit state; if standing or busted it cannot be their turn already
             log(get_time() + " >> " + str(context.author) + " hit in Blackjack in [" + str(context.guild) + "], [" + str(context.channel) + "]")
             await context.respond(".", ephemeral = True, delete_after = 0)
             drawn = game.draw(session, 1)
-            await context.channel.send("PLACEHOLDER: " + player.name + " drew the card\n" + format_cards(standard_deck, [drawn]))
+            await context.channel.send("*C1RC3 pulls a card from the top of the deck and sets it down for all to see.*\n# " + format_cards(standard_deck, [drawn]) \
+                 + "\n`\"That is your card, " + player.name + ".\"`")
             if player.add_card(session, drawn):
                 # Test for 5 card charlie
                 if len(player.get_hand()) == 5:
                     await bj_end_round(context, session, game)
                 else:
                     game.next_turn(session)
+                    await context.channel.send("`\"It is now your turn, " + game.get_turn_name() + ".\"`")
             else:
                 # Busted, so test for round end
-                await context.channel.send("PLACEHOLDER: " + player.name + " busted")
+                await context.channel.send("*C1RC3 nods as she calculates the hand.* `\"Unfortunately, you have busted, " + player.name + ".\"`")
                 if game.is_all_done():
                     await bj_end_round(context, session, game)
                 else:
                     # Round didn't end with bust
                     game.next_turn(session)
+                    await context.channel.send("`\"It is now your turn, " + game.get_turn_name() + ".\"`")
 
     session.close()
 
@@ -203,29 +216,29 @@ async def bj_stand(
     if game is None:
         log(get_time() + " >> " + str(context.author) + " stood in Blackjack with no game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
         await context.respond(".", ephemeral = True, delete_after = 0)
-        await context.channel.send("PLACEHOLDER: no game here")
+        await context.channel.send("`\"There is no game running at this table at the moment.\"`")
     elif game.type != "blackjack":
         log(get_time() + " >> " + str(context.author) + " stood in Blackjack while it wasn't Blackjack in [" + str(context.guild) + "], [" + str(context.channel) + "]")
         await context.respond(".", ephemeral = True, delete_after = 0)
-        await context.channel.send("PLACEHOLDER: not blackjack")
+        await context.channel.send("`\"There is a different type of game running at this table at the moment; you may be at the wrong table.\"`")
     else:
         player: BlackjackPlayer = game.is_playing(session, context.author.id)
         if player is None:
             log(get_time() + " >> " + str(context.author) + " stood in a Blackjack game they're not part of in [" + str(context.guild) + "], [" + str(context.channel) + "]")
             await context.respond(".", ephemeral = True, delete_after = 0)
-            await context.channel.send("PLACEHOLDER: you're not part of this game")
+            await context.channel.send("*C1RC3 stares at you for a few seconds.* `\"You cannot 'stand' in a game you are not a part of.\"`")
         elif not game.is_midround():
             log(get_time() + " >> " + str(context.author) + " stood in Blackjack outside of a round in [" + str(context.guild) + "], [" + str(context.channel) + "]")
             await context.respond(".", ephemeral = True, delete_after = 0)
-            await context.channel.send("PLACEHOLDER: round hasn't started")
+            await context.channel.send("`\"" + player.name + ", you currently do not have a hand; please bet and begin the round before I can deal you cards.\"`")
         elif game.get_turn() != context.author.id:
             log(get_time() + " >> " + str(context.author) + " stood in Blackjack outside of their turn in [" + str(context.guild) + "], [" + str(context.channel) + "]")
             await context.respond(".", ephemeral = True, delete_after = 0)
-            await context.channel.send("PLACEHOLDER: not your turn")
+            await context.channel.send("`\"" + player.name + ", it is currently not your turn. You may not stand yet.\"`")
         else:
             log(get_time() + " >> " + str(context.author) + " stood in Blackjack in [" + str(context.guild) + "], [" + str(context.channel) + "]")
             await context.respond(".", ephemeral = True, delete_after = 0)
-            await context.channel.send("PLACEHOLDER: " + player.name + " stood")
+            await context.channel.send("*C1RC3 nods at you.* `\"Understood. " + player.name + " has stood,\"` *she reiterates.*")
             player.stand(session)
 
             # player stood, so test for round end
@@ -234,6 +247,7 @@ async def bj_stand(
             else:
                 # Round didn't end with stand
                 game.next_turn(session)
+                await context.channel.send("`\"It is now your turn, " + game.get_turn_name() + ".\"`")
 
     session.close()
 
@@ -312,28 +326,47 @@ async def bj_end_round(context: ApplicationContext, session: Session, game: Blac
     """Does round end stuff"""
 
     log(get_time() + " >> " + str(context.author) + " Blackjack round ended in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-    await context.channel.send("PLACEHOLDER: round ended")
+    message = "`\"The round has ended. I will now reveal everyone's cards.\"`\n"
     for player in game.players:
-        await context.channel.send("## __" + player.name + "__\n" + format_cards(standard_deck, player.get_hand()))
+        message += "## __" + player.name + "__\n# " + format_cards(standard_deck, player.get_hand()) + "\n"
     
     # End the round
+    orig_bet = game.get_bet()
     win_con, winners = game.end_round(session)
     if len(winners) == 1:
+        message += "`\"The Casino sincerely congratulates " + winners[0][1] + " for winning this round"
         if win_con == "f":
-            await context.channel.send("PLACEHOLDER: " + winners[0][1] + " won w/ 5-card charlie")
+            message += " with a 5-card Charlie"
         elif win_con == "b":
-            await context.channel.send("PLACEHOLDER: " + winners[0][1] + " won w/ blackjack")
-        else:
-            await context.channel.send("PLACEHOLDER: " + winners[0][1] + " won")
+            message += " with a Blackjack"
+        message += "!\"`\n*C1RC3 opens a compartment in her abdomen where a pile of fresh chips lays, and pushes it over to " + winners[0][1] + ".*\n"\
+            + "# " + format_chips(orig_bet)
     else:
+        message += "`\""
+        if len(winners) == 2:
+            message += winners[0][1] + " and " + winners[1][1] + " have tied"
+        elif len(winners) == 3:
+            message += winners[0][1] + ", " + winners[1][1] + ", and " + winners[2][1] + " have tied"
+        elif len(winners) == 4:
+            message += winners[0][1] + ", " + winners[1][1] + ", " + winners[2][1] + ", and " + winners[3][1] + " have tied"
         if win_con == "b":
-            await context.channel.send("PLACEHOLDER: " + str([winner[1] for winner in winners]) + " tied w/ blackjack")
-        else:
-            await context.channel.send("PLACEHOLDER: " + str([winner[1] for winner in winners]) + " tied")
+            message += " with a Blackjack"
+        message += "! The new bet has been multiplied to:\"`\n"\
+             + "# " + format_chips(game.get_bet()) + "\n"\
+             "`\"Each winner will now be given a new hand.\"`\n"
         
         # Start new round because tied
         shuffled = game.start_round(session, [winner[0] for winner in winners])
         if shuffled:
-            await context.channel.send("PLACEHOLDER: deck was shuffled")
-        await context.channel.send("PLACEHOLDER: insert cards here (just use /bj hand for now)")
-        await context.channel.send("PLACEHOLDER: first turn is " + game.get_turn_name())
+            message += "*Before C1RC3 begins to draw cards, she places all of the cards into a compartment that slides open in her arm, and shuts it."\
+                " A moment of whirring later, she opens it again and pulls out a newly shuffled deck.*\n"
+        message += "*She begins to draw cards from the deck, deftly placing them down in front of each winner of the previous round.*\n"
+        for player in game.players:
+            message += "## __" + player.name + "__\n"
+            hand = player.get_hand
+            if len(hand) >= 2:
+                hand[1] = 52
+            message += "# " + format_cards(standard_deck, hand) + "\n"
+        message += "`\"The first turn goes to " + game.get_turn_name() + " this round.\"`"
+
+    await context.channel.send(message)

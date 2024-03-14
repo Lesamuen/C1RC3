@@ -70,15 +70,15 @@ standard_deck: Tuple[str] = (
 def format_chips(chips: List[int]) -> str:
     """Formats chips into a human readable format for Discord."""
 
-    formatted = "# "
-    # If no chips, say "no chips".
+    formatted = ""
+    # If no chips, say "0 basic chips".
     no_chips = True
     for chip_type in chips:
         if chip_type != 0:
             no_chips = False
             break
     if no_chips:
-        formatted += "No " + chip_emojis[0]
+        formatted += "0 " + chip_emojis[0]
     else:
         # Chips exist, so go through every non-zero chip and list them
         for i in range(len(chips)):
@@ -91,7 +91,7 @@ def format_chips(chips: List[int]) -> str:
 def format_cards(card_set: Tuple[str], cards: List[int]) -> str:
     """Formats card emojis into a human readable format for Discord"""
 
-    formatted = "# "
+    formatted = ""
     for i in cards:
         formatted += card_set[i]
     return formatted
