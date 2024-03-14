@@ -65,5 +65,9 @@ async def on_disconnect():
 @bot_client.listen()
 async def on_connect():
     log("\n" + get_time() + " >> Connected to Discord!\n")
+@bot_client.listen()
+async def on_application_command_error(ctx, exc):
+    # Suppress admin fail checks
+    return
 
 bot_client.run(bot_token)

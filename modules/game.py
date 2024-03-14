@@ -24,31 +24,6 @@ chip_conversions = (
     ((0, 0, 0, 0, 0, 1), (0, 0.5, 0, 0, 0, 0)),
 )
 
-@bot_client.slash_command(name = "force_end_game", description = "Admin command to end a game in this channel", guild_ids = guilds, guild_only = True)
-async def force_end_game(
-    context: ApplicationContext
-):
-    """Adds the command /force_end_game"""
-
-    session = database_connector()
-
-    if context.author.id in perms["admin"]:
-        game = Game.find_game(session, context.channel_id)
-        if game is None:
-            log(get_time() + " >> Admin " + str(context.author) + " tried to force-end a game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-            await context.respond(".", ephemeral = True, delete_after = 0)
-            await context.channel.send("`\"Request failed. There is already no game at this table.\"`")
-        else:
-            log(get_time() + " >> Admin " + str(context.author) + " force-ended a game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-            game.end(session)
-            await context.respond(".", ephemeral = True, delete_after = 0)
-            await context.channel.send("`\"Permission granted. The game running for this table has been forcibly ended.\"`")
-    else:
-        await context.respond("`\"Permission denied. You have no administrator privilege.\"`")
-        log(get_time() + " >> " + str(context.author) + " permission denied in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-
-    session.close()
-
 async def bet(context: ApplicationContext, session: Session, chips: List[int], expected_type: str) -> Tuple[bool, Game]:
     """default bet behavior, return whether bet placed"""
 
@@ -245,8 +220,7 @@ async def convert(context: ApplicationContext, session: Session, option: int, am
                     log(get_time() + " >> " + str(context.author) + " converted more chips than they had in [" + str(context.guild) + "], [" + str(context.channel) + "]")
                     await context.respond(".", ephemeral = True, delete_after = 0)
                     await context.channel.send("`\"You do not possess enough chips to convert that many, " + player.name + ".\"`")
-
-                    
+           
 async def rename(context: ApplicationContext, session: Session, new_name: str, expected_type: str) -> None:
     """default rename behavior"""
 
