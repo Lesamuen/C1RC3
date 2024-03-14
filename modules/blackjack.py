@@ -286,19 +286,19 @@ async def bj_use(
 async def bj_convert(
     context: ApplicationContext,
     type: Option(int, description = "What chips to convert", required = True, choices = [
-        OptionChoice("Dissolve Mental", 0),
-        OptionChoice("Dissolve Artificial", 1),
-        OptionChoice("Craft Artificial", 2),
-        OptionChoice("Dissolve Supernatural to Physical", 3),
-        OptionChoice("Dissolve Supernatural to Mental", 4),
-        OptionChoice("Craft Supernatural from Physical", 5),
-        OptionChoice("Craft Supernatural from Mental", 6),
-        OptionChoice("Dissolve Merge to Physical", 7),
-        OptionChoice("Dissolve Merge to Mental", 8),
-        OptionChoice("Dissolve Swap to Physical", 9),
-        OptionChoice("Dissolve Swap to Mental", 10),
+        OptionChoice("Mental -> x10 Physical", 0),
+        OptionChoice("Artificial -> x40 Physical, x3 Mental", 1),
+        OptionChoice("x40 Physical, x3 Mental -> Artificial", 2),
+        OptionChoice("Supernatural -> x5 Physical", 3),
+        OptionChoice("Supernatural -> x1/2 Mental", 4),
+        OptionChoice("x5 Physical -> Supernatural", 5),
+        OptionChoice("x1/2 Mental -> Supernatural", 6),
+        OptionChoice("Merge -> x30 Physical", 7),
+        OptionChoice("Merge -> x3 Mental", 8),
+        OptionChoice("Swap -> x5 Physical", 9),
+        OptionChoice("Swap -> x1/2 Mental", 10),
     ]),
-    amount: Option(int, description = "The amount of chips to convert", min_value = 1, default = 1)
+    amount: Option(int, description = "The amount of chips to convert", min_value = 1)
 ):
     """Adds the command /bj convert"""
 
