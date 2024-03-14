@@ -395,19 +395,31 @@ class Player(SQLBase):
 
         return loads(self.chips)
 
-    def pay_chips(self, session: Session, bet: List[int]) -> None:
+    def pay_chips(self, session: Session, amount: List[int]) -> None:
         """Gives a player chips"""
 
         bal = loads(self.chips)
         for i in range(len(bal)):
-            bal[i] += bet[i]
+            bal[i] += amount[i]
         self.chips = dumps(bal)
 
         session.commit()
 
-    def use_chips(self, session: Session, bet: List[int]) -> bool:
-        # TODO
-        return
+    def use_chips(self, session: Session, amount: List[int]) -> bool:
+        """Removes a player's chips, if able"""
+
+        bal = loads(self.chips)
+        # Check if enough chips
+        for i in range(len(bal)):
+            if bal[i] < amount[i]:
+                return False
+        
+        for i in range(len(bal)):
+            bal[i] -= amount[i]
+
+        self.chips = dumps(bal)
+        session.commit()
+        return True
 
 class Blackjack(Game):
     """Represents a game of Blackjack.

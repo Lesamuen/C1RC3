@@ -10,6 +10,20 @@ from auxiliary import perms, guilds, log, get_time, all_zero
 from dbmodels import User, Game, Player
 from emojis import format_chips
 
+chip_conversions = (
+    ((0, 1, 0, 0, 0, 0), (10, 0, 0, 0, 0, 0)),
+    ((0, 0, 1, 0, 0, 0), (40, 3, 0, 0, 0, 0)),
+    ((40, 3, 0, 0, 0, 0), (0, 0, 1, 0, 0, 0)),
+    ((0, 0, 0, 1, 0, 0), (5, 0, 0, 0, 0, 0)),
+    ((0, 0, 0, 1, 0, 0), (0, 0.5, 0, 0, 0, 0)),
+    ((5, 0, 0, 0, 0, 0), (0, 0, 0, 1, 0, 0)),
+    ((0, 0.5, 0, 0, 0, 0), (0, 0, 0, 1, 0, 0)),
+    ((0, 0, 0, 0, 1, 0), (30, 0, 0, 0, 0, 0)),
+    ((0, 0, 0, 0, 1, 0), (0, 3, 0, 0, 0, 0)),
+    ((0, 0, 0, 0, 0, 1), (5, 0, 0, 0, 0, 0)),
+    ((0, 0, 0, 0, 0, 1), (0, 0.5, 0, 0, 0, 0)),
+)
+
 @bot_client.slash_command(name = "force_end_game", description = "Admin command to end a game in this channel", guild_ids = guilds, guild_only = True)
 async def force_end_game(
     context: ApplicationContext
@@ -35,14 +49,14 @@ async def force_end_game(
 
     session.close()
 
-async def bet(context: ApplicationContext, session: Session, chips: List[int], expected_type: str) -> Tuple[bool, Game, Player]:
+async def bet(context: ApplicationContext, session: Session, chips: List[int], expected_type: str) -> Tuple[bool, Game]:
     """default bet behavior, return whether bet placed"""
 
     if all_zero(chips):
         log(get_time() + " >> " + str(context.author) + " tried to bet nothing in [" + str(context.guild) + "], [" + str(context.channel) + "]")
         await context.respond(".", ephemeral = True, delete_after = 0)
         await context.channel.send("PLACEHOLDER: ...nothin'?")
-        return (False, None, None)
+        return (False, None)
 
     game = Game.find_game(session, context.channel_id)
     if game is None:
@@ -67,10 +81,10 @@ async def bet(context: ApplicationContext, session: Session, chips: List[int], e
             log(get_time() + " >> " + str(context.author) + " placed a bet of " + str(chips) + " in [" + str(context.guild) + "], [" + str(context.channel) + "]")
             player.set_bet(session, chips)
             await context.respond(".", ephemeral = True, delete_after = 0)
-            await context.channel.send("PLACEHOLDER: bet placed")
-            return (True, game, player)
+            await context.channel.send("PLACEHOLDER: " + player.name + " placed bet of " + str(chips))
+            return (True, game)
 
-    return (False, None, None)
+    return (False, None)
 
 async def concede(context: ApplicationContext, session: Session, expected_type: str) -> None:
     """default concede behavior"""
@@ -137,3 +151,93 @@ async def chips(context: ApplicationContext, session: Session, expected_type: st
             log(get_time() + " >> " + str(context.author) + " viewed chips in a game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
             await context.respond(".", ephemeral = True, delete_after = 0)
             await context.channel.send("PLACEHOLDER: current chips of " + player.name + " are\n" + format_chips(player.get_chips()))
+
+async def use(context: ApplicationContext, session: Session, chips: List[int], expected_type: str) -> None:
+    """default chip use behavior"""
+
+    if all_zero(chips):
+        log(get_time() + " >> " + str(context.author) + " tried to use no chips in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+        await context.respond(".", ephemeral = True, delete_after = 0)
+        await context.channel.send("PLACEHOLDER: ...nothin'?")
+        return (False, None, None)
+
+    game = Game.find_game(session, context.channel_id)
+    if game is None:
+        log(get_time() + " >> " + str(context.author) + " tried to use chips with no game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+        await context.respond(".", ephemeral = True, delete_after = 0)
+        await context.channel.send("PLACEHOLDER: no game here")
+    elif game.type != expected_type:
+        log(get_time() + " >> " + str(context.author) + " tried to use chips in the wrong type of game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+        await context.respond(".", ephemeral = True, delete_after = 0)
+        await context.channel.send("PLACEHOLDER: wrong game to use chips")
+    else:
+        player = game.is_playing(session, context.author.id)
+        if player is None:
+            log(get_time() + " >> " + str(context.author) + " tried to use chips in the wrong game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+            await context.respond(".", ephemeral = True, delete_after = 0)
+            await context.channel.send("PLACEHOLDER: not part of this game")
+        elif game.is_midround():
+            log(get_time() + " >> " + str(context.author) + " tried to use chips mid-game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+            await context.respond(".", ephemeral = True, delete_after = 0)
+            await context.channel.send("PLACEHOLDER: can't use chips midround")
+        else:
+            success = player.use_chips(session, chips)
+            if success:
+                log(get_time() + " >> " + str(context.author) + " used " + str(chips) + " chips in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+                await context.respond(".", ephemeral = True, delete_after = 0)
+                await context.channel.send("PLACEHOLDER: " + str(chips) + " chips used by " + player.name)
+            else:
+                log(get_time() + " >> " + str(context.author) + " tried to use " + str(chips) + " chips in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+                await context.respond(".", ephemeral = True, delete_after = 0)
+                await context.channel.send("PLACEHOLDER: not enough chips")
+
+async def convert(context: ApplicationContext, session: Session, option: int, amount: int, expected_type: str) -> None:
+    """default chip conversion behavior"""
+
+    game = Game.find_game(session, context.channel_id)
+    if game is None:
+        log(get_time() + " >> " + str(context.author) + " tried to convert chips with no game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+        await context.respond(".", ephemeral = True, delete_after = 0)
+        await context.channel.send("PLACEHOLDER: no game here")
+    elif game.type != expected_type:
+        log(get_time() + " >> " + str(context.author) + " tried to convert chips in the wrong type of game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+        await context.respond(".", ephemeral = True, delete_after = 0)
+        await context.channel.send("PLACEHOLDER: wrong game to convert chips")
+    else:
+        player = game.is_playing(session, context.author.id)
+        if player is None:
+            log(get_time() + " >> " + str(context.author) + " tried to convert chips in the wrong game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+            await context.respond(".", ephemeral = True, delete_after = 0)
+            await context.channel.send("PLACEHOLDER: not part of this game")
+        elif game.is_midround():
+            log(get_time() + " >> " + str(context.author) + " tried to convert chips mid-game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+            await context.respond(".", ephemeral = True, delete_after = 0)
+            await context.channel.send("PLACEHOLDER: can't convert chips midround")
+        else:
+            # test to see if conversion results in whole numbers
+            consumed, produced = chip_conversions[option]
+            consumed = [x * amount for x in consumed]
+            produced = [x * amount for x in produced]
+
+            whole = True
+            for i in range(len(consumed)):
+                if consumed[i] % 1 != 0 or produced[i] % 1 != 0:
+                    whole = False
+
+            if not whole:
+                log(get_time() + " >> " + str(context.author) + " converted illegal amount of chips in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+                await context.respond(".", ephemeral = True, delete_after = 0)
+                await context.channel.send("PLACEHOLDER: please convert whole numbers of chips")
+            else:
+                # convert to int
+                consumed = [int(x) for x in consumed]
+                produced = [int(x) for x in produced]
+                if player.use_chips(session, consumed):
+                    player.pay_chips(session, produced)
+                    log(get_time() + " >> " + str(context.author) + " converted " + str(consumed) + " to " + str(produced) + " chips in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+                    await context.respond(".", ephemeral = True, delete_after = 0)
+                    await context.channel.send("PLACEHOLDER: " + player.name + " converted " + str(consumed) + " to " + str(produced) + " chips")
+                else:
+                    log(get_time() + " >> " + str(context.author) + " converted more chips than they had in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+                    await context.respond(".", ephemeral = True, delete_after = 0)
+                    await context.channel.send("PLACEHOLDER: you don't have enough chips for that conversion")

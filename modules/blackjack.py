@@ -9,7 +9,7 @@ from bot import bot_client, database_connector
 from auxiliary import perms, guilds, log, get_time, all_zero
 from dbmodels import Blackjack, BlackjackPlayer, Game
 from emojis import standard_deck, format_cards
-from game import bet, concede, chips
+from game import bet, concede, chips, use, convert
 
 bj_cmds = bot_client.create_group("bj", "Commands to run the game of Blackjack", guild_ids = guilds, guild_only = True)
 
@@ -87,12 +87,9 @@ async def bj_bet(
 
     game: Blackjack
     player: BlackjackPlayer
-    bet_placed, game, player = await bet(context, session, chips, "blackjack")
+    bet_placed, game = await bet(context, session, chips, "blackjack")
 
     if bet_placed:
-        await context.respond(".", ephemeral = True, delete_after = 0)
-        await context.channel.send("PLACEHOLDER: " + player.name + " placed bet of " + str(chips))
-
         if game.bets_aligned():
             log(get_time() + " >> The Blackjack round has started in [" + str(context.guild) + "], [" + str(context.channel) + "]")
             game.set_bet(session, chips)
@@ -276,9 +273,14 @@ async def bj_use(
 ):
     """Adds the command /bj use"""
 
-    log(get_time() + " >> " + str(context.author) + " tried to use chips in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-    await context.respond(".", ephemeral = True, delete_after = 0)
-    await context.channel.send("PLACEHOLDER: not implemented yet srry")
+    # Extract chip args
+    chips: List[int] = list(locals().values())[1:7]
+
+    session = database_connector()
+
+    await use(context, session, chips, "blackjack")
+
+    session.close()
 
 @bj_cmds.command(name = "convert", description = "Convert one type of chips to another")
 async def bj_convert(
@@ -300,9 +302,11 @@ async def bj_convert(
 ):
     """Adds the command /bj convert"""
 
-    log(get_time() + " >> " + str(context.author) + " tried to convert chips in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-    await context.respond(".", ephemeral = True, delete_after = 0)
-    await context.channel.send("PLACEHOLDER: not implemented yet srry")
+    session = database_connector()
+
+    await convert(context, session, type, amount, "blackjack")
+
+    session.close()
 
 async def bj_end_round(context: ApplicationContext, session: Session, game: Blackjack) -> None:
     """Does round end stuff"""
