@@ -26,12 +26,12 @@ async def open_account(
         log(get_time() + " >> " + str(context.author) + " opened an account under the name \"" + name
              + "\" in [" + str(context.guild) + "], [" + str(context.channel) + "]")
         await context.respond(".", ephemeral = True, delete_after = 0)
-        await context.channel.send("*C1RC3 nods.* \"Request accepted and processed. An account has been opened under the name '" + name + "'.\"")
+        await context.channel.send("*C1RC3 nods.* `\"Request accepted and processed. An account has been opened under the name '" + name + "'.\"`")
     else:
         log(get_time() + " >> " + str(context.author) + " tried to open a duplicate account under the name \"" + name + "\" in ["
              + str(context.guild) + "], [" + str(context.channel) + "]")
         await context.respond(".", ephemeral = True, delete_after = 0)
-        await context.channel.send("*C1RC3 shakes her head.* \"Request denied. An account already exists under the name '" + name + "'.\"")
+        await context.channel.send("*C1RC3 shakes her head.* `\"Request denied. An account already exists under the name '" + name + "'.\"`")
 
     session.close()
 

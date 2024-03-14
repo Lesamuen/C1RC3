@@ -121,8 +121,8 @@ async def concede(context: ApplicationContext, session: Session, expected_type: 
                 if len(game.players) == 1:
                     log(get_time() + " >> " + str(context.author) + " game ended in [" + str(context.guild) + "], [" + str(context.channel) + "]")
                     winner: Player = game.players[0]
-                    message += "\n*C1RC3 turns to the last player.* `\"Congratulations, " + winner.name + ", you have won against everyone at the table."\
-                        "You may choose to transform back to your original form at the beginning of the game, or keep your current one if it is complete."\
+                    message += "\n*C1RC3 turns to the last player.* `\"Congratulations, " + winner.name + ", you have won against everyone at the table.\n"\
+                        "You may choose to transform back to your original form at the beginning of the game, or keep your current one if it is complete.\n"\
                         "You may also keep your chips, if this table was at normal stakes or higher:\"`\n# "\
                          + format_chips(winner.get_chips()) + "\n*With that, C1RC3 walks off to attend to other tables.*"
                     game.end(session)
@@ -189,7 +189,7 @@ async def use(context: ApplicationContext, session: Session, chips: List[int], e
             if success:
                 log(get_time() + " >> " + str(context.author) + " used " + str(chips) + " chips in [" + str(context.guild) + "], [" + str(context.channel) + "]")
                 await context.respond(".", ephemeral = True, delete_after = 0)
-                await context.channel.send("`\"" + player.name + " has used:\n## " + format_chips(chips))
+                await context.channel.send("`\"" + player.name + " has used:\"`\n## " + format_chips(chips))
             else:
                 log(get_time() + " >> " + str(context.author) + " tried to use " + str(chips) + " chips in [" + str(context.guild) + "], [" + str(context.channel) + "]")
                 await context.respond(".", ephemeral = True, delete_after = 0)
@@ -240,7 +240,7 @@ async def convert(context: ApplicationContext, session: Session, option: int, am
                     player.pay_chips(session, produced)
                     log(get_time() + " >> " + str(context.author) + " converted " + str(consumed) + " to " + str(produced) + " chips in [" + str(context.guild) + "], [" + str(context.channel) + "]")
                     await context.respond(".", ephemeral = True, delete_after = 0)
-                    await context.channel.send("`\"" + player.name + " has converted:\n## " + format_chips(consumed) + " to " + format_chips(produced))
+                    await context.channel.send("`\"" + player.name + " has converted:\"`\n## " + format_chips(consumed) + " to " + format_chips(produced))
                 else:
                     log(get_time() + " >> " + str(context.author) + " converted more chips than they had in [" + str(context.guild) + "], [" + str(context.channel) + "]")
                     await context.respond(".", ephemeral = True, delete_after = 0)

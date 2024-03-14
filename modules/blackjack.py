@@ -104,7 +104,7 @@ async def bj_bet(
             message += "*She begins to draw cards from the deck, deftly placing them down in front of each player.*\n"
             for player in game.players:
                 message += "## __" + player.name + "__\n"
-                hand = player.get_hand
+                hand = player.get_hand()
                 if len(hand) >= 2:
                     hand[1] = 52
                 message += "# " + format_cards(standard_deck, hand) + "\n"
@@ -363,7 +363,7 @@ async def bj_end_round(context: ApplicationContext, session: Session, game: Blac
         message += "*She begins to draw cards from the deck, deftly placing them down in front of each winner of the previous round.*\n"
         for player in game.players:
             message += "## __" + player.name + "__\n"
-            hand = player.get_hand
+            hand = player.get_hand()
             if len(hand) >= 2:
                 hand[1] = 52
             message += "# " + format_cards(standard_deck, hand) + "\n"
