@@ -9,7 +9,7 @@ from bot import bot_client, database_connector
 from auxiliary import perms, guilds, log, get_time, all_zero
 from dbmodels import Blackjack, BlackjackPlayer, Game
 from emojis import standard_deck, format_cards, format_chips
-from game import bet, concede, chips, use, convert
+from game import bet, concede, chips, use, convert, rename
 
 bj_cmds = bot_client.create_group("bj", "Commands to run the game of Blackjack", guild_ids = guilds, guild_only = True)
 
@@ -65,9 +65,11 @@ async def bj_rename(
 ):
     """Adds the command /bj rename"""
 
-    log(get_time() + " >> " + str(context.author) + " tried to rename themselves in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-    await context.respond(".", ephemeral = True, delete_after = 0)
-    await context.channel.send("PLACEHOLDER: not implemented yet srry")
+    session = database_connector()
+
+    await rename(context, session, name, "blackjack")
+
+    session.close()
 
 @bj_cmds.command(name = "bet", description = "Bet an amount of chips")
 async def bj_bet(

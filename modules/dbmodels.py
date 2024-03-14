@@ -382,8 +382,12 @@ class Player(SQLBase):
         "polymorphic_on": "type"
     }
     
-    def leave(self, session: Session):
+    def leave(self, session: Session) -> None:
         session.delete(self)
+        session.commit()
+
+    def rename(self, session: Session, new_name: str) -> None:
+        self.name = new_name
         session.commit()
 
     def set_bet(self, session: Session, bet: List[int]) -> None:

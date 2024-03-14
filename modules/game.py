@@ -245,3 +245,28 @@ async def convert(context: ApplicationContext, session: Session, option: int, am
                     log(get_time() + " >> " + str(context.author) + " converted more chips than they had in [" + str(context.guild) + "], [" + str(context.channel) + "]")
                     await context.respond(".", ephemeral = True, delete_after = 0)
                     await context.channel.send("`\"You do not possess enough chips to convert that many, " + player.name + ".\"`")
+
+                    
+async def rename(context: ApplicationContext, session: Session, new_name: str, expected_type: str) -> None:
+    """default rename behavior"""
+
+    game = Game.find_game(session, context.channel_id)
+    if game is None:
+        log(get_time() + " >> " + str(context.author) + " tried to rename with no game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+        await context.respond(".", ephemeral = True, delete_after = 0)
+        await context.channel.send("`\"There is no game running at this table at the moment.\"`")
+    elif game.type != expected_type:
+        log(get_time() + " >> " + str(context.author) + " tried to rename in the wrong type of game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+        await context.respond(".", ephemeral = True, delete_after = 0)
+        await context.channel.send("`\"There is a different type of game running at this table at the moment; you may be at the wrong table.\"`")
+    else:
+        player = game.is_playing(session, context.author.id)
+        if player is None:
+            log(get_time() + " >> " + str(context.author) + " tried to rename in the wrong game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+            await context.respond(".", ephemeral = True, delete_after = 0)
+            await context.channel.send("*C1RC3 stares at you for a few seconds.* `\"You cannot rename yourself in a game you are not a part of.\"`")
+        else:
+            player.rename(session, new_name)
+            log(get_time() + " >> " + str(context.author) + " tried to rename in the wrong game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+            await context.respond(".", ephemeral = True, delete_after = 0)
+            await context.channel.send("*C1RC3 nods.* `\"Very well. I will refer to you as " + new_name + " from now on.\"`")
