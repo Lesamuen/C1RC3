@@ -145,7 +145,12 @@ async def bj_hand(
             await context.channel.send("`\"" + player.name + ", you currently do not have a hand; please bet and begin the round before I can deal you cards.\"`")
         else:
             log(get_time() + " >> " + str(context.author) + " looked at their Blackjack hand in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-            await context.respond("`\"Here are your cards. Please do not reveal them to any other player:\"`\n# " + format_cards(standard_deck, player.get_hand()), ephemeral = True, delete_after = 30)
+            message = "`\"Here are your opponents' current hands:\"`\n"
+            for other_player in game.players:
+                if other_player != player:
+                    message += "**" + other_player.name + "**: " + format_cards(standard_deck, other_player.get_hand()) + "\n"
+            message += "`\"Here is your current hand:\"`\n# " + format_cards(standard_deck, player.get_hand()) + "\n## Total Value: " + str(player.hand_value())
+            await context.respond(message, ephemeral = True, delete_after = 30)
 
     session.close()
 
