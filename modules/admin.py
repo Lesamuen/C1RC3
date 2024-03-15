@@ -5,7 +5,7 @@ from typing import List
 from discord import ApplicationContext, Option, Member
 
 from bot import bot_client, database_connector
-from auxiliary import perms, guilds, log, get_time
+from auxiliary import perms, guilds, log, get_time, ghost_reply
 from dbmodels import Game
 from emojis import format_chips
 
@@ -32,13 +32,11 @@ async def force_end_game(
     game = Game.find_game(session, context.channel_id)
     if game is None:
         log(get_time() + " >> Admin " + str(context.author) + " tried to force-end a game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-        await context.respond(".", ephemeral = True, delete_after = 0)
-        await context.channel.send("`\"Administrator-level Access detected. Request failed. There is already no game at this table.\"`")
+        await ghost_reply(context, "`\"Administrator-level Access detected. Request failed. There is already no game at this table.\"`")
     else:
         log(get_time() + " >> Admin " + str(context.author) + " force-ended a game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
         game.end(session)
-        await context.respond(".", ephemeral = True, delete_after = 0)
-        await context.channel.send("`\"Administrator-level Access detected. The game running for this table has been forcibly ended.\"`")
+        await ghost_reply(context, "`\"Administrator-level Access detected. The game running for this table has been forcibly ended.\"`")
 
     session.close()
 
@@ -63,19 +61,16 @@ async def force_end_game(
     game = Game.find_game(session, context.channel_id)
     if game is None:
         log(get_time() + " >> Admin " + str(context.author) + " tried to set chips with no game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-        await context.respond(".", ephemeral = True, delete_after = 0)
-        await context.channel.send("`\"Administrator-level Access detected. Request failed. There is no game at this table.\"`")
+        await ghost_reply(context, "`\"Administrator-level Access detected. Request failed. There is no game at this table.\"`")
     else:
         player = game.is_playing(session, user.id)
         if player is None:
             log(get_time() + " >> Admin " + str(context.author) + " tried to set chips for a non-player in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-            await context.respond(".", ephemeral = True, delete_after = 0)
-            await context.channel.send("`\"Administrator-level Access detected. Request failed. This person is not playing at this table.\"`")
+            await ghost_reply(context, "`\"Administrator-level Access detected. Request failed. This person is not playing at this table.\"`")
         else:
             player.set_chips(session, chips)
-            log(get_time() + " >> Admin " + str(context.author) + " set chips to " + str(chips) + " for " + str(user) + " in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-            await context.respond(".", ephemeral = True, delete_after = 0)
-            await context.channel.send("`\"Administrator-level Access detected. " + player.name + " has been granted the following chips:\"`\n## " + format_chips(chips))
+            log(get_time() + " >> Admin " + str(context.author) + " set chips of " + str(user) + " to " + str(chips) + " in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+            await ghost_reply(context, "`\"Administrator-level Access detected. " + player.name + " has been granted the following chips:\"`\n## " + format_chips(chips))
 
     session.close()
 

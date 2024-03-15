@@ -4,6 +4,7 @@ from datetime import datetime
 from json import load
 from typing import Dict, List, Any
 
+from discord import ApplicationContext
 
 class InvalidArgumentError(Exception):
     pass
@@ -21,7 +22,6 @@ def get_time() -> str:
 
     return datetime.now().strftime("%Y-%m-%d, %H:%M:%S")
 
-
 def log(out: str) -> None:
     """Both prints the input string to the console and writes the input string to a dated log.
 
@@ -36,6 +36,19 @@ def log(out: str) -> None:
 
     with open("logs/" + datetime.now().strftime("%Y-%m-%d") + ".txt", "a") as log_file:
         log_file.write(out + "\n")
+
+async def ghost_reply(context: ApplicationContext, message: str) -> None:
+    """Reply to a message without the command reply actually showing up
+    
+    ### Parameters
+    context: discord.ApplicationContext
+        Application command context
+    message: str
+        The message to send
+    """
+
+    await context.respond(".", ephemeral = True, delete_after = 0)
+    await context.channel.send(message)
 
 def all_zero(arr: List[int]) -> bool:
     """Checks if a list of integers contains nothing but 0's.
