@@ -52,10 +52,7 @@ class User(SQLBase):
         User object with matching id. Creates new user object if no match found.
         """
 
-        found_user = session.execute(
-            select(User)
-            .where(User.id == id)
-            ).scalar()
+        found_user = session.get(User, id)
         
         if found_user is None:
             # Create new default user data if no matching user data found
@@ -80,10 +77,7 @@ class User(SQLBase):
         True on success, False if account already existed.
         """
 
-        found_account = session.execute(
-            select(ChipAccount)
-            .where(ChipAccount.name == name)
-            ).scalar()
+        found_account = session.get(ChipAccount, name)
         
         if found_account is None:
             # Create new account
@@ -157,10 +151,7 @@ class ChipAccount(SQLBase):
         ChipAccount with matching username or None if not found.
         """
 
-        return session.execute(
-            select(ChipAccount)
-            .where(ChipAccount.name == name)
-            ).scalar()
+        return session.get(ChipAccount, name)
     
     def get_bal(self) -> List[int]:
         """Returns the balance unjsonified
