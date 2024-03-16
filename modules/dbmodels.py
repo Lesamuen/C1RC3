@@ -535,15 +535,10 @@ class Blackjack(Game):
         session.commit()
         return player
     
-    def get_turn_name(self) -> str:
-        """Get name of player whose turn it is"""
+    def get_turn(self) -> "BlackjackPlayer":
+        """Get player whose turn it is"""
 
-        return self.players[self.curr_turn].name
-    
-    def get_turn(self) -> int:
-        """Get user id of player whose turn it is"""
-
-        return self.players[self.curr_turn].user_id
+        return self.players[self.curr_turn]
     
     def is_all_done(self) -> bool:
         """Test whether every player has stood/busted"""

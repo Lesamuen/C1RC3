@@ -104,7 +104,7 @@ async def bj_bet(
                 if len(hand) >= 2:
                     hand[1] = 52
                 message += "# " + format_cards(standard_deck, hand) + "\n"
-            message += "`\"The first turn goes to " + game.get_turn_name() + " this round.\"`"
+            message += "`\"The first turn goes to " + game.get_turn().name + " this round.\"`"
             
             await context.channel.send(message)
 
@@ -170,7 +170,7 @@ async def bj_hit(
         elif not game.is_midround():
             log(get_time() + " >> " + str(context.author) + " hit in Blackjack outside of a round in [" + str(context.guild) + "], [" + str(context.channel) + "]")
             await ghost_reply(context, "`\"" + player.name + ", you currently do not have a hand; please bet and begin the round before I can deal you cards.\"`")
-        elif game.get_turn() != context.author.id:
+        elif game.get_turn().user_id != context.author.id:
             log(get_time() + " >> " + str(context.author) + " hit in Blackjack outside of their turn in [" + str(context.guild) + "], [" + str(context.channel) + "]")
             await ghost_reply(context, "`\"" + player.name + ", it is currently not your turn. You may not hit yet.\"`")
         else:
@@ -185,7 +185,7 @@ async def bj_hit(
                     await bj_end_round(context, session, game)
                 else:
                     game.next_turn(session)
-                    await context.channel.send("`\"It is now your turn, " + game.get_turn_name() + ".\"`")
+                    await context.channel.send("`\"It is now your turn, " + game.get_turn().name + ".\"`")
             else:
                 # Busted, so test for round end
                 await context.channel.send("*C1RC3 nods as she calculates the hand.* `\"Unfortunately, you have busted, " + player.name + ".\"`")
@@ -194,7 +194,7 @@ async def bj_hit(
                 else:
                     # Round didn't end with bust
                     game.next_turn(session)
-                    await context.channel.send("`\"It is now your turn, " + game.get_turn_name() + ".\"`")
+                    await context.channel.send("`\"It is now your turn, " + game.get_turn().name + ".\"`")
 
     session.close()
 
@@ -221,7 +221,7 @@ async def bj_stand(
         elif not game.is_midround():
             log(get_time() + " >> " + str(context.author) + " stood in Blackjack outside of a round in [" + str(context.guild) + "], [" + str(context.channel) + "]")
             await ghost_reply(context, "`\"" + player.name + ", you currently do not have a hand; please bet and begin the round before I can deal you cards.\"`")
-        elif game.get_turn() != context.author.id:
+        elif game.get_turn().user_id != context.author.id:
             log(get_time() + " >> " + str(context.author) + " stood in Blackjack outside of their turn in [" + str(context.guild) + "], [" + str(context.channel) + "]")
             await ghost_reply(context, "`\"" + player.name + ", it is currently not your turn. You may not stand yet.\"`")
         else:
@@ -235,7 +235,7 @@ async def bj_stand(
             else:
                 # Round didn't end with stand
                 game.next_turn(session)
-                await context.channel.send("`\"It is now your turn, " + game.get_turn_name() + ".\"`")
+                await context.channel.send("`\"It is now your turn, " + game.get_turn().name + ".\"`")
 
     session.close()
 
@@ -355,6 +355,6 @@ async def bj_end_round(context: ApplicationContext, session: Session, game: Blac
             if len(hand) >= 2:
                 hand[1] = 52
             message += "# " + format_cards(standard_deck, hand) + "\n"
-        message += "`\"The first turn goes to " + game.get_turn_name() + " this round.\"`"
+        message += "`\"The first turn goes to " + game.get_turn().name + " this round.\"`"
 
     await context.channel.send(message)
