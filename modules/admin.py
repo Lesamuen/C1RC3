@@ -59,12 +59,12 @@ async def force_end_game(
 async def force_end_game(
     context: ApplicationContext,
     user: Option(Member, description = "User whose chips you are editting", required = True),
-    phys_chips: Option(int, description = "The amount of physical chips to set", min_value = 0, default = 0),
-    ment_chips: Option(int, description = "The amount of mental chips to set", min_value = 0, default = 0),
-    arti_chips: Option(int, description = "The amount of artificial chips to set", min_value = 0, default = 0),
-    supe_chips: Option(int, description = "The amount of supernatural chips to set", min_value = 0, default = 0),
-    merg_chips: Option(int, description = "The amount of merging chips to set", min_value = 0, default = 0),
-    swap_chips: Option(int, description = "The amount of swap chips to set", min_value = 0, default = 0)
+    physical: Option(int, description = "The amount of physical chips to set", min_value = 0, default = 0),
+    mental: Option(int, description = "The amount of mental chips to set", min_value = 0, default = 0),
+    artificial: Option(int, description = "The amount of artificial chips to set", min_value = 0, default = 0),
+    supernatural: Option(int, description = "The amount of supernatural chips to set", min_value = 0, default = 0),
+    merge: Option(int, description = "The amount of merge chips to set", min_value = 0, default = 0),
+    swap: Option(int, description = "The amount of swap chips to set", min_value = 0, default = 0)
 ):
     """Add the command /admin set_chips"""
 

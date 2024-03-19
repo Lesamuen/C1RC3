@@ -70,12 +70,12 @@ async def bj_rename(
 @bj_cmds.command(name = "bet", description = "Bet an amount of chips")
 async def bj_bet(
     context: ApplicationContext,
-    phys_chips: Option(int, description = "The amount of physical chips to bet", min_value = 0, default = 0),
-    ment_chips: Option(int, description = "The amount of mental chips to bet", min_value = 0, default = 0),
-    arti_chips: Option(int, description = "The amount of artificial chips to bet", min_value = 0, default = 0),
-    supe_chips: Option(int, description = "The amount of supernatural chips to bet", min_value = 0, default = 0),
-    merg_chips: Option(int, description = "The amount of merging chips to bet", min_value = 0, default = 0),
-    swap_chips: Option(int, description = "The amount of swap chips to bet", min_value = 0, default = 0)
+    physical: Option(int, description = "The amount of physical chips to bet", min_value = 0, default = 0),
+    mental: Option(int, description = "The amount of mental chips to bet", min_value = 0, default = 0),
+    artificial: Option(int, description = "The amount of artificial chips to bet", min_value = 0, default = 0),
+    supernatural: Option(int, description = "The amount of supernatural chips to bet", min_value = 0, default = 0),
+    merge: Option(int, description = "The amount of merge chips to bet", min_value = 0, default = 0),
+    swap: Option(int, description = "The amount of swap chips to bet", min_value = 0, default = 0)
 ):
     """Add the command /bj bet"""
 
@@ -269,12 +269,12 @@ async def bj_chips(
 @bj_cmds.command(name = "use", description = "Use an amount of chips from your current pile")
 async def bj_use(
     context: ApplicationContext,
-    phys_chips: Option(int, description = "The amount of physical chips to use", min_value = 0, default = 0),
-    ment_chips: Option(int, description = "The amount of mental chips to use", min_value = 0, default = 0),
-    arti_chips: Option(int, description = "The amount of artificial chips to use", min_value = 0, default = 0),
-    supe_chips: Option(int, description = "The amount of supernatural chips to use", min_value = 0, default = 0),
-    merg_chips: Option(int, description = "The amount of merging chips to use", min_value = 0, default = 0),
-    swap_chips: Option(int, description = "The amount of swap chips to use", min_value = 0, default = 0)
+    physical: Option(int, description = "The amount of physical chips to use", min_value = 0, default = 0),
+    mental: Option(int, description = "The amount of mental chips to use", min_value = 0, default = 0),
+    artificial: Option(int, description = "The amount of artificial chips to use", min_value = 0, default = 0),
+    supernatural: Option(int, description = "The amount of supernatural chips to use", min_value = 0, default = 0),
+    merge: Option(int, description = "The amount of merge chips to use", min_value = 0, default = 0),
+    swap: Option(int, description = "The amount of swap chips to use", min_value = 0, default = 0)
 ):
     """Add the command /bj use"""
 
