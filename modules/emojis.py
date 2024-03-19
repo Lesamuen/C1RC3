@@ -68,7 +68,7 @@ standard_deck: Tuple[str] = (
 )
 
 def format_chips(chips: List[int]) -> str:
-    """Formats chips into a human readable format for Discord."""
+    """Format chips into a human readable format for Discord."""
 
     formatted = ""
     # If no chips, say "0 basic chips".
@@ -89,7 +89,7 @@ def format_chips(chips: List[int]) -> str:
     return formatted
 
 def format_cards(card_set: Tuple[str], cards: List[int]) -> str:
-    """Formats card emojis into a human readable format for Discord"""
+    """Format card emojis into a human readable format for Discord"""
 
     formatted = ""
     for i in cards:

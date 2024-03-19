@@ -12,6 +12,19 @@ from emojis import format_chips
 admin_cmds = bot_client.create_group("admin", "Commands that only an admin can use", guild_ids = guilds, guild_only = True)
 
 async def check_admin(context: ApplicationContext) -> bool:
+    """Pre-check whether a user has the 'admin' permission
+    
+    ### Parameters
+    context: discord.ApplicationContext
+        Application command context
+
+    ### Returns
+    True
+        Author in admin perms list
+    False
+        Author not in admin perms list
+    """
+
     if context.author.id in perms["admin"]:
         return True
     else:
@@ -25,7 +38,7 @@ admin_cmds.checks = [check_admin]
 async def force_end_game(
     context: ApplicationContext
 ):
-    """Adds the command /admin force_end_game"""
+    """Add the command /admin force_end_game"""
 
     session = database_connector()
 
@@ -51,7 +64,7 @@ async def force_end_game(
     merg_chips: Option(int, description = "The amount of merging chips to set", min_value = 0, default = 0),
     swap_chips: Option(int, description = "The amount of swap chips to set", min_value = 0, default = 0)
 ):
-    """Adds the command /admin set_chips"""
+    """Add the command /admin set_chips"""
 
     session = database_connector()
 
@@ -76,7 +89,7 @@ async def force_end_game(
 
 @admin_cmds.command(name = "bad_girl", description = "Admin command to shut C1RC3 down", )
 async def bad_girl(context: ApplicationContext):
-    """Adds the command /bad_girl"""
+    """Add the command /bad_girl"""
 
     await context.respond("https://tenor.com/view/anime-dan-machi-sad-sad-face-sorrow-gif-13886240")
     log(get_time() + " >> Admin " + str(context.author) + " externally shut down C1RC3 from [" + str(context.guild) + "], [" + str(context.channel) + "]")
@@ -85,7 +98,7 @@ async def bad_girl(context: ApplicationContext):
 
 @bot_client.slash_command(name = "good_girl", description = "Reward C1RC3 <3", guild_ids = guilds, guild_only = True)
 async def good_girl(context: ApplicationContext):
-    """Adds the command /good_girl"""
+    """Add the command /good_girl"""
 
     await context.respond("https://tenor.com/view/catgirl-gif-19605722")
     log(get_time() + " >> " + str(context.author) + " headpatted C1RC3 [" + str(context.guild) + "], [" + str(context.channel) + "]")

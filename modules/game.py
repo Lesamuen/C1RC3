@@ -24,7 +24,27 @@ chip_conversions = (
 )
 
 async def bet(context: ApplicationContext, session: Session, chips: List[int], expected_type: str) -> Tuple[bool, Game]:
-    """default bet behavior, return whether bet placed"""
+    """Handle functionality for placing a bet in any game
+    
+    ### Parameters
+    context: discord.ApplicationContext
+        Application command context
+    session: sqlalchemy.orm.Session
+        Current database scope
+    chips: list[int]
+        Values of chips to bet in order of type
+    expected_type: str
+        Discriminator of Game subclass this command was sent for
+
+    ### Returns
+    bool
+        True
+            The bet was successfully placed
+        False
+            The bet failed to be placed
+    dbmodels.Game
+        The game of the channel if bet placed; None if not
+    """
 
     if all_zero(chips):
         log(get_time() + " >> " + str(context.author) + " tried to bet nothing in [" + str(context.guild) + "], [" + str(context.channel) + "]")
@@ -55,7 +75,16 @@ async def bet(context: ApplicationContext, session: Session, chips: List[int], e
     return (False, None)
 
 async def concede(context: ApplicationContext, session: Session, expected_type: str) -> None:
-    """default concede behavior"""
+    """Handle functionality for conceding in any game
+    
+    ### Parameters
+    context: discord.ApplicationContext
+        Application command context
+    session: sqlalchemy.orm.Session
+        Current database scope
+    expected_type: str
+        Discriminator of Game subclass this command was sent for
+    """
     
     game = Game.find_game(session, context.channel_id)
     if game is None:
@@ -98,7 +127,16 @@ async def concede(context: ApplicationContext, session: Session, expected_type: 
                     game.end(session)
 
 async def chips(context: ApplicationContext, session: Session, expected_type: str) -> None:
-    """default chip view behavior"""
+    """Handle functionality for viewing chips in any game
+    
+    ### Parameters
+    context: discord.ApplicationContext
+        Application command context
+    session: sqlalchemy.orm.Session
+        Current database scope
+    expected_type: str
+        Discriminator of Game subclass this command was sent for
+    """
     
     game = Game.find_game(session, context.channel_id)
     if game is None:
@@ -117,7 +155,18 @@ async def chips(context: ApplicationContext, session: Session, expected_type: st
             await ghost_reply(context, "`\"" + player.name + ", you currently have:\"`\n# " + format_chips(player.get_chips()))
 
 async def use(context: ApplicationContext, session: Session, chips: List[int], expected_type: str) -> None:
-    """default chip use behavior"""
+    """Handle functionality for using chips in any game
+    
+    ### Parameters
+    context: discord.ApplicationContext
+        Application command context
+    session: sqlalchemy.orm.Session
+        Current database scope
+    chips: list[int]
+        Values of chips to use in order of type
+    expected_type: str
+        Discriminator of Game subclass this command was sent for
+    """
 
     if all_zero(chips):
         log(get_time() + " >> " + str(context.author) + " tried to use no chips in [" + str(context.guild) + "], [" + str(context.channel) + "]")
@@ -148,7 +197,20 @@ async def use(context: ApplicationContext, session: Session, chips: List[int], e
                 await ghost_reply(context, "`\"You do not possess enough chips to use that many, " + player.name + ".\"`")
 
 async def convert(context: ApplicationContext, session: Session, option: int, amount: int, expected_type: str) -> None:
-    """default chip conversion behavior"""
+    """Handle functionality for converting chips in any game
+    
+    ### Parameters
+    context: discord.ApplicationContext
+        Application command context
+    session: sqlalchemy.orm.Session
+        Current database scope
+    option: int
+        Index for conversion type of chip_conversions
+    amount: int
+        Amount to multiply conversion by
+    expected_type: str
+        Discriminator of Game subclass this command was sent for
+    """
 
     game = Game.find_game(session, context.channel_id)
     if game is None:
@@ -192,7 +254,18 @@ async def convert(context: ApplicationContext, session: Session, option: int, am
                     await ghost_reply(context, "`\"You do not possess enough chips to convert that many, " + player.name + ".\"`")
            
 async def rename(context: ApplicationContext, session: Session, new_name: str, expected_type: str) -> None:
-    """default rename behavior"""
+    """Handle functionality for renaming a player in any game
+    
+    ### Parameters
+    context: discord.ApplicationContext
+        Application command context
+    session: sqlalchemy.orm.Session
+        Current database scope
+    new_name: str
+        The new name to set the player to
+    expected_type: str
+        Discriminator of Game subclass this command was sent for
+    """
 
     game = Game.find_game(session, context.channel_id)
     if game is None:

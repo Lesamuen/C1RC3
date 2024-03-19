@@ -9,12 +9,12 @@ from auxiliary import guilds, log, get_time, all_zero, ghost_reply
 from dbmodels import User, ChipAccount
 from emojis import format_chips
 
-@bot_client.slash_command(name = "open_account", description = "Open an account for you to hold your chips.", guild_ids = guilds, guild_only = True)
+@bot_client.slash_command(name = "open_account", description = "Open an account for you to keep track of the chips you've won from tables.", guild_ids = guilds, guild_only = True)
 async def open_account(
     context: ApplicationContext,
     name: Option(str, description = "The name of the person holding the account", required = True, min_length = 1)
 ):
-    """Adds the command /open_account"""
+    """Add the command /open_account"""
 
     session = database_connector()
 
@@ -39,7 +39,7 @@ async def change_name(
     name: Option(str, description = "The original name of the casino account", required = True, min_length = 1),
     new_name: Option(str, description = "The new name of the account", required = True, min_length = 1)
 ):
-    """Adds the command /change_name"""
+    """Add the command /change_name"""
 
     session = database_connector()
 
@@ -84,7 +84,7 @@ async def balance(
     context: ApplicationContext,
     name: Option(str, description = "The name the account is under", required = True, min_length = 1)
 ):
-    """Adds the command /balance"""
+    """Add the command /balance"""
 
     session = database_connector()
 
@@ -123,7 +123,7 @@ async def deposit(
     merg_chips: Option(int, description = "The amount of merging chips to deposit", min_value = 0, default = 0),
     swap_chips: Option(int, description = "The amount of swap chips to deposit", min_value = 0, default = 0)
 ):
-    """Adds the command /deposit"""
+    """Add the command /deposit"""
 
     # Grab chip params
     chips: List[int] = list(locals().values())[2:8]
@@ -174,7 +174,7 @@ async def withdraw(
     merg_chips: Option(int, description = "The amount of merging chips to withdraw", min_value = 0, default = 0),
     swap_chips: Option(int, description = "The amount of swap chips to withdraw", min_value = 0, default = 0)
 ):
-    """Adds the command /withdraw"""
+    """Add the command /withdraw"""
 
     # Grab chip params
     chips: List[int] = list(locals().values())[2:8]

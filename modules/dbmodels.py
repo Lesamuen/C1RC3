@@ -17,15 +17,13 @@ class User(SQLBase):
     ### Attributes
     [PRIMARY] id: int
         Corresponds to Discord user ID
-
-    [BACKREF] accounts: List[ChipAccount]
+    [BACKREF] accounts: list[ChipAccount]
         List of chip accounts under this User
         
     ### Methods
-    [STATIC] find_user(session: Session, id: str) -> User
+    [STATIC] find_user(session: sqlalchemy.orm.Session, id: str) -> User
         Returns the User object corresponding to the given Discord ID
-
-    create_account(session: Session, name: str) -> bool
+    create_account(session: sqlalchemy.orm.Session, name: str) -> bool
         Tries to open a chip account under the given name
     """
 
@@ -39,12 +37,11 @@ class User(SQLBase):
 
     @staticmethod
     def find_user(session: Session, id: int) -> "User":
-        """Returns the User object corresponding to the given Discord ID
+        """Return the User object corresponding to the given Discord ID
 
         ### Parameters
-        session: Session
+        session: sqlalchemy.orm.Session
             Database session scope
-
         id: int
             Discord user ID
 
@@ -64,17 +61,19 @@ class User(SQLBase):
             return found_user
         
     def create_account(self, session: Session, name: str) -> bool:
-        """Tries to open a chip account under the given name
+        """Attempt to open a chip account under the given name
 
         ### Parameters
-        session: Session
+        session: sqlalchemy.orm.Session
             Database session scope
-
         name: str
             In-character name that the account is going under
 
         ### Returns
-        True on success, False if account already existed.
+        True
+            Successfully created account
+        False
+            Account already existed
         """
 
         found_account = session.get(ChipAccount, name)
@@ -93,32 +92,25 @@ class ChipAccount(SQLBase):
     """Represents a chips account belonging to a single character.
 
     ### Attributes
-    [PRIMARY] str: name
+    [PRIMARY] name: str
         Unique name that the account is under
-
     [FOREIGN] owner_id: int
         ID of User who owns this account
-
     [BACKREF] owner: User
         Direct reference to User who owns this account
-
     chips: str
         Jsonified array of chips of each type within the account
         
     ### Methods
-    [STATIC] find_account(session: Session, username: str) -> ChipAccount | None
+    [STATIC] find_account(session: sqlalchemy.orm.Session, username: str) -> ChipAccount | None
         Returns the ChipAccount if it exists
-
-    get_bal() -> List[int]
+    get_bal() -> list[int]
         Returns the balance unjsonified
-    
-    deposit(session: Session, amount: List[int]) -> None
+    deposit(session: sqlalchemy.orm.Session, amount: list[int]) -> None
         Deposit an amount of chips into the account
-
-    withdraw(session: Session, amount: List[int]) -> bool
+    withdraw(session: sqlalchemy.orm.Session, amount: list[int]) -> bool
         Withdraw an amount of chips from the account
-    
-    change_name(session: Session, new: str) -> None
+    change_name(session: sqlalchemy.orm.Session, new: str) -> None
         Change the name of the account
     """
 
@@ -141,9 +133,8 @@ class ChipAccount(SQLBase):
         """Returns the ChipAccount if it exists
         
         ### Parameters
-        session: Session
+        session: sqlalchemy.orm.Session
             Database session scope
-
         name: str
             Name of account to search for
 
@@ -166,9 +157,8 @@ class ChipAccount(SQLBase):
         """Deposit an amount of chips into the account
 
         ### Parameters
-        session: Session
+        session: sqlalchemy.orm.Session
             Database session scope
-
         amount: List[int]
             Amount of each type of chips to add to the balance
 
@@ -195,14 +185,16 @@ class ChipAccount(SQLBase):
         """Withdraw an amount of chips from the account
 
         ### Parameters
-        session: Session
+        session: sqlalchemy.orm.Session
             Database session scope
-
         amount: List[int]
             Amount of each type of chips to remove from the balance
 
         ### Returns
-            True if successful, false if any amount of chips was more than balance
+        True
+            Successful withdraw
+        False
+            Any amount of chips was more than balance
 
         ### Throws
         InvalidArgumentError
@@ -231,9 +223,8 @@ class ChipAccount(SQLBase):
         """Change the name of the account
 
         ### Parameters
-        session: Session
+        session: sqlalchemy.orm.Session
             Database session scope
-
         new: str
             The new name to attach the account to
 
@@ -253,11 +244,43 @@ class Game(SQLBase):
     """Represents a currently running game for a channel/thread.
     
     ### Attributes
+    [PRIMARY] id: int
+        Corresponds to the discord channel/thread ID
+    type: str
+        The type of game
+    [BACKREF] players: list[Player]
+        Ref to list of players within this game
+    [CLASS] max_players: int
+        Max amount of players the game of this type can handle; 0 means infinite
+    current_bet: str
+        The current bet for the round within the game
+    started: bool
+        Whether or not the game's first round has begun
 
     ### Methods
-    """ #TODO
+    [STATIC] find_game(session: sqlalchemy.orm.Session, channel: int) -> Game | None
+        Return Game object for a channel, if any
+    end(session: sqlalchemy.orm.Session) -> None
+        Wipe the Game from the database
+    get_bet() -> list[int]
+        Return the current bet for the round unjsonified
+    set_bet(session: sqlalchemy.orm.Session, bet: list[int]) -> None
+        Set the current bet for the round
+    is_midround() -> bool
+        Test if the game is currently in the middle of a round; i.e. bets have been set
+    is_full() -> bool
+        Test if the max amount of players have joined
+    is_playing(session: sqlalchemy.orm.Session, user_id: int) -> Player | None
+        Return Player of current game if it actually exists
+    bets_aligned() -> bool:
+        Test if all players' bets are aligned and set
+    """
 
     __tablename__ = "game"
+    __mapper_args__ = {
+        "polymorphic_identity": "base",
+        "polymorphic_on": "type"
+        }
 
     id: Mapped[int] = mapped_column(primary_key = True)
     """Corresponds to the discord channel/thread ID"""
@@ -269,6 +292,10 @@ class Game(SQLBase):
     """Ref to list of players within this game"""
 
     max_players: int = 0
+    """Max amount of players the game of this type can handle; 0 means infinite
+    
+    Overwritten per child class
+    """
 
     current_bet: Mapped[str] = mapped_column(default = "[0, 0, 0, 0, 0, 0]")
     """The current bet for the round within the game
@@ -279,46 +306,102 @@ class Game(SQLBase):
     started: Mapped[bool] = mapped_column(default = False)
     """Whether or not the game's first round has begun"""
 
-    __mapper_args__ = {
-        "polymorphic_identity": "base",
-        "polymorphic_on": "type"
-    }
-
     @staticmethod
     def find_game(session: Session, channel: int) -> "Game | None":
+        """Return Game object for a channel, if any
+        
+        ### Parameters
+        session: sqlalchemy.orm.Session
+            Database session scope
+        channel: int
+            ID of the Discord channel
+
+        ### Returns
+        The Game object of the channel if it exists, None otherwise
+        """
+
         return session.get(Game, channel)
     
-    def end(self, session: Session):
+    def end(self, session: Session) -> None:
+        """Wipe the Game from the database
+        
+        ### Parameters
+        session: sqlalchemy.orm.Session
+            Database session scope
+        """
+
         session.delete(self)
         session.commit()
 
     def get_bet(self) -> List[int]:
+        """Return the current bet for the round unjsonified
+        
+        ### Returns
+        List of ints corresponding to chip amounts
+        """
         return loads(self.current_bet)
 
     def set_bet(self, session: Session, bet: List[int]) -> None:
-        """Sets current_bet"""
+        """Set the current bet for the round
+        
+        ### Parameters
+        session: sqlalchemy.orm.Session
+            Database session scope
+        bet: list[int]
+            List of chip amounts to bet for each chip type
+        """
 
         self.current_bet = dumps(bet)
 
         session.commit()
 
     def is_midround(self) -> bool:
-        """Tests if the round is currently in the middle of a round; i.e. bets have been set"""
+        """Test if the game is currently in the middle of a round; i.e. bets have been set
+        
+        ### Returns
+        True
+            Game in the middle of round (nonzero bet)
+        False
+            Game not in round (no bet)
+        """
 
         return self.current_bet != "[0, 0, 0, 0, 0, 0]"
     
     def is_full(self) -> bool:
-        """Tests if the max amount of players have joined"""
+        """Test if the max amount of players have joined
 
-        return len(self.players) >= self.max_players
+        ### Returns
+        True
+            Players in game equals max amount or max is unlimited
+        False
+            Less players in game than max"""
+
+        return self.max_players == 0 or len(self.players) >= self.max_players
     
     def is_playing(self, session: Session, user_id: int) -> "Player | None":
-        """Tests if a user is already part of the game"""
+        """Return Player of current game if it actually exists
+
+        ### Parameters
+        session: sqlalchemy.orm.Session
+            Database session scope
+        user_id: int
+            ID of the Discord user to search for a corresponding Player object
+
+        ### Returns
+        A Player object corresponding to channel and user on Discord, or None if it doesn't exist
+        """
 
         return session.get(Player, (user_id, self.id))
     
     def bets_aligned(self) -> bool:
-        """Tests if all players' bets are aligned and nonzero"""
+        """Test if all players' bets are aligned and set
+        
+        ### Returns
+        True
+            All players's bets are the same and nonzero
+        False
+            Otherwise
+        """
 
         # No point in checking if only 1 player
         if len(self.players) < 2:
@@ -341,66 +424,133 @@ class Player(SQLBase):
     """Represents a User's participation within a Game.
     
     ### Attributes
+    [PRIMARY] user_id: int
+        User ID of the player
+    [PRIMARY, FOREIGN] game_id: int
+        ID of the Game the Player is playing in
+    [BACKREF] game: Game
+        Direct reference to corresponding Game
+    type: str
+        The type of game this Player belongs to
+    name: str
+        What name the Player shall be referred to as
+    chips: str
+        Jsonified array of chips of each type the Player holds
+    bet: str
+        How many chips the Player is currently willing to bet
 
     ### Methods
-    """ #TODO
+    leave(session: sqlalchemy.orm.Session) -> None
+        Remove Player from Game, i.e. delete Player from database
+    rename(session: sqlalchemy.orm.Session, new_name: str) -> None
+        Change the name of the player
+    set_bet(session: sqlalchemy.orm.Session, bet: list[int]) -> None
+        Set the Player's bet
+    get_chips() -> list[int]
+        Return the Player's current amount of chips unjsonified
+    set_chips(session: sqlalchemy.orm.Session, amount: list[int]) -> None
+        Set the Player's chips directly
+    pay_chips(session: sqlalchemy.orm.Session, amount: list[int]) -> None
+        Add an amount of chips to the Player's current amount of chips
+    use_chips(session: sqlalchemy.orm.Session, amount: list[int]) -> bool
+        Removes a player's chips, if able
+    """
 
     __tablename__ = "player"
+    __mapper_args__ = {
+        "polymorphic_identity": "base",
+        "polymorphic_on": "type"
+        }
 
     user_id: Mapped[int] = mapped_column(primary_key = True)
     """User ID of the player"""
 
     game_id: Mapped[int] = mapped_column(ForeignKey("game.id", ondelete = "CASCADE"), primary_key = True)
-    """ID of the game the Player is playing in"""
+    """ID of the Game the Player is playing in"""
 
     game: Mapped[Game] = relationship(back_populates = "players")
-    """Ref to related game"""
+    """Direct reference to corresponding Game"""
 
     type: Mapped[str]
-    """The type of game"""
+    """The type of game this Player belongs to"""
 
     name: Mapped[str]
-    """What name the player shall be referred to as"""
+    """What name the Player shall be referred to as"""
 
     chips: Mapped[str] = mapped_column(default = "[0, 0, 0, 0, 0, 0]")
-    """Jsonified array of chips of each type the player holds"""
+    """Jsonified array of chips of each type the Player holds"""
 
     bet: Mapped[str] = mapped_column(default = "[0, 0, 0, 0, 0, 0]")
-    """What the player is currently willing to bet"""
-
-    __mapper_args__ = {
-        "polymorphic_identity": "base",
-        "polymorphic_on": "type"
-    }
+    """How many chips the Player is currently willing to bet"""
     
     def leave(self, session: Session) -> None:
+        """Remove Player from Game, i.e. delete Player from database
+        
+        ### Parameters
+        session: sqlalchemy.orm.Session
+            Database session scope
+        """
+
         session.delete(self)
         session.commit()
 
     def rename(self, session: Session, new_name: str) -> None:
+        """Change the name of the player
+        
+        ### Parameters
+        session: sqlalchemy.orm.Session
+            Database session scope
+        new_name: str
+            The name to change the Player's name to
+        """
+
         self.name = new_name
         session.commit()
 
     def set_bet(self, session: Session, bet: List[int]) -> None:
-        """Sets bet"""
+        """Set the Player's bet
+        
+        ### Parameters
+        session: sqlalchemy.orm.Session
+            Database session scope
+        bet: list[int]
+            The bet to set the Player's bet to
+        """
 
         self.bet = dumps(bet)
-
         session.commit()
 
     def get_chips(self) -> List[int]:
-        """Get chips unjsonified"""
+        """Return the Player's current amount of chips unjsonified
+        
+        ### Returns
+        List of integers corresponding to types of chips
+        """
 
         return loads(self.chips)
     
     def set_chips(self, session: Session, amount: List[int]) -> None:
-        """Sets players chips"""
+        """Set the Player's chips directly
+        
+        ### Parameters
+        session: sqlalchemy.orm.Session
+            Database session scope
+        amount: list[int]
+            The list of chips to set the Player's chips to
+        """
 
         self.chips = dumps(amount)
         session.commit()
 
     def pay_chips(self, session: Session, amount: List[int]) -> None:
-        """Gives a player chips"""
+        """Add an amount of chips to the Player's current amount of chips
+        
+        ### Parameters
+        session: sqlalchemy.orm.Session
+            Database session scope
+        amount: list[int]
+            The list of chips to add to the Player's chips
+        """
 
         bal = loads(self.chips)
         for i in range(len(bal)):
@@ -410,7 +560,20 @@ class Player(SQLBase):
         session.commit()
 
     def use_chips(self, session: Session, amount: List[int]) -> bool:
-        """Removes a player's chips, if able"""
+        """Removes a player's chips, if able
+        
+        ### Parameters
+        session: sqlalchemy.orm.Session
+            Database session scope
+        amount: list[int]
+            The list of chips to try to remove from the Player's chips
+
+        ### Returns
+        True
+            Chips successfully removed
+        False
+            Less current chips than was requested to be removed
+        """
 
         bal = loads(self.chips)
         # Check if enough chips
@@ -429,16 +592,48 @@ class Blackjack(Game):
     """Represents a game of Blackjack.
     
     ### Attributes
+    [PRIMARY, FOREIGN] id: int
+        Corresponds to the discord channel/thread ID
+    max_players = 4
+        Max amount of players the game of this type can handle
+    round_turn: int
+        The first turn of the round; determines ordering of the hands in first post
+    curr_turn: int
+        The current turn of the round; corresponds to index of player list
+    deck: str
+        The current deck to be pulled from; jsonified array of ints where each int corresponds to default deck index
 
     ### Methods
-    """ #TODO
+    [STATIC] create_game(session: sqlalchemy.orm.Session, channel_id: int) -> Blackjack | None
+        Create a blackjack game if there isn't one in the channel already
+    shuffle(session: sqlalchemy.orm.Session) -> None
+        Shuffle all cards back into the deck
+    draw(session: sqlalchemy.orm.Session, amount: int) -> list[int] | int
+        Draw a single or multiple cards
+    start_round(session: sqlalchemy.orm.Session, players: list[int] = None) -> bool
+        Deal the initial two cards to each player given and rotate turn order
+    join_game(session: sqlalchemy.orm.Session, user: int, name: str) -> BlackjackPlayer | None
+        Attempt to add a Player to this game; does not check max players, see Game.is_full()
+    get_turn() -> BlackjackPlayer
+        Get player whose turn it is
+    is_all_done() -> bool:
+        Test whether every player has stood/busted
+    next_turn(session: sqlalchemy.orm.Session) -> None
+        Advance the turn counter
+    end_round(session: sqlalchemy.orm.Session) -> tuple[str, list[tuple[int, str]]]:
+        Give the winner the winnings, returning index/name of winner(s); more than 1 means tie
+    """
 
     __tablename__ = "blackjack"
+    __mapper_args__ = {
+        "polymorphic_identity": "blackjack"
+        }
 
     id: Mapped[int] = mapped_column(ForeignKey("game.id"), primary_key = True)
     """Corresponds to the discord channel/thread ID"""
 
     max_players: int = 4
+    """Max amount of players the game of this type can handle"""
 
     round_turn: Mapped[int] = mapped_column(default = 0)
     """The first turn of the round; determines ordering of the hands in first post"""
@@ -449,12 +644,20 @@ class Blackjack(Game):
     deck: Mapped[str] = mapped_column(default = "[]")
     """The current deck to be pulled from; jsonified array of ints where each int corresponds to default deck index"""
 
-    __mapper_args__ = {
-        "polymorphic_identity": "blackjack"
-    }
-
     @staticmethod
     def create_game(session: Session, channel_id: int) -> "Blackjack | None":
+        """Create a blackjack game if there isn't one in the channel already
+        
+        ### Parameters
+        session: sqlalchemy.orm.Session
+            Database session scope
+        channel_id: int
+            ID of the Discord channel to make the game in
+
+        ### Returns
+        The created Blackjack game or None if not created
+        """
+
         if session.get(Game, channel_id) is not None:
             return None
         
@@ -465,14 +668,31 @@ class Blackjack(Game):
         return new_game
 
     def shuffle(self, session: Session) -> None:
-        """Shuffle the discard back into the deck"""
+        """Shuffle all cards back into the deck
+        
+        ### Parameters
+        session: sqlalchemy.orm.Session
+            Database session scope
+        """
 
         self.deck = dumps(sample(range(52), 52))
-
         session.commit()
 
     def draw(self, session: Session, amount: int) -> List[int] | int:
-        """Draw a single or multiple cards"""
+        """Draw a single or multiple cards
+        
+        ### Parameters
+        session: sqlalchemy.orm.Session
+            Database session scope
+        amount: int
+            Amount of cards to draw
+        
+        ### Returns
+        int
+            Card index drawn, if only 1
+        list[int]
+            Cards indices drawn, if more than 1
+        """
 
         current_deck: List[int] = loads(self.deck)
 
@@ -490,7 +710,17 @@ class Blackjack(Game):
     def start_round(self, session: Session, players: List[int] = None) -> bool:
         """Deal the initial two cards to each player given and rotate turn order
         
-        returns whether shuffled
+        ### Parameters
+        session: sqlalchemy.orm.Session
+            Database session scope
+        players: list[int]
+            List of users to give cards to, by index in Player list; if omitted, then all players are dealt hands
+
+        ### Returns
+        True
+            Deck was shuffled
+        False
+            Deck was not shuffled
         """
 
         if not self.started:
@@ -523,7 +753,22 @@ class Blackjack(Game):
         return shuffled
 
     def join_game(self, session: Session, user: int, name: str) -> "BlackjackPlayer | None":
-        """Tries to have a user join the game"""
+        """Attempt to add a Player to this game; does not check max players, see is_full()
+        
+        ### Parameters
+        session: sqlalchemy.orm.Session
+            Database session scope
+        user: int
+            ID of the Discord user
+        name: str
+            Name of the Player to be created
+
+        ### Returns:
+        BlackjackPlayer
+            The player instance created
+        None
+            The Player already existed
+        """
 
         player = session.get(BlackjackPlayer, (user, self.id))
         if player is not None:
@@ -536,12 +781,23 @@ class Blackjack(Game):
         return player
     
     def get_turn(self) -> "BlackjackPlayer":
-        """Get player whose turn it is"""
+        """Get player whose turn it is
+        
+        ### Returns
+        The BlackjackPlayer whose turn it is
+        """
 
         return self.players[self.curr_turn]
     
     def is_all_done(self) -> bool:
-        """Test whether every player has stood/busted"""
+        """Test whether every player has stood/busted
+        
+        ### Returns
+        True
+            Every player except one has busted, or every player is standing/busted
+        False
+            At least one player is still Hitting
+        """
 
         states = [0, 0, 0]
         for player in self.players:
@@ -562,7 +818,12 @@ class Blackjack(Game):
         return False
     
     def next_turn(self, session: Session) -> None:
-        """Advance the turn counter"""
+        """Advance the turn counter
+        
+        ### Parameters
+        session: sqlalchemy.orm.Session
+            Database session scope
+        """
 
         self.curr_turn = (self.curr_turn + 1) % len(self.players)
         while self.players[self.curr_turn].state != "hit":
@@ -571,11 +832,19 @@ class Blackjack(Game):
         session.commit()
 
     def end_round(self, session: Session) -> Tuple[str, List[Tuple[int, str]]]:
-        """Gives the winner the winnings, returns index/name of winner(s); more than 1 means tie
+        """Give the winner the winnings, returning index/name of winner(s); more than 1 means tie
         
         If tie, instead multiply bet by 3, or 9 on 21 tie
+        
+        ### Parameters
+        session: sqlalchemy.orm.Session
+            Database session scope
 
-        Return win condition string for special dialogue; n = norm, b = blackjack, f = five card charlie
+        ### Returns
+        Index 0
+            Win condition string for special dialogue; n = norm, b = blackjack, f = five card charlie
+        Index 1
+            List of winners by user id--name pairs
         """
 
         # Compare final hands
@@ -622,15 +891,33 @@ class BlackjackPlayer(Player):
     """Represents a player of Blackjack.
     
     ### Attributes
+    [PRIMARY, FOREIGN] user_id: int
+        User ID of the player
+    [PRIMARY, FOREIGN] game_id: int
+        ID of the game the Player is playing in
+    hand: str
+        Jsonified list of cards within player's hand
+    state: str
+        Either 'hit', 'stand', or 'bust'; represents state of player's hand
 
     ### Methods
-    """ #TODO
+    get_hand() -> list[int]
+        Parses hand to list of ints
+    stand(session: sqlalchemy.orm.Session) -> None
+        Set state to standing
+    add_card(session: sqlalchemy.orm.Session, card: int) -> bool
+        Add card to hand; return whether still un-busted
+    hand_value() -> int:
+        Calculate the value of the hand for direct comparison
+    """
 
     __tablename__ = "blackjack_player"
     __table_args__ = (
         ForeignKeyConstraint(["user_id", "game_id"], ["player.user_id", "player.game_id"]),
         )
-    
+    __mapper_args__ = {
+        "polymorphic_identity": "blackjack"
+        }
 
     user_id: Mapped[int] = mapped_column(primary_key = True)
     """User ID of the player"""
@@ -644,23 +931,42 @@ class BlackjackPlayer(Player):
     state: Mapped[str] = mapped_column(default = "hit")
     """Either 'hit', 'stand', or 'bust'; represents state of player's hand"""
 
-    __mapper_args__ = {
-        "polymorphic_identity": "blackjack"
-    }
-
     def get_hand(self) -> List[int]:
-        """Parses hand to list of ints"""
+        """Parses hand to list of ints
+        
+        ### Returns
+        list[int]
+            Each int corresponds to index in deck
+        """
 
         return loads(self.hand)
     
     def stand(self, session: Session) -> None:
-        """Blackjack player stands"""
+        """Set state to standing
+        
+        ### Parameters
+        session: sqlalchemy.orm.Session
+            Database session scope
+        """
 
         self.state = "stand"
         session.commit()
     
     def add_card(self, session: Session, card: int) -> bool:
-        """Adds card to hand; returns whether still un-busted"""
+        """Add card to hand; return whether still un-busted
+        
+        ### Parameters
+        session: sqlalchemy.orm.Session
+            Database session scope
+        card: int
+            Index of card in deck to add
+        
+        ### Returns
+        True
+            If hand has not busted from adding the card
+        False
+            If hand busted from adding the card
+        """
 
         hand: List[int] = loads(self.hand)
         hand.append(card)
@@ -675,10 +981,15 @@ class BlackjackPlayer(Player):
         return bool(hand_value)
 
     def hand_value(self) -> int:
-        """Calculates the value of the hand for direct comparison
-        
-        0 is bust
-        22 is 5-card charlie
+        """Calculate the value of the hand for direct comparison
+
+        ### Returns
+        22
+            5-Card Charlie
+        0
+            Hand value over 21 (bust)
+        1-21
+            Total value of the hand
         """
 
         hand: List[int] = loads(self.hand)

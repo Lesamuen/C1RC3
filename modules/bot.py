@@ -24,7 +24,7 @@ class SQLBase(DeclarativeBase):
     pass
 
 def db_init() -> None:
-    """Resets the database. Call this only once per structure change."""
+    """Reset the database. Call this only once per structure change."""
 
     SQLBase.metadata.drop_all(database_engine)
     SQLBase.metadata.create_all(database_engine)

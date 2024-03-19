@@ -18,7 +18,7 @@ async def bj_join(
     context: ApplicationContext,
     name: Option(str, description = "Name that C1RC3 will refer to you as", required = True, min_length = 1)
 ):
-    """Adds the command /bj join"""
+    """Add the command /bj join"""
 
     session = database_connector()
 
@@ -57,7 +57,7 @@ async def bj_rename(
     context: ApplicationContext,
     name: Option(str, description = "Name that C1RC3 will refer to you as", required = True, min_length = 1)
 ):
-    """Adds the command /bj rename"""
+    """Add the command /bj rename"""
 
     session = database_connector()
 
@@ -75,7 +75,7 @@ async def bj_bet(
     merg_chips: Option(int, description = "The amount of merging chips to bet", min_value = 0, default = 0),
     swap_chips: Option(int, description = "The amount of swap chips to bet", min_value = 0, default = 0)
 ):
-    """Adds the command /bj bet"""
+    """Add the command /bj bet"""
 
     # Extract chip args
     chips: List[int] = list(locals().values())[1:7]
@@ -114,7 +114,7 @@ async def bj_bet(
 async def bj_hand(
     context: ApplicationContext
 ):
-    """Adds the command /bj hand"""
+    """Add the command /bj hand"""
 
     session = database_connector()
     
@@ -151,7 +151,7 @@ async def bj_hand(
 async def bj_hit(
     context: ApplicationContext
 ):
-    """Adds the command /bj hit"""
+    """Add the command /bj hit"""
 
     session = database_connector()
     
@@ -202,7 +202,7 @@ async def bj_hit(
 async def bj_stand(
     context: ApplicationContext
 ):
-    """Adds the command /bj stand"""
+    """Add the command /bj stand"""
 
     session = database_connector()
     
@@ -243,7 +243,7 @@ async def bj_stand(
 async def bj_concede(
     context: ApplicationContext
 ):
-    """Adds the command /bj concede"""
+    """Add the command /bj concede"""
 
     session = database_connector()
 
@@ -255,7 +255,7 @@ async def bj_concede(
 async def bj_chips(
     context: ApplicationContext
 ):
-    """Adds the command /bj chips"""
+    """Add the command /bj chips"""
 
     session = database_connector()
 
@@ -273,7 +273,7 @@ async def bj_use(
     merg_chips: Option(int, description = "The amount of merging chips to use", min_value = 0, default = 0),
     swap_chips: Option(int, description = "The amount of swap chips to use", min_value = 0, default = 0)
 ):
-    """Adds the command /bj use"""
+    """Add the command /bj use"""
 
     # Extract chip args
     chips: List[int] = list(locals().values())[1:7]
@@ -302,7 +302,7 @@ async def bj_convert(
     ]),
     amount: Option(int, description = "The amount of chips to convert", min_value = 1)
 ):
-    """Adds the command /bj convert"""
+    """Add the command /bj convert"""
 
     session = database_connector()
 
@@ -311,7 +311,16 @@ async def bj_convert(
     session.close()
 
 async def bj_end_round(context: ApplicationContext, session: Session, game: Blackjack) -> None:
-    """Does round end stuff"""
+    """Handle all functionality for ending a round of Blackjack
+    
+    ### Parameters
+    context: discord.ApplicationContext
+        Application command context
+    session: sqlalchemy.orm.Session
+        Current database scope
+    game: Blackjack
+        The blackjack game in which the round shall be ended
+    """
 
     log(get_time() + " >> " + str(context.author) + " Blackjack round ended in [" + str(context.guild) + "], [" + str(context.channel) + "]")
     message = "`\"The round has ended. I will now reveal everyone's cards.\"`\n"

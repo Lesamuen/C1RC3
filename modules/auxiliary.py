@@ -18,7 +18,7 @@ with open("settings/guilds.json", "r") as file:
     """Contains all guild ids that the bot is to be used in"""
 
 def get_time() -> str:
-    """Returns the current system time in extended ISO8601 format; 20 chars long"""
+    """Return the current system time in extended ISO8601 format; 20 chars long"""
 
     return datetime.now().strftime("%Y-%m-%d, %H:%M:%S")
 
@@ -51,10 +51,10 @@ async def ghost_reply(context: ApplicationContext, message: str) -> None:
     await context.channel.send(message)
 
 def all_zero(arr: List[int]) -> bool:
-    """Checks if a list of integers contains nothing but 0's.
+    """Check if a list of integers contains nothing but 0's.
     
     ### Parameters
-    arr: List[int]
+    arr: list[int]
         The list of integers to be tested
 
     ### Returns
