@@ -248,7 +248,7 @@ class Game(SQLBase):
     ### Attributes
     [PRIMARY] id: int
         Corresponds to the discord channel/thread ID
-    type: str
+    [POLYMORPHIC] type: str
         The type of game
     [BACKREF] players: list[Player]
         Ref to list of players within this game
@@ -432,7 +432,7 @@ class Player(SQLBase):
         ID of the Game the Player is playing in
     [BACKREF] game: Game
         Direct reference to corresponding Game
-    type: str
+    [POLYMORPHIC] type: str
         The type of game this Player belongs to
     name: str
         What name the Player shall be referred to as
@@ -590,13 +590,14 @@ class Player(SQLBase):
         session.commit()
         return True
 
+
 class Blackjack(Game):
-    """Represents a game of Blackjack.
+    """Represents a game of Blackjack. Inherits most attributes of Game.
     
     ### Attributes
     [PRIMARY, FOREIGN] id: int
         Corresponds to the discord channel/thread ID
-    max_players = 4
+    [CLASS] max_players = 4
         Max amount of players the game of this type can handle
     round_turn: int
         The first turn of the round; determines ordering of the hands in first post
@@ -889,8 +890,9 @@ class Blackjack(Game):
         
         return (win_con, winners)
 
+
 class BlackjackPlayer(Player):
-    """Represents a player of Blackjack.
+    """Represents a player of Blackjack. Inherits most attributes of Player.
     
     ### Attributes
     [PRIMARY, FOREIGN] user_id: int
