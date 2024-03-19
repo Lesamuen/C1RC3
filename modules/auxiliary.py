@@ -47,7 +47,7 @@ async def ghost_reply(context: ApplicationContext, message: str) -> None:
         The message to send
     """
 
-    await context.respond(".", ephemeral = True, delete_after = 0)
+    await context.respond("https://canary.discordapp.com/__development/link/", ephemeral = True, delete_after = 0)
     await context.channel.send(message)
 
 def all_zero(arr: List[int]) -> bool:
