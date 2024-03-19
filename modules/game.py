@@ -69,7 +69,7 @@ async def bet(context: ApplicationContext, session: Session, chips: List[int], e
             log(get_time() + " >> " + str(context.author) + " tried to bet mid-game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
             await ghost_reply(context, "`\"" + player.name + ", you cannot bet right now, in the middle of a round.\"`")
         else:
-            log(get_time() + " >> " + str(context.author) + " placed a bet of " + str(chips) + " in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+            log(get_time() + " >> " + str(context.author) + " placed bet of " + str(chips) + " in [" + str(context.guild) + "], [" + str(context.channel) + "]")
             player.set_bet(session, chips)
             await ghost_reply(context, "*C1RC3 nods to your request, as she reiterates,* `\"" + player.name + " has placed a bet of:\"`\n## " + format_chips(chips))
             return (True, game)
@@ -113,8 +113,8 @@ async def concede(context: ApplicationContext, session: Session, expected_type: 
                 message = "`\"Understood. Player " + name + " has officially conceded.\"`\n*C1RC3 snaps her fingers as the magic of the casino flows into "\
                      + name + ", solidifying their new form. Their pile of chips disintegrates into golden light, reabsorbed into C1RC3 as her frame shivers.*\n"
                 if len(game.players) == 1:
-                    log(get_time() + " >> " + str(context.author) + " game ended in [" + str(context.guild) + "], [" + str(context.channel) + "]")
                     winner: Player = game.players[0]
+                    log("                     >> Game ended with winner " + winner.name + ".")
                     message += "\n*C1RC3 turns to the last player.* `\"Congratulations, " + winner.name + ", you have won against everyone at the table.\n"\
                         "You may choose to transform back to your original form at the beginning of the game, or keep your current one if it is complete.\n"\
                         "You may also keep your chips, if this table was at normal stakes or higher:\"`\n# "\
@@ -125,6 +125,7 @@ async def concede(context: ApplicationContext, session: Session, expected_type: 
                 # Game has not started, so safely left the game; if all left, delete game
                 await ghost_reply(context, "`\"Understood. Player " + name + " has changed their mind.\"`")
                 if len(game.players) == 0:
+                    log("                     >> Game deleted as all players left.")
                     await context.channel.send("*With no one left sitting at the table, C1RC3 walks off to attend to other tables.*")
                     game.end(session)
 
@@ -153,7 +154,7 @@ async def chips(context: ApplicationContext, session: Session, expected_type: st
             log(get_time() + " >> " + str(context.author) + " tried to view chips in the wrong game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
             await ghost_reply(context, "*C1RC3 stares at you for a few seconds.* `\"You do not have any chips for game you are not a part of.\"`")
         else:
-            log(get_time() + " >> " + str(context.author) + " viewed chips in a game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+            log(get_time() + " >> " + str(context.author) + " viewed chips (" + str(player.get_chips()) + ") in a game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
             await ghost_reply(context, "`\"" + player.name + ", you currently have:\"`\n# " + format_chips(player.get_chips()))
 
 async def use(context: ApplicationContext, session: Session, chips: List[int], expected_type: str) -> None:
@@ -241,7 +242,7 @@ async def convert(context: ApplicationContext, session: Session, option: int, am
                     whole = False
 
             if not whole:
-                log(get_time() + " >> " + str(context.author) + " converted illegal amount of chips in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+                log(get_time() + " >> " + str(context.author) + " converted illegal amount of chips (" + str(consumed) + " to " + str(produced) + ") in [" + str(context.guild) + "], [" + str(context.channel) + "]")
                 await ghost_reply(context, "*C1RC3 shakes her head.* `\"That conversion would result in a fractional chip; please pay attention to the conversion ratios, " + player.name + ".\"`")
             else:
                 # convert to int
@@ -252,7 +253,7 @@ async def convert(context: ApplicationContext, session: Session, option: int, am
                     log(get_time() + " >> " + str(context.author) + " converted " + str(consumed) + " to " + str(produced) + " chips in [" + str(context.guild) + "], [" + str(context.channel) + "]")
                     await ghost_reply(context, "`\"" + player.name + " has converted:\"`\n## " + format_chips(consumed) + " to " + format_chips(produced))
                 else:
-                    log(get_time() + " >> " + str(context.author) + " converted more chips than they had in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+                    log(get_time() + " >> " + str(context.author) + " converted more chips than they had (" + str(consumed) + ") in [" + str(context.guild) + "], [" + str(context.channel) + "]")
                     await ghost_reply(context, "`\"You do not possess enough chips to convert that many, " + player.name + ".\"`")
            
 async def rename(context: ApplicationContext, session: Session, new_name: str, expected_type: str) -> None:
@@ -283,5 +284,5 @@ async def rename(context: ApplicationContext, session: Session, new_name: str, e
             await ghost_reply(context, "*C1RC3 stares at you for a few seconds.* `\"You cannot rename yourself in a game you are not a part of.\"`")
         else:
             player.rename(session, new_name)
-            log(get_time() + " >> " + str(context.author) + " tried to rename in the wrong game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+            log(get_time() + " >> " + str(context.author) + " renamed to " + new_name + " in [" + str(context.guild) + "], [" + str(context.channel) + "]")
             await ghost_reply(context, "*C1RC3 nods.* `\"Very well. I will refer to you as " + new_name + " from now on.\"`")

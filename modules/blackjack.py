@@ -136,7 +136,7 @@ async def bj_hand(
             log(get_time() + " >> " + str(context.author) + " looked at their Blackjack hand outside of a round in [" + str(context.guild) + "], [" + str(context.channel) + "]")
             await ghost_reply(context, "`\"" + player.name + ", you currently do not have a hand; please bet and begin the round before I can deal you cards.\"`")
         else:
-            log(get_time() + " >> " + str(context.author) + " looked at their Blackjack hand in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+            log(get_time() + " >> " + str(context.author) + " looked at their Blackjack hand (" + str(player.get_hand()) + ") in [" + str(context.guild) + "], [" + str(context.channel) + "]")
             message = "`\"Here are your opponents' current hands:\"`\n"
             for other_player in game.players:
                 if other_player != player:
@@ -177,8 +177,8 @@ async def bj_hit(
             await ghost_reply(context, "`\"" + player.name + ", it is currently not your turn. You may not hit yet.\"`")
         else:
             # No need to test for hit state; if standing or busted it cannot be their turn already
-            log(get_time() + " >> " + str(context.author) + " hit in Blackjack in [" + str(context.guild) + "], [" + str(context.channel) + "]")
             drawn = game.draw(session, 1)
+            log(get_time() + " >> " + str(context.author) + " drew " + str(drawn) + " in Blackjack in [" + str(context.guild) + "], [" + str(context.channel) + "]")
             await ghost_reply(context, "*C1RC3 pulls a card from the top of the deck and sets it down for all to see.*\n# " + format_cards(standard_deck, [drawn]) \
                  + "\n`\"That is your card, " + player.name + ".\"`")
             if player.add_card(session, drawn):
@@ -190,6 +190,7 @@ async def bj_hit(
                     await context.channel.send("`\"It is now your turn, " + game.get_turn().name + ".\"`")
             else:
                 # Busted, so test for round end
+                log("                     >> " + str(context.author) + " busted.")
                 await context.channel.send("*C1RC3 nods as she calculates the hand.* `\"Unfortunately, you have busted, " + player.name + ".\"`")
                 if game.is_all_done():
                     await bj_end_round(context, session, game)
@@ -367,5 +368,6 @@ async def bj_end_round(context: ApplicationContext, session: Session, game: Blac
                 hand[1] = 52
             message += "# " + format_cards(standard_deck, hand) + "\n"
         message += "`\"The first turn goes to " + game.get_turn().name + " this round.\"`"
+    log("                     >> " + str([game.players[winner[0]].user_id for winner in winners]) + "won.")
 
     await context.channel.send(message)
