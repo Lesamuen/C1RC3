@@ -638,7 +638,7 @@ class Blackjack(Game):
     max_players: int = 4
     """Max amount of players the game of this type can handle"""
 
-    round_turn: Mapped[int] = mapped_column(default = 0)
+    round_turn: Mapped[int] = mapped_column(default = -1)
     """The first turn of the round; determines ordering of the hands in first post"""
 
     curr_turn: Mapped[int] = mapped_column(default = 0)
