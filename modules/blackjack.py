@@ -1,5 +1,7 @@
 """This module relates to the game 'Blackjack'."""
 
+print("Loading module 'blackjack'...")
+
 from typing import List
 
 from discord import ApplicationContext, Option, OptionChoice

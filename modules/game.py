@@ -1,5 +1,7 @@
 """Module containing methods that are applicable to every game"""
 
+print("Loading module 'game'...")
+
 from typing import List, Tuple
 
 from discord import ApplicationContext

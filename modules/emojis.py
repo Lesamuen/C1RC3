@@ -1,5 +1,7 @@
 """Contains all Discord-emoji related stuff like decks and chips"""
 
+print("Loading module 'emoji'...")
+
 from typing import List, Tuple
 
 chip_emojis: Tuple[str] = (

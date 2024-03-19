@@ -1,5 +1,7 @@
 """Contains global bot object & Database connection manager"""
 
+print("Loading module 'bot'...")
+
 import discord
 import discord.ext.commands as discomm
 from sqlalchemy import create_engine

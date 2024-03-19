@@ -1,5 +1,7 @@
 """Contains miscellaneous functions used in most cases"""
 
+print("Loading module 'auxiliary'...")
+
 from datetime import datetime
 from json import load
 from typing import Dict, List, Any

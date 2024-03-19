@@ -1,5 +1,7 @@
 """Contains several bot commands for admining or debugging"""
 
+print("Loading module 'admin'...")
+
 from typing import List
 
 from discord import ApplicationContext, Option, Member

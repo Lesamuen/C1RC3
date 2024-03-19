@@ -1,5 +1,7 @@
 """This module helps keeps track of user's global out-of-game chips."""
 
+print("Loading module 'chips'...")
+
 from typing import List
 
 from discord import ApplicationContext, Option

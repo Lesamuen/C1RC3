@@ -1,5 +1,7 @@
 """Contains all SQLAlchemy ORM models"""
 
+print("Loading module 'dbmodels'...")
+
 from typing import List, Optional, Tuple, Dict
 from json import dumps, loads
 from random import sample
