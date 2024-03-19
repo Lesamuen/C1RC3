@@ -11,7 +11,9 @@ from auxiliary import guilds, log, get_time, all_zero, ghost_reply
 from dbmodels import User, ChipAccount
 from emojis import format_chips
 
-@bot_client.slash_command(name = "open_account", description = "Open an account for you to keep track of the chips you've won from tables.", guild_ids = guilds, guild_only = True)
+chip_cmds = bot_client.create_group("chip", "Commands related to chip-holding accounts out of game", guild_ids = guilds, guild_only = True)
+
+@chip_cmds.command(name = "open_account", description = "Open an account for you to keep track of the chips you've won from tables.")
 async def open_account(
     context: ApplicationContext,
     name: Option(str, description = "The name of the person holding the account", required = True, min_length = 1)
@@ -35,7 +37,7 @@ async def open_account(
 
     session.close()
 
-@bot_client.slash_command(name = "change_name", description = "Update the holder's name on an account.", guild_ids = guilds, guild_only = True)
+@chip_cmds.command(name = "change_name", description = "Update the holder's name on an account.")
 async def change_name(
     context: ApplicationContext,
     name: Option(str, description = "The original name of the casino account", required = True, min_length = 1),
@@ -81,7 +83,7 @@ async def change_name(
 
     session.close()
 
-@bot_client.slash_command(name = "balance", description = "Check how many chips you have in an account.", guild_ids = guilds, guild_only = True)
+@chip_cmds.command(name = "balance", description = "Check how many chips you have in an account.")
 async def balance(
     context: ApplicationContext,
     name: Option(str, description = "The name the account is under", required = True, min_length = 1)
@@ -114,7 +116,7 @@ async def balance(
 
     session.close()
 
-@bot_client.slash_command(name = "deposit", description = "Deposit an amount of chips into an account.", guild_ids = guilds, guild_only = True)
+@chip_cmds.command(name = "deposit", description = "Deposit an amount of chips into an account.")
 async def deposit(
     context: ApplicationContext,
     name: Option(str, description = "The name the account is under", required = True, min_length = 1),
@@ -165,7 +167,7 @@ async def deposit(
 
     session.close()
 
-@bot_client.slash_command(name = "withdraw", description = "Withdraw an amount of chips from an account.", guild_ids = guilds, guild_only = True)
+@chip_cmds.command(name = "withdraw", description = "Withdraw an amount of chips from an account.")
 async def withdraw(
     context: ApplicationContext,
     name: Option(str, description = "The name the account is under", required = True, min_length = 1),
