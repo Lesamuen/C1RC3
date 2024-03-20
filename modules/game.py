@@ -25,58 +25,65 @@ chip_conversions = (
     ((0, 0, 0, 0, 0, 1), (0, 0.5, 0, 0, 0, 0)),
 )
 
-async def bet(context: ApplicationContext, session: Session, chips: List[int], expected_type: str) -> Tuple[bool, Game]:
-    """Handle functionality for placing a bet in any game
+async def create(context: ApplicationContext, session: Session, expected_type: type[Game]) -> None:
+    """Handle functionality for creating any game
     
     ### Parameters
     context: discord.ApplicationContext
         Application command context
     session: sqlalchemy.orm.Session
         Current database scope
-    chips: list[int]
-        Values of chips to bet in order of type
-    expected_type: str
-        Discriminator of Game subclass this command was sent for
-
-    ### Returns
-    bool
-        True
-            The bet was successfully placed
-        False
-            The bet failed to be placed
-    dbmodels.Game
-        The game of the channel if bet placed; None if not
+    expected_type: type[dbmodels.Game]
+        Game subclass this command was sent for
     """
 
-    if all_zero(chips):
-        log(get_time() + " >> " + str(context.author) + " tried to bet nothing in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-        await ghost_reply(context, "*C1RC3 pauses as she tries to process your inane request.*\n`\"...You cannot bet nothing. Please restate your bet.\"`")
-        return (False, None)
-
     game = Game.find_game(session, context.channel_id)
-    if game is None:
-        log(get_time() + " >> " + str(context.author) + " tried to bet with no game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-        await ghost_reply(context, "`\"There is no game running at this table at the moment.\"`")
-    elif game.type != expected_type:
-        log(get_time() + " >> " + str(context.author) + " tried to bet in the wrong type of game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-        await ghost_reply(context, "`\"There is a different type of game running at this table at the moment; you may be at the wrong table.\"`")
+    if game is not None:
+        log(get_time() + " >> " + str(context.author) + " tried to create another game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+        await ghost_reply(context, "`\"There is already a game running at this table.\"`")
     else:
-        player = game.is_playing(session, context.author.id)
-        if player is None:
-            log(get_time() + " >> " + str(context.author) + " tried to bet in the wrong game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-            await ghost_reply(context, "*C1RC3 stares at you for a few seconds.* `\"You cannot bet in a game you are not a part of.\"`")
+        expected_type.create_game(session, context.channel_id)
+        
+        print("goth eher")
+        log(get_time() + " >> " + str(context.author) + " started a " + str(expected_type) + " game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+        await ghost_reply(context, "*C1RC3 approaches you when you call for a dealer, and takes her place at the dealer's stand.*\n"\
+            "`\"Your request has been processed. I will be acting as your table's arbitrator. Please state your name for the record, in order for your participation to be counted.\"`")
+
+async def join(context: ApplicationContext, session: Session, name: str, expected_type: type[Game]) -> None:
+    """Handle functionality for joining any game
+    
+    ### Parameters
+    context: discord.ApplicationContext
+        Application command context
+    session: sqlalchemy.orm.Session
+        Current database scope
+    name: str
+        Name to refer to new Player as
+    expected_type: type[dbmodels.Game]
+        Game subclass this command was sent for
+    """
+
+    game: expected_type = expected_type.find_game(session, context.channel_id)
+    if game is None:
+        log(get_time() + " >> " + str(context.author) + " tried to join no game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+        await ghost_reply(context, "`\"There is no game of that type running at this table at the moment.\"`")
+    else:
+        if game.is_full():
+            log(get_time() + " >> " + str(context.author) + " tried to join a full game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+            await ghost_reply(context, "`\"This table is already full.\"`")
         elif game.is_midround():
-            log(get_time() + " >> " + str(context.author) + " tried to bet mid-game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-            await ghost_reply(context, "`\"" + player.name + ", you cannot bet right now, in the middle of a round.\"`")
+            # Can't join game in the middle of a round
+            log(get_time() + " >> " + str(context.author) + " tried to join a game mid-round in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+            await ghost_reply(context, "`\"This table is in the middle of a round; please wait until the round is over before joining.\"`")
         else:
-            log(get_time() + " >> " + str(context.author) + " placed bet of " + str(chips) + " in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-            player.set_bet(session, chips)
-            await ghost_reply(context, "*C1RC3 nods to your request, as she reiterates,* `\"" + player.name + " has placed a bet of:\"`\n## " + format_chips(chips))
-            return (True, game)
+            if (player := game.join_game(session, context.author.id, name)) is not None:
+                log(get_time() + " >> " + str(context.author) + " joined a game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+                await ghost_reply(context, "*C1RC3 nods.* `\"Request accepted. " + player.name + " has joined this table.\"`")
+            else:
+                log(get_time() + " >> " + str(context.author) + " tried to rejoin a game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+                await ghost_reply(context, "*C1RC3 stays silent for a couple of seconds as she tries to process your request.*\n`\"...You are already part of this table.\"`")
 
-    return (False, None)
-
-async def concede(context: ApplicationContext, session: Session, expected_type: str) -> None:
+async def concede(context: ApplicationContext, session: Session, expected_type: type[Game]) -> None:
     """Handle functionality for conceding in any game
     
     ### Parameters
@@ -84,17 +91,14 @@ async def concede(context: ApplicationContext, session: Session, expected_type: 
         Application command context
     session: sqlalchemy.orm.Session
         Current database scope
-    expected_type: str
-        Discriminator of Game subclass this command was sent for
+    expected_type: type[dbmodels.Game]
+        Game subclass this command was sent for
     """
     
-    game = Game.find_game(session, context.channel_id)
+    game = expected_type.find_game(session, context.channel_id)
     if game is None:
         log(get_time() + " >> " + str(context.author) + " tried to concede from no game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-        await ghost_reply(context, "`\"There is no game running at this table at the moment.\"`")
-    elif game.type != expected_type:
-        log(get_time() + " >> " + str(context.author) + " tried to bet from the wrong type of game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-        await ghost_reply(context, "`\"There is a different type of game running at this table at the moment; you may be at the wrong table.\"`")
+        await ghost_reply(context, "`\"There is no game of that type running at this table at the moment.\"`")
     else:
         player = game.is_playing(session, context.author.id)
         if player is None:
@@ -129,7 +133,7 @@ async def concede(context: ApplicationContext, session: Session, expected_type: 
                     await context.channel.send("*With no one left sitting at the table, C1RC3 walks off to attend to other tables.*")
                     game.end(session)
 
-async def chips(context: ApplicationContext, session: Session, expected_type: str) -> None:
+async def chips(context: ApplicationContext, session: Session, expected_type: type[Game]) -> None:
     """Handle functionality for viewing chips in any game
     
     ### Parameters
@@ -137,17 +141,14 @@ async def chips(context: ApplicationContext, session: Session, expected_type: st
         Application command context
     session: sqlalchemy.orm.Session
         Current database scope
-    expected_type: str
-        Discriminator of Game subclass this command was sent for
+    expected_type: type[dbmodels.Game]
+        Game subclass this command was sent for
     """
     
-    game = Game.find_game(session, context.channel_id)
+    game = expected_type.find_game(session, context.channel_id)
     if game is None:
         log(get_time() + " >> " + str(context.author) + " tried to view chips with no game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-        await ghost_reply(context, "`\"There is no game running at this table at the moment.\"`")
-    elif game.type != expected_type:
-        log(get_time() + " >> " + str(context.author) + " tried to view chips of the wrong type of game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-        await ghost_reply(context, "`\"There is a different type of game running at this table at the moment; you may be at the wrong table.\"`")
+        await ghost_reply(context, "`\"There is no game of that type running at this table at the moment.\"`")
     else:
         player = game.is_playing(session, context.author.id)
         if player is None:
@@ -157,7 +158,55 @@ async def chips(context: ApplicationContext, session: Session, expected_type: st
             log(get_time() + " >> " + str(context.author) + " viewed chips (" + str(player.get_chips()) + ") in a game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
             await ghost_reply(context, "`\"" + player.name + ", you currently have:\"`\n# " + format_chips(player.get_chips()))
 
-async def use(context: ApplicationContext, session: Session, chips: List[int], expected_type: str) -> None:
+async def bet(context: ApplicationContext, session: Session, chips: List[int], expected_type: type[Game]) -> Tuple[bool, Game]:
+    """Handle functionality for placing a bet in any game
+    
+    ### Parameters
+    context: discord.ApplicationContext
+        Application command context
+    session: sqlalchemy.orm.Session
+        Current database scope
+    chips: list[int]
+        Values of chips to bet in order of type
+    expected_type: type[dbmodels.Game]
+        Game subclass this command was sent for
+
+    ### Returns
+    bool
+        True
+            The bet was successfully placed
+        False
+            The bet failed to be placed
+    dbmodels.Game
+        The game of the channel if bet placed; None if not
+    """
+
+    if all_zero(chips):
+        log(get_time() + " >> " + str(context.author) + " tried to bet nothing in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+        await ghost_reply(context, "*C1RC3 pauses as she tries to process your inane request.*\n`\"...You cannot bet nothing. Please restate your bet.\"`")
+        return (False, None)
+
+    game = expected_type.find_game(session, context.channel_id)
+    if game is None:
+        log(get_time() + " >> " + str(context.author) + " tried to bet with no game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+        await ghost_reply(context, "`\"There is no game of that type running at this table at the moment.\"`")
+    else:
+        player = game.is_playing(session, context.author.id)
+        if player is None:
+            log(get_time() + " >> " + str(context.author) + " tried to bet in the wrong game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+            await ghost_reply(context, "*C1RC3 stares at you for a few seconds.* `\"You cannot bet in a game you are not a part of.\"`")
+        elif game.is_midround():
+            log(get_time() + " >> " + str(context.author) + " tried to bet mid-game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+            await ghost_reply(context, "`\"" + player.name + ", you cannot bet right now, in the middle of a round.\"`")
+        else:
+            log(get_time() + " >> " + str(context.author) + " placed bet of " + str(chips) + " in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+            player.set_bet(session, chips)
+            await ghost_reply(context, "*C1RC3 nods to your request, as she reiterates,* `\"" + player.name + " has placed a bet of:\"`\n## " + format_chips(chips))
+            return (True, game)
+
+    return (False, None)
+
+async def use(context: ApplicationContext, session: Session, chips: List[int], expected_type: type[Game]) -> None:
     """Handle functionality for using chips in any game
     
     ### Parameters
@@ -167,21 +216,18 @@ async def use(context: ApplicationContext, session: Session, chips: List[int], e
         Current database scope
     chips: list[int]
         Values of chips to use in order of type
-    expected_type: str
-        Discriminator of Game subclass this command was sent for
+    expected_type: type[dbmodels.Game]
+        Game subclass this command was sent for
     """
 
     if all_zero(chips):
         log(get_time() + " >> " + str(context.author) + " tried to use no chips in [" + str(context.guild) + "], [" + str(context.channel) + "]")
         await ghost_reply(context, "*C1RC3 pauses as she tries to process your inane request.*\n`\"...You cannot use nothing. Please restate how many chips you want to use.\"`")
 
-    game = Game.find_game(session, context.channel_id)
+    game = expected_type.find_game(session, context.channel_id)
     if game is None:
         log(get_time() + " >> " + str(context.author) + " tried to use chips with no game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-        await ghost_reply(context, "`\"There is no game running at this table at the moment.\"`")
-    elif game.type != expected_type:
-        log(get_time() + " >> " + str(context.author) + " tried to use chips in the wrong type of game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-        await ghost_reply(context, "`\"There is a different type of game running at this table at the moment; you may be at the wrong table.\"`")
+        await ghost_reply(context, "`\"There is no game of that type running at this table at the moment.\"`")
     else:
         player = game.is_playing(session, context.author.id)
         if player is None:
@@ -199,7 +245,7 @@ async def use(context: ApplicationContext, session: Session, chips: List[int], e
                 log(get_time() + " >> " + str(context.author) + " tried to use " + str(chips) + " chips in [" + str(context.guild) + "], [" + str(context.channel) + "]")
                 await ghost_reply(context, "`\"You do not possess enough chips to use that many, " + player.name + ".\"`")
 
-async def convert(context: ApplicationContext, session: Session, option: int, amount: int, expected_type: str) -> None:
+async def convert(context: ApplicationContext, session: Session, option: int, amount: int, expected_type: type[Game]) -> None:
     """Handle functionality for converting chips in any game
     
     ### Parameters
@@ -211,17 +257,14 @@ async def convert(context: ApplicationContext, session: Session, option: int, am
         Index for conversion type of chip_conversions
     amount: int
         Amount to multiply conversion by
-    expected_type: str
-        Discriminator of Game subclass this command was sent for
+    expected_type: type[dbmodels.Game]
+        Game subclass this command was sent for
     """
 
-    game = Game.find_game(session, context.channel_id)
+    game = expected_type.find_game(session, context.channel_id)
     if game is None:
         log(get_time() + " >> " + str(context.author) + " tried to convert chips with no game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-        await ghost_reply(context, "`\"There is no game running at this table at the moment.\"`")
-    elif game.type != expected_type:
-        log(get_time() + " >> " + str(context.author) + " tried to convert chips in the wrong type of game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-        await ghost_reply(context, "`\"There is a different type of game running at this table at the moment; you may be at the wrong table.\"`")
+        await ghost_reply(context, "`\"There is no game of that type running at this table at the moment.\"`")
     else:
         player = game.is_playing(session, context.author.id)
         if player is None:
@@ -256,7 +299,7 @@ async def convert(context: ApplicationContext, session: Session, option: int, am
                     log(get_time() + " >> " + str(context.author) + " converted more chips than they had (" + str(consumed) + ") in [" + str(context.guild) + "], [" + str(context.channel) + "]")
                     await ghost_reply(context, "`\"You do not possess enough chips to convert that many, " + player.name + ".\"`")
            
-async def rename(context: ApplicationContext, session: Session, new_name: str, expected_type: str) -> None:
+async def rename(context: ApplicationContext, session: Session, new_name: str, expected_type: type[Game]) -> None:
     """Handle functionality for renaming a player in any game
     
     ### Parameters
@@ -266,17 +309,14 @@ async def rename(context: ApplicationContext, session: Session, new_name: str, e
         Current database scope
     new_name: str
         The new name to set the player to
-    expected_type: str
-        Discriminator of Game subclass this command was sent for
+    expected_type: type[dbmodels.Game]
+        Game subclass this command was sent for
     """
 
-    game = Game.find_game(session, context.channel_id)
+    game = expected_type.find_game(session, context.channel_id)
     if game is None:
         log(get_time() + " >> " + str(context.author) + " tried to rename with no game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-        await ghost_reply(context, "`\"There is no game running at this table at the moment.\"`")
-    elif game.type != expected_type:
-        log(get_time() + " >> " + str(context.author) + " tried to rename in the wrong type of game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-        await ghost_reply(context, "`\"There is a different type of game running at this table at the moment; you may be at the wrong table.\"`")
+        await ghost_reply(context, "`\"There is no game of that type running at this table at the moment.\"`")
     else:
         player = game.is_playing(session, context.author.id)
         if player is None:

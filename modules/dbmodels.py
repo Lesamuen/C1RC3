@@ -242,186 +242,6 @@ class ChipAccount(SQLBase):
         session.commit()
 
 
-class Game(SQLBase):
-    """Represents a currently running game for a channel/thread.
-    
-    ### Attributes
-    [PRIMARY] id: int
-        Corresponds to the discord channel/thread ID
-    [POLYMORPHIC] type: str
-        The type of game
-    [BACKREF] players: list[Player]
-        Ref to list of players within this game
-    [CLASS] max_players: int
-        Max amount of players the game of this type can handle; 0 means infinite
-    current_bet: str
-        The current bet for the round within the game
-    started: bool
-        Whether or not the game's first round has begun
-
-    ### Methods
-    [STATIC] find_game(session: sqlalchemy.orm.Session, channel: int) -> Game | None
-        Return Game object for a channel, if any
-    end(session: sqlalchemy.orm.Session) -> None
-        Wipe the Game from the database
-    get_bet() -> list[int]
-        Return the current bet for the round unjsonified
-    set_bet(session: sqlalchemy.orm.Session, bet: list[int]) -> None
-        Set the current bet for the round
-    is_midround() -> bool
-        Test if the game is currently in the middle of a round; i.e. bets have been set
-    is_full() -> bool
-        Test if the max amount of players have joined
-    is_playing(session: sqlalchemy.orm.Session, user_id: int) -> Player | None
-        Return Player of current game if it actually exists
-    bets_aligned() -> bool:
-        Test if all players' bets are aligned and set
-    """
-
-    __tablename__ = "game"
-    __mapper_args__ = {
-        "polymorphic_identity": "base",
-        "polymorphic_on": "type"
-        }
-
-    id: Mapped[int] = mapped_column(primary_key = True)
-    """Corresponds to the discord channel/thread ID"""
-
-    type: Mapped[str]
-    """The type of game"""
-
-    players: Mapped[List["Player"]] = relationship(back_populates = "game", cascade = "all, delete-orphan")
-    """Ref to list of players within this game"""
-
-    max_players: int = 0
-    """Max amount of players the game of this type can handle; 0 means infinite
-    
-    Overwritten per child class
-    """
-
-    current_bet: Mapped[str] = mapped_column(default = "[0, 0, 0, 0, 0, 0]")
-    """The current bet for the round within the game
-
-    If bet is all zeroes, then round hasn't started yet.
-    """
-
-    started: Mapped[bool] = mapped_column(default = False)
-    """Whether or not the game's first round has begun"""
-
-    @staticmethod
-    def find_game(session: Session, channel: int) -> "Game | None":
-        """Return Game object for a channel, if any
-        
-        ### Parameters
-        session: sqlalchemy.orm.Session
-            Database session scope
-        channel: int
-            ID of the Discord channel
-
-        ### Returns
-        The Game object of the channel if it exists, None otherwise
-        """
-
-        return session.get(Game, channel)
-    
-    def end(self, session: Session) -> None:
-        """Wipe the Game from the database
-        
-        ### Parameters
-        session: sqlalchemy.orm.Session
-            Database session scope
-        """
-
-        session.delete(self)
-        session.commit()
-
-    def get_bet(self) -> List[int]:
-        """Return the current bet for the round unjsonified
-        
-        ### Returns
-        List of ints corresponding to chip amounts
-        """
-        return loads(self.current_bet)
-
-    def set_bet(self, session: Session, bet: List[int]) -> None:
-        """Set the current bet for the round
-        
-        ### Parameters
-        session: sqlalchemy.orm.Session
-            Database session scope
-        bet: list[int]
-            List of chip amounts to bet for each chip type
-        """
-
-        self.current_bet = dumps(bet)
-
-        session.commit()
-
-    def is_midround(self) -> bool:
-        """Test if the game is currently in the middle of a round; i.e. bets have been set
-        
-        ### Returns
-        True
-            Game in the middle of round (nonzero bet)
-        False
-            Game not in round (no bet)
-        """
-
-        return self.current_bet != "[0, 0, 0, 0, 0, 0]"
-    
-    def is_full(self) -> bool:
-        """Test if the max amount of players have joined
-
-        ### Returns
-        True
-            Players in game equals max amount or max is unlimited
-        False
-            Less players in game than max"""
-
-        return self.max_players == 0 or len(self.players) >= self.max_players
-    
-    def is_playing(self, session: Session, user_id: int) -> "Player | None":
-        """Return Player of current game if it actually exists
-
-        ### Parameters
-        session: sqlalchemy.orm.Session
-            Database session scope
-        user_id: int
-            ID of the Discord user to search for a corresponding Player object
-
-        ### Returns
-        A Player object corresponding to channel and user on Discord, or None if it doesn't exist
-        """
-
-        return session.get(Player, (user_id, self.id))
-    
-    def bets_aligned(self) -> bool:
-        """Test if all players' bets are aligned and set
-        
-        ### Returns
-        True
-            All players's bets are the same and nonzero
-        False
-            Otherwise
-        """
-
-        # No point in checking if only 1 player
-        if len(self.players) < 2:
-            return False
-
-        # Make sure bets are nonzero, i.e. bets have actually been placed
-        for player in self.players:
-            if player.bet == "[0, 0, 0, 0, 0, 0]":
-                return False
-
-        # Associative property; only need to check consecutive pairs
-        for i in range(len(self.players) - 1):
-            if self.players[i].bet != self.players[i + 1].bet:
-                return False
-
-        return True
-
-
 class Player(SQLBase):
     """Represents a User's participation within a Game.
     
@@ -470,7 +290,7 @@ class Player(SQLBase):
     game_id: Mapped[int] = mapped_column(ForeignKey("game.id", ondelete = "CASCADE"), primary_key = True)
     """ID of the Game the Player is playing in"""
 
-    game: Mapped[Game] = relationship(back_populates = "players")
+    game: Mapped["Game"] = relationship(back_populates = "players")
     """Direct reference to corresponding Game"""
 
     type: Mapped[str]
@@ -591,171 +411,117 @@ class Player(SQLBase):
         return True
 
 
-class Blackjack(Game):
-    """Represents a game of Blackjack. Inherits most attributes of Game.
+class Game(SQLBase):
+    """Represents a currently running game for a channel/thread.
     
     ### Attributes
-    [PRIMARY, FOREIGN] id: int
+    [PRIMARY] id: int
         Corresponds to the discord channel/thread ID
-    [CLASS] max_players = 4
-        Max amount of players the game of this type can handle
-    round_turn: int
-        The first turn of the round; determines ordering of the hands in first post
-    curr_turn: int
-        The current turn of the round; corresponds to index of player list
-    deck: str
-        The current deck to be pulled from; jsonified array of ints where each int corresponds to default deck index
+    [POLYMORPHIC] type: str
+        The type of game
+    [BACKREF] players: list[Player]
+        Ref to list of players within this game
+    [CLASS] player_class
+        Player subclass that corresponds to this Game subclass
+    [CLASS] max_players: int
+        Max amount of players the game of this type can handle; 0 means infinite
+    current_bet: str
+        The current bet for the round within the game
+    started: bool
+        Whether or not the game's first round has begun
 
     ### Methods
-    [STATIC] create_game(session: sqlalchemy.orm.Session, channel_id: int) -> Blackjack | None
-        Create a blackjack game if there isn't one in the channel already
-    shuffle(session: sqlalchemy.orm.Session) -> None
-        Shuffle all cards back into the deck
-    draw(session: sqlalchemy.orm.Session, amount: int) -> list[int] | int
-        Draw a single or multiple cards
-    start_round(session: sqlalchemy.orm.Session, players: list[int] = None) -> bool
-        Deal the initial two cards to each player given and rotate turn order
-    join_game(session: sqlalchemy.orm.Session, user: int, name: str) -> BlackjackPlayer | None
+    [CLASS] create_game(session: sqlalchemy.orm.Session, channel_id: int) -> None
+        Create a game if there isn't one in the channel already
+    [CLASS] find_game(session: sqlalchemy.orm.Session, channel: int) -> Game | None
+        Return object of Game subclass for a channel, if any
+    join_game(session: sqlalchemy.orm.Session, user: int, name: str) -> Player | None
         Attempt to add a Player to this game; does not check max players, see Game.is_full()
-    get_turn() -> BlackjackPlayer
-        Get player whose turn it is
-    is_all_done() -> bool:
-        Test whether every player has stood/busted
-    next_turn(session: sqlalchemy.orm.Session) -> None
-        Advance the turn counter
-    end_round(session: sqlalchemy.orm.Session) -> tuple[str, list[tuple[int, str]]]:
-        Give the winner the winnings, returning index/name of winner(s); more than 1 means tie
+    end(session: sqlalchemy.orm.Session) -> None
+        Wipe the Game from the database
+    get_bet() -> list[int]
+        Return the current bet for the round unjsonified
+    set_bet(session: sqlalchemy.orm.Session, bet: list[int]) -> None
+        Set the current bet for the round
+    is_midround() -> bool
+        Test if the game is currently in the middle of a round; i.e. bets have been set
+    is_full() -> bool
+        Test if the max amount of players have joined
+    is_playing(session: sqlalchemy.orm.Session, user_id: int) -> Player | None
+        Return Player of current game if it actually exists
+    bets_aligned() -> bool:
+        Test if all players' bets are aligned and set
     """
 
-    __tablename__ = "blackjack"
+    __tablename__ = "game"
     __mapper_args__ = {
-        "polymorphic_identity": "blackjack"
+        "polymorphic_identity": "base",
+        "polymorphic_on": "type"
         }
 
-    id: Mapped[int] = mapped_column(ForeignKey("game.id"), primary_key = True)
+    id: Mapped[int] = mapped_column(primary_key = True)
     """Corresponds to the discord channel/thread ID"""
 
-    max_players: int = 4
-    """Max amount of players the game of this type can handle"""
+    type: Mapped[str]
+    """The type of game"""
 
-    round_turn: Mapped[int] = mapped_column(default = -1)
-    """The first turn of the round; determines ordering of the hands in first post"""
+    players: Mapped[List["Player"]] = relationship(back_populates = "game", cascade = "all, delete-orphan")
+    """Ref to list of players within this game"""
 
-    curr_turn: Mapped[int] = mapped_column(default = 0)
-    """The current turn of the round; corresponds to index of player list"""
+    player_class = Player
+    """Player subclass that corresponds to this Game subclass"""
 
-    deck: Mapped[str] = mapped_column(default = "[]")
-    """The current deck to be pulled from; jsonified array of ints where each int corresponds to default deck index"""
+    max_players: int = 0
+    """Max amount of players the game of this type can handle; 0 means infinite
+    
+    Overwritten per child class
+    """
 
-    @staticmethod
-    def create_game(session: Session, channel_id: int) -> "Blackjack | None":
-        """Create a blackjack game if there isn't one in the channel already
+    current_bet: Mapped[str] = mapped_column(default = "[0, 0, 0, 0, 0, 0]")
+    """The current bet for the round within the game
+
+    If bet is all zeroes, then round hasn't started yet.
+    """
+
+    started: Mapped[bool] = mapped_column(default = False)
+    """Whether or not the game's first round has begun"""
+
+    @classmethod
+    def create_game(cls, session: Session, channel_id: int) -> None:
+        """Create a game if there isn't one in the channel already
         
         ### Parameters
         session: sqlalchemy.orm.Session
             Database session scope
         channel_id: int
             ID of the Discord channel to make the game in
-
-        ### Returns
-        The created Blackjack game or None if not created
         """
 
         if session.get(Game, channel_id) is not None:
-            return None
+            return
         
-        new_game = Blackjack(id = channel_id)
+        new_game = cls(id = channel_id)
         session.add(new_game)
 
         session.commit()
-        return new_game
 
-    def shuffle(self, session: Session) -> None:
-        """Shuffle all cards back into the deck
+    @classmethod
+    def find_game(cls, session: Session, channel: int) -> "Game | None":
+        """Return object of Game subclass for a channel, if any
         
         ### Parameters
         session: sqlalchemy.orm.Session
             Database session scope
-        """
-
-        self.deck = dumps(sample(range(52), 52))
-        session.commit()
-
-    def draw(self, session: Session, amount: int) -> List[int] | int:
-        """Draw a single or multiple cards
-        
-        ### Parameters
-        session: sqlalchemy.orm.Session
-            Database session scope
-        amount: int
-            Amount of cards to draw
-        
-        ### Returns
-        int
-            Card index drawn, if only 1
-        list[int]
-            Cards indices drawn, if more than 1
-        """
-
-        current_deck: List[int] = loads(self.deck)
-
-        if amount == 1:
-            cards: int = current_deck.pop()
-            self.deck = dumps(current_deck)
-        elif amount > 1:
-            cards: List[int] = current_deck[-amount:]
-            del current_deck[-amount:]
-            self.deck = dumps(current_deck)
-
-        session.commit()
-        return cards
-
-    def start_round(self, session: Session, players: List[int] = None) -> bool:
-        """Deal the initial two cards to each player given and rotate turn order
-        
-        ### Parameters
-        session: sqlalchemy.orm.Session
-            Database session scope
-        players: list[int]
-            List of users to give cards to, by index in Player list; if omitted, then all players are dealt hands
+        channel: int
+            ID of the Discord channel
 
         ### Returns
-        True
-            Deck was shuffled
-        False
-            Deck was not shuffled
+        The Game object of the channel if it exists, None otherwise
         """
 
-        if not self.started:
-            self.started = True
-
-        if shuffled := (len(loads(self.deck)) <= 26):
-            self.shuffle(session)
-
-        if players is None:
-            players = range(len(self.players))
-
-        drawn: List[int] = self.draw(session, 2 * len(players))
-        for i in range(len(self.players)):
-            if i in players:
-                self.players[i].state = "hit"
-                self.players[i].hand = dumps(drawn[-2:])
-                del drawn[-2:]
-            else:
-                self.players[i].state = "stand"
-                self.players[i].hand = "[]"
-
-        self.round_turn = (self.round_turn + 1) % len(self.players)
-        self.curr_turn = self.round_turn
-
-        if self.players[self.curr_turn].state == "stand":
-            self.next_turn(session)
-
-        session.commit()
-
-        return shuffled
-
-    def join_game(self, session: Session, user: int, name: str) -> "BlackjackPlayer | None":
+        return session.get(cls, channel)
+    
+    def join_game(self, session: Session, user: int, name: str) -> Player | None:
         """Attempt to add a Player to this game; does not check max players, see is_full()
         
         ### Parameters
@@ -767,128 +533,118 @@ class Blackjack(Game):
             Name of the Player to be created
 
         ### Returns:
-        BlackjackPlayer
+        Subclass of Player
             The player instance created
         None
             The Player already existed
         """
 
-        player = session.get(BlackjackPlayer, (user, self.id))
+        player = session.get(Player, (user, self.id))
         if player is not None:
             return None
         
-        player = BlackjackPlayer(user_id = user, game_id = self.id, name = name)
+        player = self.player_class(user_id = user, game_id = self.id, name = name)
         session.add(player)
         
         session.commit()
         return player
-    
-    def get_turn(self) -> "BlackjackPlayer":
-        """Get player whose turn it is
-        
-        ### Returns
-        The BlackjackPlayer whose turn it is
-        """
 
-        return self.players[self.curr_turn]
-    
-    def is_all_done(self) -> bool:
-        """Test whether every player has stood/busted
-        
-        ### Returns
-        True
-            Every player except one has busted, or every player is standing/busted
-        False
-            At least one player is still Hitting
-        """
-
-        states = [0, 0, 0]
-        for player in self.players:
-            if player.state == "hit":
-                states[0] += 1
-            elif player.state == "stand":
-                states[1] += 1
-            elif player.state == "bust":
-                states[2] += 1
-
-        # If all but one player have busted, that player auto wins
-        if states[2] == len(self.players) - 1:
-            return True
-        # Otherwise, more than 1 player is still hitting/standing; end play when all are standing/busting
-        if states[0] == 0:
-            return True
-        
-        return False
-    
-    def next_turn(self, session: Session) -> None:
-        """Advance the turn counter
+    def end(self, session: Session) -> None:
+        """Wipe the Game from the database
         
         ### Parameters
         session: sqlalchemy.orm.Session
             Database session scope
         """
 
-        self.curr_turn = (self.curr_turn + 1) % len(self.players)
-        while self.players[self.curr_turn].state != "hit":
-            self.curr_turn = (self.curr_turn + 1) % len(self.players)
+        session.delete(self)
+        session.commit()
+
+    def get_bet(self) -> List[int]:
+        """Return the current bet for the round unjsonified
+        
+        ### Returns
+        List of ints corresponding to chip amounts
+        """
+        return loads(self.current_bet)
+
+    def set_bet(self, session: Session, bet: List[int]) -> None:
+        """Set the current bet for the round
+        
+        ### Parameters
+        session: sqlalchemy.orm.Session
+            Database session scope
+        bet: list[int]
+            List of chip amounts to bet for each chip type
+        """
+
+        self.current_bet = dumps(bet)
 
         session.commit()
 
-    def end_round(self, session: Session) -> Tuple[str, List[Tuple[int, str]]]:
-        """Give the winner the winnings, returning index/name of winner(s); more than 1 means tie
+    def is_midround(self) -> bool:
+        """Test if the game is currently in the middle of a round; i.e. bets have been set
         
-        If tie, instead multiply bet by 3, or 9 on 21 tie
-        
+        ### Returns
+        True
+            Game in the middle of round (nonzero bet)
+        False
+            Game not in round (no bet)
+        """
+
+        return self.current_bet != "[0, 0, 0, 0, 0, 0]"
+    
+    def is_full(self) -> bool:
+        """Test if the max amount of players have joined
+
+        ### Returns
+        True
+            Players in game equals max amount or max is unlimited
+        False
+            Less players in game than max"""
+
+        return self.max_players == 0 or len(self.players) >= self.max_players
+    
+    def is_playing(self, session: Session, user_id: int) -> "Player | None":
+        """Return Player of current game if it actually exists
+
         ### Parameters
         session: sqlalchemy.orm.Session
             Database session scope
+        user_id: int
+            ID of the Discord user to search for a corresponding Player object
 
         ### Returns
-        Index 0
-            Win condition string for special dialogue; n = norm, b = blackjack, f = five card charlie
-        Index 1
-            List of winners by user id--name pairs
+        A Player object corresponding to channel and user on Discord, or None if it doesn't exist
         """
 
-        # Compare final hands
-        end_vals: List[int] = []
-        for player in self.players:
-            end_vals.append(player.hand_value())
-
-        winner_val = max(end_vals)
-        winners = []
-        for i in range(len(end_vals)):
-            if end_vals[i] == winner_val:
-                winners.append((i, self.players[i].name))
-
-        if winner_val == 22:
-            win_con = "f"
-        elif winner_val == 21:
-            win_con = "b"
-        else:
-            win_con = "n"
-
-        # If more than 1 winner, then tie occurred
-        if len(winners) == 1:
-            # Give winner the bet value, then reset bets
-            winner: BlackjackPlayer = self.players[winners[0][0]]
-            winner.pay_chips(session, loads(self.current_bet))
-            self.current_bet = "[0, 0, 0, 0, 0, 0]"
-            for player in self.players:
-                player.set_bet(session, [0, 0, 0, 0, 0, 0])
-        else:
-            # Multiply bet
-            bet = loads(self.current_bet)
-            if winner_val == 21:
-                for i in range(len(bet)):
-                    bet[i] *= 9
-            else:
-                for i in range(len(bet)):
-                    bet[i] *= 3
-            self.current_bet = dumps(bet)
-            session.commit()
+        return session.get(Player, (user_id, self.id))
+    
+    def bets_aligned(self) -> bool:
+        """Test if all players' bets are aligned and set
         
-        return (win_con, winners)
+        ### Returns
+        True
+            All players's bets are the same and nonzero
+        False
+            Otherwise
+        """
+
+        # No point in checking if only 1 player
+        if len(self.players) < 2:
+            return False
+
+        # Make sure bets are nonzero, i.e. bets have actually been placed
+        for player in self.players:
+            if player.bet == "[0, 0, 0, 0, 0, 0]":
+                return False
+
+        # Associative property; only need to check consecutive pairs
+        for i in range(len(self.players) - 1):
+            if self.players[i].bet != self.players[i + 1].bet:
+                return False
+
+        return True
 
 
 class BlackjackPlayer(Player):
@@ -1020,3 +776,254 @@ class BlackjackPlayer(Player):
             return 22
         else:
             return val
+
+
+class Blackjack(Game):
+    """Represents a game of Blackjack. Inherits most attributes of Game.
+    
+    ### Attributes
+    [PRIMARY, FOREIGN] id: int
+        Corresponds to the discord channel/thread ID
+    [CLASS] max_players = 4
+        Max amount of players the game of this type can handle
+    [CLASS] player_class
+        Player subclass that corresponds to this Game subclass
+    round_turn: int
+        The first turn of the round; determines ordering of the hands in first post
+    curr_turn: int
+        The current turn of the round; corresponds to index of player list
+    deck: str
+        The current deck to be pulled from; jsonified array of ints where each int corresponds to default deck index
+
+    ### Methods
+    shuffle(session: sqlalchemy.orm.Session) -> None
+        Shuffle all cards back into the deck
+    draw(session: sqlalchemy.orm.Session, amount: int) -> list[int] | int
+        Draw a single or multiple cards
+    start_round(session: sqlalchemy.orm.Session, players: list[int] = None) -> bool
+        Deal the initial two cards to each player given and rotate turn order
+    get_turn() -> BlackjackPlayer
+        Get player whose turn it is
+    is_all_done() -> bool:
+        Test whether every player has stood/busted
+    next_turn(session: sqlalchemy.orm.Session) -> None
+        Advance the turn counter
+    end_round(session: sqlalchemy.orm.Session) -> tuple[str, list[tuple[int, str]]]:
+        Give the winner the winnings, returning index/name of winner(s); more than 1 means tie
+    """
+
+    __tablename__ = "blackjack"
+    __mapper_args__ = {
+        "polymorphic_identity": "blackjack"
+        }
+
+    id: Mapped[int] = mapped_column(ForeignKey("game.id"), primary_key = True)
+    """Corresponds to the discord channel/thread ID"""
+
+    player_class = BlackjackPlayer
+    """Player subclass that corresponds to this Game subclass"""
+
+    max_players: int = 4
+    """Max amount of players the game of this type can handle"""
+
+    round_turn: Mapped[int] = mapped_column(default = -1)
+    """The first turn of the round; determines ordering of the hands in first post"""
+
+    curr_turn: Mapped[int] = mapped_column(default = 0)
+    """The current turn of the round; corresponds to index of player list"""
+
+    deck: Mapped[str] = mapped_column(default = "[]")
+    """The current deck to be pulled from; jsonified array of ints where each int corresponds to default deck index"""
+
+    def shuffle(self, session: Session) -> None:
+        """Shuffle all cards back into the deck
+        
+        ### Parameters
+        session: sqlalchemy.orm.Session
+            Database session scope
+        """
+
+        self.deck = dumps(sample(range(52), 52))
+        session.commit()
+
+    def draw(self, session: Session, amount: int) -> List[int] | int:
+        """Draw a single or multiple cards
+        
+        ### Parameters
+        session: sqlalchemy.orm.Session
+            Database session scope
+        amount: int
+            Amount of cards to draw
+        
+        ### Returns
+        int
+            Card index drawn, if only 1
+        list[int]
+            Cards indices drawn, if more than 1
+        """
+
+        current_deck: List[int] = loads(self.deck)
+
+        if amount == 1:
+            cards: int = current_deck.pop()
+            self.deck = dumps(current_deck)
+        elif amount > 1:
+            cards: List[int] = current_deck[-amount:]
+            del current_deck[-amount:]
+            self.deck = dumps(current_deck)
+
+        session.commit()
+        return cards
+
+    def start_round(self, session: Session, players: List[int] = None) -> bool:
+        """Deal the initial two cards to each player given and rotate turn order
+        
+        ### Parameters
+        session: sqlalchemy.orm.Session
+            Database session scope
+        players: list[int]
+            List of users to give cards to, by index in Player list; if omitted, then all players are dealt hands
+
+        ### Returns
+        True
+            Deck was shuffled
+        False
+            Deck was not shuffled
+        """
+
+        if not self.started:
+            self.started = True
+
+        if shuffled := (len(loads(self.deck)) <= 26):
+            self.shuffle(session)
+
+        if players is None:
+            players = range(len(self.players))
+
+        drawn: List[int] = self.draw(session, 2 * len(players))
+        for i in range(len(self.players)):
+            if i in players:
+                self.players[i].state = "hit"
+                self.players[i].hand = dumps(drawn[-2:])
+                del drawn[-2:]
+            else:
+                self.players[i].state = "stand"
+                self.players[i].hand = "[]"
+
+        self.round_turn = (self.round_turn + 1) % len(self.players)
+        self.curr_turn = self.round_turn
+
+        if self.players[self.curr_turn].state == "stand":
+            self.next_turn(session)
+
+        session.commit()
+
+        return shuffled
+
+    def get_turn(self) -> "BlackjackPlayer":
+        """Get player whose turn it is
+        
+        ### Returns
+        The BlackjackPlayer whose turn it is
+        """
+
+        return self.players[self.curr_turn]
+    
+    def is_all_done(self) -> bool:
+        """Test whether every player has stood/busted
+        
+        ### Returns
+        True
+            Every player except one has busted, or every player is standing/busted
+        False
+            At least one player is still Hitting
+        """
+
+        states = [0, 0, 0]
+        for player in self.players:
+            if player.state == "hit":
+                states[0] += 1
+            elif player.state == "stand":
+                states[1] += 1
+            elif player.state == "bust":
+                states[2] += 1
+
+        # If all but one player have busted, that player auto wins
+        if states[2] == len(self.players) - 1:
+            return True
+        # Otherwise, more than 1 player is still hitting/standing; end play when all are standing/busting
+        if states[0] == 0:
+            return True
+        
+        return False
+    
+    def next_turn(self, session: Session) -> None:
+        """Advance the turn counter
+        
+        ### Parameters
+        session: sqlalchemy.orm.Session
+            Database session scope
+        """
+
+        self.curr_turn = (self.curr_turn + 1) % len(self.players)
+        while self.players[self.curr_turn].state != "hit":
+            self.curr_turn = (self.curr_turn + 1) % len(self.players)
+
+        session.commit()
+
+    def end_round(self, session: Session) -> Tuple[str, List[Tuple[int, str]]]:
+        """Give the winner the winnings, returning index/name of winner(s); more than 1 means tie
+        
+        If tie, instead multiply bet by 3, or 9 on 21 tie
+        
+        ### Parameters
+        session: sqlalchemy.orm.Session
+            Database session scope
+
+        ### Returns
+        Index 0
+            Win condition string for special dialogue; n = norm, b = blackjack, f = five card charlie
+        Index 1
+            List of winners by user id--name pairs
+        """
+
+        # Compare final hands
+        end_vals: List[int] = []
+        for player in self.players:
+            end_vals.append(player.hand_value())
+
+        winner_val = max(end_vals)
+        winners = []
+        for i in range(len(end_vals)):
+            if end_vals[i] == winner_val:
+                winners.append((i, self.players[i].name))
+
+        if winner_val == 22:
+            win_con = "f"
+        elif winner_val == 21:
+            win_con = "b"
+        else:
+            win_con = "n"
+
+        # If more than 1 winner, then tie occurred
+        if len(winners) == 1:
+            # Give winner the bet value, then reset bets
+            winner: BlackjackPlayer = self.players[winners[0][0]]
+            winner.pay_chips(session, loads(self.current_bet))
+            self.current_bet = "[0, 0, 0, 0, 0, 0]"
+            for player in self.players:
+                player.set_bet(session, [0, 0, 0, 0, 0, 0])
+        else:
+            # Multiply bet
+            bet = loads(self.current_bet)
+            if winner_val == 21:
+                for i in range(len(bet)):
+                    bet[i] *= 9
+            else:
+                for i in range(len(bet)):
+                    bet[i] *= 3
+            self.current_bet = dumps(bet)
+            session.commit()
+        
+        return (win_con, winners)
+
