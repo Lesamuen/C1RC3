@@ -41,7 +41,7 @@ async def bj_join(
             else:
                 if (player := game.join_game(session, context.author.id, name)) is not None:
                     log(get_time() + " >> " + str(context.author) + " joined a Blackjack game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-                    await ghost_reply(context, "*C1RC3 nods.* `\"Request accepted. " + player.name + ", please be seated before the round begins.\"`")
+                    await ghost_reply(context, "*C1RC3 nods.* `\"Request accepted. " + player.name + " has joined this table.\"`")
                 else:
                     log(get_time() + " >> " + str(context.author) + " tried to rejoin a Blackjack game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
                     await ghost_reply(context, "*C1RC3 stays silent for a couple of seconds as she tries to process your request.\n`\"...You are already part of this table.\"`")
@@ -179,8 +179,7 @@ async def bj_hit(
             # No need to test for hit state; if standing or busted it cannot be their turn already
             drawn = game.draw(session, 1)
             log(get_time() + " >> " + str(context.author) + " drew " + str(drawn) + " in Blackjack in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-            await ghost_reply(context, "*C1RC3 pulls a card from the top of the deck and sets it down for all to see.*\n# " + format_cards(standard_deck, [drawn]) \
-                 + "\n`\"That is your card, " + player.name + ".\"`")
+            await ghost_reply(context, "`\"" + player.name + " hits,\"` *C1RC3 affirms.*\n*She pulls a card from the top of the deck and sets it down for all to see.*\n# " + format_cards(standard_deck, [drawn]))
             if player.add_card(session, drawn):
                 # Test for 5 card charlie
                 if len(player.get_hand()) == 5:
@@ -191,7 +190,7 @@ async def bj_hit(
             else:
                 # Busted, so test for round end
                 log("                     >> " + str(context.author) + " busted.")
-                await context.channel.send("*C1RC3 nods as she calculates the hand.* `\"Unfortunately, you have busted, " + player.name + ".\"`")
+                await context.channel.send("*C1RC3 shakes her head as she calculates the hand.* `\"Unfortunately, you have busted, " + player.name + ".\"`")
                 if game.is_all_done():
                     await bj_end_round(context, session, game)
                 else:
@@ -229,7 +228,7 @@ async def bj_stand(
             await ghost_reply(context, "`\"" + player.name + ", it is currently not your turn. You may not stand yet.\"`")
         else:
             log(get_time() + " >> " + str(context.author) + " stood in Blackjack in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-            await ghost_reply(context, "*C1RC3 nods at you.* `\"Understood. " + player.name + " has stood,\"` *she reiterates.*")
+            await ghost_reply(context, "*C1RC3 nods.* `\"Understood. " + player.name + " stands,\"` *she reiterates.*")
             player.stand(session)
 
             # player stood, so test for round end
@@ -325,7 +324,7 @@ async def bj_end_round(context: ApplicationContext, session: Session, game: Blac
         The blackjack game in which the round shall be ended
     """
 
-    log(get_time() + " >> " + str(context.author) + " Blackjack round ended in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+    log(get_time() + " >> Blackjack round ended in [" + str(context.guild) + "], [" + str(context.channel) + "]")
     message = "`\"The round has ended. I will now reveal everyone's cards.\"`\n"
     for player in game.players:
         message += "## __" + player.name + "__\n# " + format_cards(standard_deck, player.get_hand()) + "\n"
@@ -334,12 +333,12 @@ async def bj_end_round(context: ApplicationContext, session: Session, game: Blac
     orig_bet = game.get_bet()
     win_con, winners = game.end_round(session)
     if len(winners) == 1:
-        message += "`\"The Casino sincerely congratulates " + winners[0][1] + " for winning this round"
+        message += "`\"The Casino congratulates " + winners[0][1] + " for winning this round"
         if win_con == "f":
             message += " with a 5-card Charlie"
         elif win_con == "b":
             message += " with a Blackjack"
-        message += "!\"`\n*C1RC3 opens a compartment in her abdomen where a pile of fresh chips lays, and pushes it over to " + winners[0][1] + ".*\n"\
+        message += ".\"`\n*C1RC3 opens a compartment in her abdomen where a pile of fresh chips lays, and pushes it over to " + winners[0][1] + ".*\n"\
             + "# " + format_chips(orig_bet)
     else:
         message += "`\""
@@ -368,6 +367,6 @@ async def bj_end_round(context: ApplicationContext, session: Session, game: Blac
                 hand[1] = 52
             message += "# " + format_cards(standard_deck, hand) + "\n"
         message += "`\"The first turn goes to " + game.get_turn().name + " this round.\"`"
-    log("                     >> " + str([game.players[winner[0]].user_id for winner in winners]) + "won.")
+    log("                     >> " + str([str(bot_client.get_user(game.players[winner[0]].user_id)) for winner in winners]) + " won.")
 
     await context.channel.send(message)
