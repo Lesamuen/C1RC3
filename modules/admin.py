@@ -56,7 +56,7 @@ async def force_end_game(
     session.close()
 
 @admin_cmds.command(name = "set_chips", description = "Admin command to manually set chips in a game", guild_ids = guilds, guild_only = True)
-async def force_end_game(
+async def set_chips(
     context: ApplicationContext,
     user: Option(Member, description = "User whose chips you are editting", required = True),
     physical: Option(int, description = "The amount of physical chips to set", min_value = 0, default = 0),
