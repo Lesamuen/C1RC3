@@ -15,7 +15,7 @@ from game import bet, concede, chips, use, convert, rename
 
 bj_cmds = bot_client.create_group("bj", "Commands to run the game of Blackjack", guild_ids = guilds, guild_only = True)
 
-@bj_cmds.command(name = "join", description = "Join a Blackjack game in this channel, or creates one if there isn't one")
+@bj_cmds.command(name = "join", description = "Join a Blackjack game in this channel")
 async def bj_join(
     context: ApplicationContext,
     name: Option(str, description = "Name that C1RC3 will refer to you as", required = True, min_length = 1)
@@ -25,7 +25,10 @@ async def bj_join(
     session = database_connector()
 
     game: Blackjack = Blackjack.find_game(session, context.channel_id)
-    if game is not None:
+    if game is None:
+        log(get_time() + " >> " + str(context.author) + " tried to join no game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+        await ghost_reply(context, "`\"There is no game running at this table at the moment.\"`")
+    else:
         if game.type != "blackjack":
             log(get_time() + " >> " + str(context.author) + " tried to join a non-Blackjack game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
             await ghost_reply(context, "`\"There is already a different game running at this table.\"`")
@@ -44,13 +47,27 @@ async def bj_join(
                     await ghost_reply(context, "*C1RC3 nods.* `\"Request accepted. " + player.name + " has joined this table.\"`")
                 else:
                     log(get_time() + " >> " + str(context.author) + " tried to rejoin a Blackjack game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-                    await ghost_reply(context, "*C1RC3 stays silent for a couple of seconds as she tries to process your request.\n`\"...You are already part of this table.\"`")
+                    await ghost_reply(context, "*C1RC3 stays silent for a couple of seconds as she tries to process your request.*\n`\"...You are already part of this table.\"`")
+
+    session.close()
+
+@bj_cmds.command(name = "create", description = "Start a Blackjack game in this channel")
+async def bj_create(
+    context: ApplicationContext
+):
+    """Add the command /bj create"""
+
+    session = database_connector()
+
+    game: Blackjack = Blackjack.find_game(session, context.channel_id)
+    if game is not None:
+        log(get_time() + " >> " + str(context.author) + " tried to create another game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+        await ghost_reply(context, "`\"There is already a game running at this table.\"`")
     else:
-        # Create new game if no game exists yet
-        player = Blackjack.create_game(session, context.channel_id).join_game(session, context.author.id, name)
+        Blackjack.create_game(session, context.channel_id)
         log(get_time() + " >> " + str(context.author) + " started a Blackjack game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-        await ghost_reply(context, "*C1RC3 approaches you as you ring the bell on the table, and takes her place at the dealer's stand.*\n`\"Your request has been processed.\"`\n*She turns to the rest of the floor, as she announces with her voice amplified,*\n`\""
-             + player.name + " has begun a new blackjack game!\"`")
+        await ghost_reply(context, "*C1RC3 approaches you as you call for a dealer, and takes her place at the dealer's stand.*\n"\
+            "`\"Your request has been processed. I will be acting as your table's arbitrator. Please state your name for the record, in order to be counted as part of the game.\"`")
 
     session.close()
 
