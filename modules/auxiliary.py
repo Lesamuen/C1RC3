@@ -39,18 +39,22 @@ def log(out: str) -> None:
     with open("logs/" + datetime.now().strftime("%Y-%m-%d") + ".txt", "a") as log_file:
         log_file.write(out + "\n")
 
-async def ghost_reply(context: ApplicationContext, message: str) -> None:
-    """Reply to a message without the command reply actually showing up
+async def ghost_reply(context: ApplicationContext, message: str, private: bool = False) -> None:
+    """Reply to a message without the command reply being visible to everyone else
     
     ### Parameters
     context: discord.ApplicationContext
         Application command context
     message: str
         The message to send
+    private: bool = False
+        Whether the reply should only be visible to the user
     """
-
-    await context.respond("https://canary.discordapp.com/__development/link/", ephemeral = True, delete_after = 0)
-    await context.channel.send(message)
+    if private:
+        await context.respond(message, ephemeral = True, delete_after = 60)
+    else:
+        await context.respond("https://canary.discordapp.com/__development/link/", ephemeral = True, delete_after = 0)
+        await context.channel.send(message)
 
 def all_zero(arr: List[int]) -> bool:
     """Check if a list of integers contains nothing but 0's.

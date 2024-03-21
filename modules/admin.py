@@ -30,7 +30,7 @@ async def check_admin(context: ApplicationContext) -> bool:
     if context.author.id in perms["admin"]:
         return True
     else:
-        await context.respond("`\"Request denied. Administrator-level Access required.\"`")
+        await ghost_reply(context, "`\"Request denied. Administrator-level Access required.\"`", True)
         log(get_time() + " >> " + str(context.author) + " permission denied in [" + str(context.guild) + "], [" + str(context.channel) + "]")
         return False
     
@@ -38,7 +38,8 @@ admin_cmds.checks = [check_admin]
 
 @admin_cmds.command(name = "force_end_game", description = "Admin command to end a game in this channel", guild_ids = guilds, guild_only = True)
 async def force_end_game(
-    context: ApplicationContext
+    context: ApplicationContext,
+    private: Option(bool, description = "Whether to keep the response only visible to you", default = False)
 ):
     """Add the command /admin force_end_game"""
 
@@ -47,11 +48,11 @@ async def force_end_game(
     game = Game.find_game(session, context.channel_id)
     if game is None:
         log(get_time() + " >> Admin " + str(context.author) + " tried to force-end a game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-        await ghost_reply(context, "`\"Administrator-level Access detected. Request failed. There is already no game at this table.\"`")
+        await ghost_reply(context, "`\"Administrator-level Access detected. Request failed. There is already no game at this table.\"`", True)
     else:
         log(get_time() + " >> Admin " + str(context.author) + " force-ended a game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
         game.end(session)
-        await ghost_reply(context, "`\"Administrator-level Access detected. The game running for this table has been forcibly ended.\"`")
+        await ghost_reply(context, "`\"Administrator-level Access detected. The game running for this table has been forcibly ended.\"`", private)
 
     session.close()
 
@@ -64,7 +65,8 @@ async def set_chips(
     artificial: Option(int, description = "The amount of artificial chips to set", min_value = 0, default = 0),
     supernatural: Option(int, description = "The amount of supernatural chips to set", min_value = 0, default = 0),
     merge: Option(int, description = "The amount of merge chips to set", min_value = 0, default = 0),
-    swap: Option(int, description = "The amount of swap chips to set", min_value = 0, default = 0)
+    swap: Option(int, description = "The amount of swap chips to set", min_value = 0, default = 0),
+    private: Option(bool, description = "Whether to keep the response only visible to you", default = False)
 ):
     """Add the command /admin set_chips"""
 
@@ -76,16 +78,16 @@ async def set_chips(
     game = Game.find_game(session, context.channel_id)
     if game is None:
         log(get_time() + " >> Admin " + str(context.author) + " tried to set chips with no game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-        await ghost_reply(context, "`\"Administrator-level Access detected. Request failed. There is no game at this table.\"`")
+        await ghost_reply(context, "`\"Administrator-level Access detected. Request failed. There is no game at this table.\"`", True)
     else:
         player = game.is_playing(session, user.id)
         if player is None:
             log(get_time() + " >> Admin " + str(context.author) + " tried to set chips for a non-player in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-            await ghost_reply(context, "`\"Administrator-level Access detected. Request failed. This person is not playing at this table.\"`")
+            await ghost_reply(context, "`\"Administrator-level Access detected. Request failed. This person is not playing at this table.\"`", True)
         else:
             player.set_chips(session, chips)
             log(get_time() + " >> Admin " + str(context.author) + " set chips of " + str(user) + " to " + str(chips) + " in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-            await ghost_reply(context, "`\"Administrator-level Access detected. " + player.name + " has been granted the following chips:\"`\n## " + format_chips(chips))
+            await ghost_reply(context, "`\"Administrator-level Access detected. " + player.name + " has been granted the following chips:\"`\n## " + format_chips(chips), private)
 
     session.close()
 
