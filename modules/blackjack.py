@@ -314,7 +314,6 @@ async def bj_end_round(context: ApplicationContext, session: Session, game: Blac
         message += "## __" + player.name + "__\n# " + format_cards(standard_deck, player.get_hand()) + "\n"
     
     # End the round
-    orig_bet = game.get_bet()
     win_con, winners = game.end_round(session)
     if len(winners) == 1:
         message += "`\"The Casino congratulates " + winners[0][1] + " for winning this round"
@@ -322,8 +321,8 @@ async def bj_end_round(context: ApplicationContext, session: Session, game: Blac
             message += " with a 5-card Charlie"
         elif win_con == "b":
             message += " with a Blackjack"
-        message += ".\"`\n*C1RC3 opens a compartment in her abdomen where a pile of fresh chips lays, and pushes it over to " + winners[0][1] + ".*\n"\
-            + "# " + format_chips(orig_bet)
+        message += ".\"`\n*C1RC3 opens a compartment in her abdomen where a pile of fresh chips lays, and pushes it over to " + winners[0][1] + ", making a sizeable pile of*\n"\
+            + "# " + format_chips(game.players[winners[0][0]].get_chips())
     else:
         message += "`\""
         if len(winners) == 2:
