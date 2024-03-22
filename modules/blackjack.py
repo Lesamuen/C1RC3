@@ -104,10 +104,10 @@ async def bj_bet(
             log(get_time() + " >> The Blackjack round has started in [" + str(context.guild) + "], [" + str(context.channel) + "]")
             game.set_bet(session, chips)
 
-            shuffled = game.start_round(session)
-
             message = "`\"The players have agreed on a bet. The round shall now begin.\"`\n"
-            if shuffled:
+            if game.start_round(session):
+                # If true, then shuffled
+                log("                     >> Deck was reshuffled.")
                 message += "*Before C1RC3 begins to draw cards, she places all of the cards into a compartment that slides open in her arm, and shuts it."\
                     " A moment of whirring later, she opens it again and pulls out a newly shuffled deck.*\n"
             message += "*She begins to draw cards from the deck, deftly placing them down in front of each player.*\n"
@@ -339,8 +339,10 @@ async def bj_end_round(context: ApplicationContext, session: Session, game: Blac
              "`\"Each winner will now be given a new hand.\"`\n"
         
         # Start new round because tied
-        shuffled = game.start_round(session, [winner[0] for winner in winners])
-        if shuffled:
+        log("                     >> The Blackjack round has re-started in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+        if game.start_round(session, [winner[0] for winner in winners]):
+            # If true, then shuffled
+            log("                     >> Deck was reshuffled.")
             message += "*Before C1RC3 begins to draw cards, she places all of the cards into a compartment that slides open in her arm, and shuts it."\
                 " A moment of whirring later, she opens it again and pulls out a newly shuffled deck.*\n"
         message += "*She begins to draw cards from the deck, deftly placing them down in front of each winner of the previous round.*\n"
