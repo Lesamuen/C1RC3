@@ -114,10 +114,7 @@ async def bj_bet(
             player: BlackjackPlayer
             for player in game.players:
                 message += "## __" + player.name + "__\n"
-                hand = player.get_hand()
-                if len(hand) >= 2:
-                    hand[1] = 52
-                message += "# " + format_cards(standard_deck, hand) + "\n"
+                message += "# " + format_cards(standard_deck, player.get_hand(True)) + "\n"
             message += "`\"The first turn goes to " + game.get_turn().name + " this round.\"`"
             
             await context.channel.send(message)
@@ -194,17 +191,24 @@ async def bj_hand(
         else:
             log(get_time() + " >> " + str(context.author) + " looked at their Blackjack hand (" + str(player.get_hand()) + ") in [" + str(context.guild) + "], [" + str(context.channel) + "]")
             message = "`\"Here are your opponents' current hands:\"`\n"
+            other_player: BlackjackPlayer
             for other_player in game.players:
                 if other_player != player:
-                    other_hand = other_player.get_hand()
-                    if len(other_hand) >= 2:
-                        other_hand[1] = 52
-                    message += "**" + other_player.name + "**: " + format_cards(standard_deck, other_hand) + "\n"
+                    message += "**" + other_player.name + "**: "
+                    if len(other_player.get_hand()) == 0:
+                        message += "No Hand"
+                    else:
+                        message += format_cards(standard_deck, other_player.get_hand(True)) + " -- "
+                        if other_player.busted():
+                            message += "Bust"
+                        else:
+                            message += str(other_player.hand_value(True)) + "+"
+                    message += "\n"
             hand = player.get_hand()
             if len(hand) == 0:
                 message += "\n`\"Here is your current hand:\"`\n\n## Total Value: 0"
             else:
-                message += "\n`\"Here is your current hand:\"`\n# " + format_cards(standard_deck, player.get_hand()) + "\n## Total Value: " + str(player.hand_value())
+                message += "\n`\"Here is your current hand:\"`\n# " + format_cards(standard_deck, hand) + "\n## Total Value: " + str(player.hand_value())
             await ghost_reply(context, message, True)
 
     session.close()
@@ -310,8 +314,20 @@ async def bj_end_round(context: ApplicationContext, session: Session, game: Blac
 
     log(get_time() + " >> Blackjack round ended in [" + str(context.guild) + "], [" + str(context.channel) + "]")
     message = "`\"The round has ended. I will now reveal everyone's cards.\"`\n"
+    player: BlackjackPlayer
     for player in game.players:
-        message += "## __" + player.name + "__\n# " + format_cards(standard_deck, player.get_hand()) + "\n"
+        message += "## __" + player.name + "__\n"
+        hand = player.get_hand()
+        if len(hand) != 0:
+            val = player.hand_value(raw = True)
+            message += "# " + format_cards(standard_deck, hand) + ": " + str(val)
+            if val > 21:
+                message += " (Bust)"
+            elif len(hand) == 5:
+                message += " (5-Card Charlie)"
+            elif val == 21:
+                message += " (Blackjack)"
+        message += "\n"
     
     # End the round
     win_con, winners = game.end_round(session)
@@ -347,9 +363,7 @@ async def bj_end_round(context: ApplicationContext, session: Session, game: Blac
         message += "*She begins to draw cards from the deck, deftly placing them down in front of each winner of the previous round.*\n"
         for player in game.players:
             message += "## __" + player.name + "__\n"
-            hand = player.get_hand()
-            if len(hand) >= 2:
-                hand[1] = 52
+            hand = player.get_hand(True)
             if len(hand) == 0:
                 message += "\n"
             else:

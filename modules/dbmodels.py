@@ -667,8 +667,10 @@ class BlackjackPlayer(Player):
         Set state to standing
     add_card(session: sqlalchemy.orm.Session, card: int) -> bool
         Add card to hand; return whether still un-busted
-    hand_value() -> int:
+    hand_value() -> int
         Calculate the value of the hand for direct comparison
+    busted() -> bool
+        Returns whether the player has busted
     """
 
     __tablename__ = "blackjack_player"
@@ -691,15 +693,23 @@ class BlackjackPlayer(Player):
     state: Mapped[str] = mapped_column(default = "hit")
     """Either 'hit', 'stand', or 'bust'; represents state of player's hand"""
 
-    def get_hand(self) -> List[int]:
+    def get_hand(self, hidden: bool = False) -> List[int]:
         """Parses hand to list of ints
         
+        ### Parameters
+        hidden: bool = False
+            Whether the second card in the hand is hidden
+
         ### Returns
         list[int]
             Each int corresponds to index in deck
         """
 
-        return loads(self.hand)
+        hand = loads(self.hand)
+        if hidden and len(hand) >= 2:
+            hand[1] = 52
+
+        return hand
     
     def stand(self, session: Session) -> None:
         """Set state to standing
@@ -728,7 +738,7 @@ class BlackjackPlayer(Player):
             If hand busted from adding the card
         """
 
-        hand: List[int] = loads(self.hand)
+        hand = self.get_hand()
         hand.append(card)
         self.hand = dumps(hand)
 
@@ -740,8 +750,14 @@ class BlackjackPlayer(Player):
         session.commit()
         return bool(hand_value)
 
-    def hand_value(self) -> int:
+    def hand_value(self, hidden: bool = False, raw: bool = False) -> int:
         """Calculate the value of the hand for direct comparison
+        
+        ### Parameters
+        hidden: bool = False
+            Whether the second card in the hand is hidden
+        raw: bool = False
+            Whether to give raw hand value without 5-card charlies or busting
 
         ### Returns
         22
@@ -752,11 +768,14 @@ class BlackjackPlayer(Player):
             Total value of the hand
         """
 
-        hand: List[int] = loads(self.hand)
+        hand = self.get_hand(hidden)
         val = 0
 
         # Remove suits and convert to direct value
         for i in range(len(hand)):
+            if hand[i] == 52:
+                hand[i] = 0
+                continue
             hand[i] = hand[i] % 13 + 2
             if hand[i] >= 11 and hand[i] <= 13:
                 hand[i] = 10
@@ -770,12 +789,19 @@ class BlackjackPlayer(Player):
             hand[hand.index(11)] = 1
             val -= 10
 
-        if val > 21:
+        if raw:
+            return val
+        elif val > 21:
             return 0
         elif len(hand) >= 5:
             return 22
         else:
             return val
+        
+    def busted(self) -> bool:
+        """Returns whether the player has busted"""
+
+        return self.state == "bust"
 
 
 class Blackjack(Game):
