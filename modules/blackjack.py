@@ -200,7 +200,11 @@ async def bj_hand(
                     if len(other_hand) >= 2:
                         other_hand[1] = 52
                     message += "**" + other_player.name + "**: " + format_cards(standard_deck, other_hand) + "\n"
-            message += "\n`\"Here is your current hand:\"`\n# " + format_cards(standard_deck, player.get_hand()) + "\n## Total Value: " + str(player.hand_value())
+            hand = player.get_hand()
+            if len(hand) == 0:
+                message += "\n`\"Here is your current hand:\"`\n\n## Total Value: 0"
+            else:
+                message += "\n`\"Here is your current hand:\"`\n# " + format_cards(standard_deck, player.get_hand()) + "\n## Total Value: " + str(player.hand_value())
             await ghost_reply(context, message, True)
 
     session.close()
@@ -345,7 +349,10 @@ async def bj_end_round(context: ApplicationContext, session: Session, game: Blac
             hand = player.get_hand()
             if len(hand) >= 2:
                 hand[1] = 52
-            message += "# " + format_cards(standard_deck, hand) + "\n"
+            if len(hand) == 0:
+                message += "\n"
+            else:
+                message += "# " + format_cards(standard_deck, hand) + "\n"
         message += "`\"The first turn goes to " + game.get_turn().name + " this round.\"`"
     log("                     >> " + str([str(bot_client.get_user(game.players[winner[0]].user_id)) for winner in winners]) + " won.")
 
