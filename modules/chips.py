@@ -99,7 +99,7 @@ async def balance(
     account = ChipAccount.find_account(session, name)
     if account is None:
         log(get_time() + " >> " + str(context.author) + " failed to find account \"" + name + "\" in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-        await ghost_reply(context, "*C1RC3 pauses for a brief moment as she scans her records.*\n`\"Request failed. No account exists under that name.\"`")
+        await ghost_reply(context, "`\"Request failed. No account exists under that name.\"`", True)
         session.close()
         return
 
@@ -115,7 +115,7 @@ async def balance(
         await ghost_reply(context, response)
     else:
         log(get_time() + " >> " + str(context.author) + " tried to access other's account \"" + name + "\" in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-        await ghost_reply(context, "*You feel a small tingle all over your body as C1RC3 scans your magical signature, and her face flashes red for a moment.*\n`\"Request denied. This account does not belong to you.\"`")
+        await ghost_reply(context, "`\"Request denied. This account does not belong to you.\"`", True)
 
     session.close()
 
