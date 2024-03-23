@@ -110,7 +110,7 @@ async def balance(
         
         response = "*You feel a small tingle all over your body as C1RC3 scans your magical signature, and her face flashes green for a moment.*"\
             "\n`\"Request approved. The account under the name '" + account.name + "' currently contains:\"`\n# "
-        response += format_chips(account.get_bal())
+        response += format_chips(account.get_bal(), private)
 
         await ghost_reply(context, response)
     else:
