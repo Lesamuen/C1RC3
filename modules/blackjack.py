@@ -17,13 +17,18 @@ bj_cmds = bot_client.create_group("bj", "Commands to run the game of Blackjack",
 
 @bj_cmds.command(name = "create", description = "Start a Blackjack game in this channel")
 async def bj_create(
-    context: ApplicationContext
+    context: ApplicationContext,
+    stake: Option(int, description = "What stake to set the game to", required = True, choices = [
+        OptionChoice("Low Stakes", 0),
+        OptionChoice("Normal Stakes", 1),
+        OptionChoice("High Stakes", 2),
+    ])
 ):
     """Add the command /bj create"""
 
     session = database_connector()
 
-    await create(context, session, Blackjack)
+    await create(context, session, stake, Blackjack)
 
     session.close()
 

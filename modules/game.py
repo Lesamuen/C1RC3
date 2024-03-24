@@ -4,7 +4,7 @@ print("Loading module 'game'...")
 
 from typing import List, Tuple
 
-from discord import ApplicationContext, Option, Member
+from discord import ApplicationContext, Option, Member, OptionChoice
 from sqlalchemy.orm import Session
 
 from auxiliary import log, get_time, all_zero, ghost_reply, guilds
@@ -27,7 +27,7 @@ chip_conversions = (
     ((0, 0, 0, 0, 0, 1), (0, 0.5, 0, 0, 0, 0)),
 )
 
-async def create(context: ApplicationContext, session: Session, expected_type: type[Game]) -> None:
+async def create(context: ApplicationContext, session: Session, stake: int, expected_type: type[Game]) -> None:
     """Handle functionality for creating any game
     
     ### Parameters
@@ -35,6 +35,8 @@ async def create(context: ApplicationContext, session: Session, expected_type: t
         Application command context
     session: sqlalchemy.orm.Session
         Current database scope
+    stake: int
+        Code for the stake level of the created game
     expected_type: type[dbmodels.Game]
         Game subclass this command was sent for
     """
@@ -44,10 +46,17 @@ async def create(context: ApplicationContext, session: Session, expected_type: t
         log(get_time() + " >> " + str(context.author) + " tried to create another game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
         await ghost_reply(context, "`\"There is already a game running at this table.\"`", True)
     else:
-        expected_type.create_game(session, context.channel_id)
+        expected_type.create_game(session, context.channel_id, stake)
         log(get_time() + " >> " + str(context.author) + " started a " + str(expected_type) + " game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-        await ghost_reply(context, "*C1RC3 approaches you when you call for a dealer, and takes her place at the dealer's stand.*\n"\
-            "`\"Your request has been processed. I will be acting as your table's arbitrator. Please state your name for the record, in order for your participation to be counted.\"`")
+        message = "*C1RC3 approaches you when you call for a dealer, and takes her place at the dealer's stand.*\n`\"Your request for a "
+        if stake == 0:
+            message += "low "
+        elif stake == 1:
+            message += "normal "
+        elif stake == 2:
+            message += "high "
+        message += "stakes game has been processed. I will be acting as your table's arbitrator. Please state your name for the record, in order for your participation to be counted.\"`"
+        await ghost_reply(context, message)
 
 async def join(context: ApplicationContext, session: Session, name: str, expected_type: type[Game]) -> None:
     """Handle functionality for joining any game
@@ -115,14 +124,37 @@ async def concede(context: ApplicationContext, session: Session, expected_type: 
             if game.started:
                 # Game in progress, so check if only one remaining = overall winner
                 message = "`\"Understood. Player " + name + " has officially conceded.\"`\n*C1RC3 snaps her fingers as the magic of the casino flows into "\
-                     + name + ", solidifying their new form. Their pile of chips disintegrates into golden light, reabsorbed into C1RC3 as her frame shivers.*\n"
+                     + name + ", solidifying their new form. Any of their remaining chips fade as golden light shoots out of them, reabsorbed into C1RC3 as her frame shivers."\
+                    "She then pulls them into an open compartment in her abdomen, where it closes shut seamlessly.*\n"
                 if len(game.players) == 1:
                     winner: Player = game.players[0]
                     log("                     >> Game ended with winner " + winner.name + ".")
                     message += "\n*C1RC3 turns to the last player.* `\"Congratulations, " + winner.name + ", you have won against everyone at the table.\n"\
-                        "You may choose to transform back to your original form at the beginning of the game, or keep your current one if it is complete.\n"\
-                        "You may also keep your chips, if this table was at normal stakes or higher:\"`\n# "\
-                         + format_chips(winner.get_chips()) + "\n*With that, C1RC3 walks off to attend to other tables.*"
+                        "You may choose to transform back to your original form at the beginning of the game, or keep your current one if it is complete.\n"
+                    if game.stake == 0:
+                        message += "Because this table was playing at low stakes, you unfortunately do not keep these.\"`"\
+                            " *She reaches over and shovels your remaining chips into herself, absorbing their magic as well.*\n"\
+                            "*She then turns to the other players.* `\"The rest of you, please enjoy your temporary forms while they last.\"`"
+                    elif game.stake == 1:
+                        message += "Because this table was playing at normal stakes, you shall receive half of the chips you have used thus far.\"`\n"
+                        roi = winner.get_used()
+                        roi = [n // 2 for n in roi]
+                        message += "*She places her hands on the table and leans forward, while the sound of clinking chips comes from her body. "\
+                            "Eventually, the compartment in her midriff slides open, and out flows a great pile of dull, magicless chips, totalling:*\n# "
+                        message += format_chips(roi)
+                        message += "\n*While she pulls your unused chips back into herself, she explains with an even tone,*"\
+                            "`\"You may come see me or any staff member later to have the magic reinfused into them so you may use them on yourself to change your own form to your liking."\
+                            " Otherwise, you may store them with me.\"`"
+                    elif game.stake == 2:
+                        message += "Because this table was playing at high stakes, you shall receive all of the chips you have used on others thus far.\"`\n"
+                        roi = winner.get_used()
+                        message += "*She places her hands on the table and leans forward, while the sound of clinking chips comes from her body. "\
+                            "Eventually, the compartment in her midriff slides open, and out flows a great pile of dull, magicless chips, totalling:*\n# "
+                        message += format_chips(roi)
+                        message += "\n*While she pulls your unused chips back into herself, she explains with an even tone,*"\
+                            "`\"You may come see me or any staff member later to have the magic reinfused into them so you may use them on yourself to change your own form to your liking."\
+                            " May fortune continue to find you.\"`"
+                    message += "\n*With that, C1RC3 walks off to attend to other tables.*"
                     game.end(session)
                 await ghost_reply(context, message)
             else:
@@ -130,7 +162,7 @@ async def concede(context: ApplicationContext, session: Session, expected_type: 
                 await ghost_reply(context, "`\"Understood. Player " + name + " has changed their mind.\"`")
                 if len(game.players) == 0:
                     log("                     >> Game deleted as all players left.")
-                    await context.channel.send("*With no one left sitting at the table, C1RC3 walks off to attend to other tables.*")
+                    await context.channel.send("*With no one left sitting at the table, C1RC3 simply walks off to attend to other tables.*")
                     game.end(session)
 
 async def chips(context: ApplicationContext, session: Session, private: bool, expected_type: type[Game]) -> None:
@@ -331,12 +363,14 @@ async def rename(context: ApplicationContext, session: Session, new_name: str, p
             log(get_time() + " >> " + str(context.author) + " renamed to " + new_name + " in [" + str(context.guild) + "], [" + str(context.channel) + "]")
             await ghost_reply(context, "*C1RC3 nods.* `\"Very well. I will refer to you as " + new_name + " from now on.\"`", private)
 
-@admin_cmds.command(name = "force_end_game", description = "Admin command to end a game in this channel", guild_ids = guilds, guild_only = True)
+game_admin_cmds = admin_cmds.create_subgroup("game", "Admin commands directly related to games in general")
+
+@game_admin_cmds.command(name = "force_end_game", description = "Admin command to end a game in this channel")
 async def force_end_game(
     context: ApplicationContext,
     private: Option(bool, description = "Whether to keep the response only visible to you", default = False)
 ):
-    """Add the command /admin force_end_game"""
+    """Add the command /admin game force_end_game"""
 
     session = database_connector()
 
@@ -351,7 +385,7 @@ async def force_end_game(
 
     session.close()
 
-@admin_cmds.command(name = "set_chips", description = "Admin command to manually set chips in a game", guild_ids = guilds, guild_only = True)
+@game_admin_cmds.command(name = "set_chips", description = "Admin command to manually set chips in a game")
 async def set_chips(
     context: ApplicationContext,
     user: Option(Member, description = "User whose chips you are editting", required = True),
@@ -363,7 +397,7 @@ async def set_chips(
     swap: Option(int, description = "The amount of swap chips to set", min_value = 0, default = 0),
     private: Option(bool, description = "Whether to keep the response only visible to you", default = False)
 ):
-    """Add the command /admin set_chips"""
+    """Add the command /admin game set_chips"""
 
     session = database_connector()
 
@@ -383,5 +417,73 @@ async def set_chips(
             player.set_chips(session, chips)
             log(get_time() + " >> Admin " + str(context.author) + " set chips of " + str(user) + " to " + str(chips) + " in [" + str(context.guild) + "], [" + str(context.channel) + "]")
             await ghost_reply(context, "`\"Administrator-level Access detected. " + player.name + " has been granted the following chips:\"`\n## " + format_chips(chips), private)
+
+    session.close()
+
+@game_admin_cmds.command(name = "set_used", description = "Admin command to manually set used chips in a game")
+async def set_used(
+    context: ApplicationContext,
+    user: Option(Member, description = "User whose used chips you are editting", required = True),
+    physical: Option(int, description = "The amount of physical chips to set", min_value = 0, default = 0),
+    mental: Option(int, description = "The amount of mental chips to set", min_value = 0, default = 0),
+    artificial: Option(int, description = "The amount of artificial chips to set", min_value = 0, default = 0),
+    supernatural: Option(int, description = "The amount of supernatural chips to set", min_value = 0, default = 0),
+    merge: Option(int, description = "The amount of merge chips to set", min_value = 0, default = 0),
+    swap: Option(int, description = "The amount of swap chips to set", min_value = 0, default = 0),
+    private: Option(bool, description = "Whether to keep the response only visible to you", default = False)
+):
+    """Add the command /admin game set_used"""
+
+    session = database_connector()
+
+    # Extract chip args
+    chips: List[int] = list(locals().values())[2:8]
+
+    game = Game.find_game(session, context.channel_id)
+    if game is None:
+        log(get_time() + " >> Admin " + str(context.author) + " tried to set used chips with no game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+        await ghost_reply(context, "`\"Administrator-level Access detected. Request failed. There is no game at this table.\"`", True)
+    else:
+        player = game.is_playing(session, user.id)
+        if player is None:
+            log(get_time() + " >> Admin " + str(context.author) + " tried to set used chips for a non-player in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+            await ghost_reply(context, "`\"Administrator-level Access detected. Request failed. This person is not playing at this table.\"`", True)
+        else:
+            player.set_used(session, chips)
+            log(get_time() + " >> Admin " + str(context.author) + " set used chips of " + str(user) + " to " + str(chips) + " in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+            await ghost_reply(context, "`\"Administrator-level Access detected. " + player.name + "'s used chips record has been has been updated to:\"`\n## " + format_chips(chips), private)
+
+    session.close()
+
+@game_admin_cmds.command(name = "set_stake", description = "Admin command to change the stake of a game in this channel")
+async def set_stake(
+    context: ApplicationContext,
+    stake: Option(int, description = "What stake to set the game to", required = True, choices = [
+        OptionChoice("Low Stakes", 0),
+        OptionChoice("Normal Stakes", 1),
+        OptionChoice("High Stakes", 2),
+    ]),
+    private: Option(bool, description = "Whether to keep the response only visible to you", default = False)
+):
+    """Add the command /admin game set_stake"""
+
+    session = database_connector()
+
+    game = Game.find_game(session, context.channel_id)
+    if game is None:
+        log(get_time() + " >> Admin " + str(context.author) + " tried to change stake for no game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+        await ghost_reply(context, "`\"Administrator-level Access detected. Request failed. There is no game at this table.\"`", True)
+    else:
+        log(get_time() + " >> Admin " + str(context.author) + " changed stake of game to " + str(stake) + " in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+        game.set_stake(session, stake)
+        message = "`\"Administrator-level Access detected. The stake of this game has been set to "
+        if stake == 0:
+            message += "Low."
+        elif stake == 1:
+            message += "Normal."
+        elif stake == 2:
+            message += "High."
+        message += "\"`"
+        await ghost_reply(context, message, private)
 
     session.close()

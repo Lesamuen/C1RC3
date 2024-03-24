@@ -32,7 +32,7 @@ async def check_admin(context: ApplicationContext) -> bool:
     
 admin_cmds.checks = [check_admin]
 
-@admin_cmds.command(name = "bad_girl", description = "Admin command to shut C1RC3 down", )
+@admin_cmds.command(name = "bad_girl", description = "Admin command to shut C1RC3 down")
 async def bad_girl(context: ApplicationContext):
     """Add the command /bad_girl"""
 
@@ -41,7 +41,7 @@ async def bad_girl(context: ApplicationContext):
     await bot_client.close()
     quit()
 
-@bot_client.slash_command(name = "good_girl", description = "Reward C1RC3 <3", guild_ids = guilds, guild_only = True)
+@bot_client.slash_command(name = "good_girl", description = "Reward C1RC3 <3")
 async def good_girl(context: ApplicationContext):
     """Add the command /good_girl"""
 

@@ -258,6 +258,8 @@ class Player(SQLBase):
         What name the Player shall be referred to as
     chips: str
         Jsonified array of chips of each type the Player holds
+    used: str
+        Jsonified array of chips of each type the Player has used this game
     bet: str
         How many chips the Player is currently willing to bet
 
@@ -272,10 +274,14 @@ class Player(SQLBase):
         Return the Player's current amount of chips unjsonified
     set_chips(session: sqlalchemy.orm.Session, amount: list[int]) -> None
         Set the Player's chips directly
+    get_used() -> list[int]
+        Return the Player's used amount of chips unjsonified
+    set_used(session: sqlalchemy.orm.Session, amount: list[int]) -> None
+        Set the Player's used chips directly
     pay_chips(session: sqlalchemy.orm.Session, amount: list[int]) -> None
         Add an amount of chips to the Player's current amount of chips
     use_chips(session: sqlalchemy.orm.Session, amount: list[int]) -> bool
-        Removes a player's chips, if able
+        Removes a player's chips, if able, and tracks used chips
     """
 
     __tablename__ = "player"
@@ -301,6 +307,9 @@ class Player(SQLBase):
 
     chips: Mapped[str] = mapped_column(default = "[0, 0, 0, 0, 0, 0]")
     """Jsonified array of chips of each type the Player holds"""
+
+    used: Mapped[str] = mapped_column(default = "[0, 0, 0, 0, 0, 0]")
+    """Jsonified array of chips of each type the Player has used this game"""
 
     bet: Mapped[str] = mapped_column(default = "[0, 0, 0, 0, 0, 0]")
     """How many chips the Player is currently willing to bet"""
@@ -364,6 +373,28 @@ class Player(SQLBase):
         self.chips = dumps(amount)
         session.commit()
 
+    def get_used(self) -> List[int]:
+        """Return the Player's used amount of chips unjsonified
+        
+        ### Returns
+        List of integers corresponding to types of chips
+        """
+
+        return loads(self.used)
+    
+    def set_used(self, session: Session, amount: List[int]) -> None:
+        """Set the Player's used chips directly
+        
+        ### Parameters
+        session: sqlalchemy.orm.Session
+            Database session scope
+        amount: list[int]
+            The list of chips to set the Player's used chips to
+        """
+
+        self.used = dumps(amount)
+        session.commit()
+
     def pay_chips(self, session: Session, amount: List[int]) -> None:
         """Add an amount of chips to the Player's current amount of chips
         
@@ -382,7 +413,7 @@ class Player(SQLBase):
         session.commit()
 
     def use_chips(self, session: Session, amount: List[int]) -> bool:
-        """Removes a player's chips, if able
+        """Removes a player's chips, if able, and tracks used chips
         
         ### Parameters
         session: sqlalchemy.orm.Session
@@ -403,10 +434,14 @@ class Player(SQLBase):
             if bal[i] < amount[i]:
                 return False
         
+        used = loads(self.used)
+
         for i in range(len(bal)):
             bal[i] -= amount[i]
+            used[i] += amount[i]
 
         self.chips = dumps(bal)
+        self.used = dumps(used)
         session.commit()
         return True
 
@@ -425,6 +460,8 @@ class Game(SQLBase):
         Player subclass that corresponds to this Game subclass
     [CLASS] max_players: int
         Max amount of players the game of this type can handle; 0 means infinite
+    stake: int
+        0 - low stakes, 1 - normal stakes, 2 - high stakes
     current_bet: str
         The current bet for the round within the game
     started: bool
@@ -439,6 +476,8 @@ class Game(SQLBase):
         Attempt to add a Player to this game; does not check max players, see Game.is_full()
     end(session: sqlalchemy.orm.Session) -> None
         Wipe the Game from the database
+    set_stake(session: sqlalchemy.orm.Session, bet: list[int], stake: int = 1) -> None
+        Set the current bet for the round
     get_bet() -> list[int]
         Return the current bet for the round unjsonified
     set_bet(session: sqlalchemy.orm.Session, bet: list[int]) -> None
@@ -477,6 +516,9 @@ class Game(SQLBase):
     Overwritten per child class
     """
 
+    stake: Mapped[int] = mapped_column(default = 1)
+    """0 - low stakes, 1 - normal stakes, 2 - high stakes"""
+
     current_bet: Mapped[str] = mapped_column(default = "[0, 0, 0, 0, 0, 0]")
     """The current bet for the round within the game
 
@@ -487,7 +529,7 @@ class Game(SQLBase):
     """Whether or not the game's first round has begun"""
 
     @classmethod
-    def create_game(cls, session: Session, channel_id: int) -> None:
+    def create_game(cls, session: Session, channel_id: int, stake: int = 1) -> None:
         """Create a game if there isn't one in the channel already
         
         ### Parameters
@@ -495,12 +537,14 @@ class Game(SQLBase):
             Database session scope
         channel_id: int
             ID of the Discord channel to make the game in
+        stake: int = 1
+            Code for stake level of created game
         """
 
         if session.get(Game, channel_id) is not None:
             return
         
-        new_game = cls(id = channel_id)
+        new_game = cls(id = channel_id, stake = stake)
         session.add(new_game)
 
         session.commit()
@@ -558,6 +602,27 @@ class Game(SQLBase):
         """
 
         session.delete(self)
+        session.commit()
+
+    def set_stake(self, session: Session, stake: int) -> None:
+        """Set the game's stake
+        
+        ### Parameters
+        session: sqlalchemy.orm.Session
+            Database session scope
+        stake: int
+            What to set the stake to
+
+        ### Throws
+        InvalidArgumentError
+            Stake is not one of the valid states
+        """
+
+        if stake < 0 or stake > 2:
+            raise InvalidArgumentError
+        
+        self.stake = stake
+
         session.commit()
 
     def get_bet(self) -> List[int]:
