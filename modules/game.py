@@ -85,9 +85,9 @@ async def join(context: ApplicationContext, session: Session, name: str, expecte
             log(get_time() + " >> " + str(context.author) + " tried to join a game mid-round in [" + str(context.guild) + "], [" + str(context.channel) + "]")
             await ghost_reply(context, "`\"This table is in the middle of a round; please wait until the round is over before joining.\"`", True)
         else:
-            if (player := game.join_game(session, context.author.id, name)) is not None:
-                log(get_time() + " >> " + str(context.author) + " joined a game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-                await ghost_reply(context, "*C1RC3 nods.* `\"Request accepted. " + player.name + " is now participating in this game.\"`")
+            if game.join_game(session, context.author.id, name) is not None:
+                log(get_time() + " >> " + str(context.author) + " joined a game as " + name + " in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+                await ghost_reply(context, "*C1RC3 nods.* `\"Request accepted. " + name + " is now participating in this game.\"`")
             else:
                 log(get_time() + " >> " + str(context.author) + " tried to rejoin a game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
                 await ghost_reply(context, "`\"...You are already part of this table.\"`", True)
