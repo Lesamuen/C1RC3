@@ -124,8 +124,8 @@ async def concede(context: ApplicationContext, session: Session, expected_type: 
             if game.started:
                 # Game in progress, so check if only one remaining = overall winner
                 message = "`\"Understood. Player " + name + " has officially conceded.\"`\n*C1RC3 snaps her fingers as the magic of the casino flows into "\
-                     + name + ", solidifying their new form. Any of their remaining chips fade as golden light shoots out of them, reabsorbed into C1RC3 as her frame shivers."\
-                    "She then pulls them into an open compartment in her abdomen, where it closes shut seamlessly.*\n"
+                     + name + ", solidifying their new form. Any of their remaining chips fade as multicolored light shoots out of them, reabsorbed into C1RC3 as her frame shivers."\
+                    " She then pulls them into an open compartment in her abdomen, where it closes shut seamlessly.*\n"
                 if len(game.players) == 1:
                     winner: Player = game.players[0]
                     log("                     >> Game ended with winner " + winner.name + ".")
@@ -142,7 +142,7 @@ async def concede(context: ApplicationContext, session: Session, expected_type: 
                         message += "*She places her hands on the table and leans forward, while the sound of clinking chips comes from her body. "\
                             "Eventually, the compartment in her midriff slides open, and out flows a great pile of dull, magicless chips, totalling:*\n# "
                         message += format_chips(roi)
-                        message += "\n*While she pulls your unused chips back into herself, she explains with an even tone,*"\
+                        message += "\n*While she pulls your unused chips back into herself, she explains with an even tone,* "\
                             "`\"You may come see me or any staff member later to have the magic reinfused into them so you may use them on yourself to change your own form to your liking."\
                             " Otherwise, you may store them with me.\"`"
                     elif game.stake == 2:
