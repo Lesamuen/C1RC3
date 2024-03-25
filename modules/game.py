@@ -11,7 +11,7 @@ from auxiliary import log, get_time, all_zero, ghost_reply, guilds
 from dbmodels import Game, Player
 from emojis import format_chips
 from admin import admin_cmds
-from bot import database_connector
+from bot import database_connector, bot_client
 
 chip_conversions = (
     ((0, 1, 0, 0, 0, 0), (10, 0, 0, 0, 0, 0)),
@@ -362,6 +362,30 @@ async def rename(context: ApplicationContext, session: Session, new_name: str, p
             player.rename(session, new_name)
             log(get_time() + " >> " + str(context.author) + " renamed to " + new_name + " in [" + str(context.guild) + "], [" + str(context.channel) + "]")
             await ghost_reply(context, "*C1RC3 nods.* `\"Very well. I will refer to you as " + new_name + " from now on.\"`", private)
+
+async def identify(context: ApplicationContext, session: Session, expected_type: type[Game]) -> None:
+    """Handle functionality for identifying other players in any game
+    
+    ### Parameters
+    context: discord.ApplicationContext
+        Application command context
+    session: sqlalchemy.orm.Session
+        Current database scope
+    expected_type: type[dbmodels.Game]
+        Game subclass this command was sent for
+    """
+
+    game = expected_type.find_game(session, context.channel_id)
+    if game is None:
+        log(get_time() + " >> " + str(context.author) + " tried to identify players at an empty table in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+        await ghost_reply(context, "`\"There is no game of that type running at this table at the moment.\"`", True)
+    else:
+        log(get_time() + " >> " + str(context.author) + " identified players in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+        message = "`\"The unique soul identifications for each player at this table are:\"`\n"
+        for player in game.players:
+            message += "**" + player.name + "**: " + bot_client.get_user(player.user_id).mention + "\n"
+        await ghost_reply(context, message, True)
+
 
 game_admin_cmds = admin_cmds.create_subgroup("game", "Admin commands directly related to games in general")
 
