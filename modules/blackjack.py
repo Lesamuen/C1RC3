@@ -87,12 +87,12 @@ async def bj_chips(
 @bj_cmds.command(name = "bet", description = "Bet an amount of chips")
 async def bj_bet(
     context: ApplicationContext,
-    physical: Option(int, description = "The amount of physical chips to bet", min_value = 0, default = 0),
-    mental: Option(int, description = "The amount of mental chips to bet", min_value = 0, default = 0),
-    artificial: Option(int, description = "The amount of artificial chips to bet", min_value = 0, default = 0),
-    supernatural: Option(int, description = "The amount of supernatural chips to bet", min_value = 0, default = 0),
-    merge: Option(int, description = "The amount of merge chips to bet", min_value = 0, default = 0),
-    swap: Option(int, description = "The amount of swap chips to bet", min_value = 0, default = 0)
+    physical: Option(int, description = "The amount of physical chips to bet", min_value = 0, max_value = 100, default = 0),
+    mental: Option(int, description = "The amount of mental chips to bet", min_value = 0, max_value = 20, default = 0),
+    artificial: Option(int, description = "The amount of artificial chips to bet", min_value = 0, max_value = 2, default = 0),
+    supernatural: Option(int, description = "The amount of supernatural chips to bet", min_value = 0, max_value = 20, default = 0),
+    merge: Option(int, description = "The amount of merge chips to bet", min_value = 0, max_value = 3, default = 0),
+    swap: Option(int, description = "The amount of swap chips to bet", min_value = 0, max_value = 25, default = 0)
 ):
     """Add the command /bj bet"""
 

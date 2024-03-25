@@ -11,8 +11,6 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship, Session
 from bot import SQLBase
 from auxiliary import InvalidArgumentError
 
-bet_cap: list[int]
-
 
 class User(SQLBase):
     """Represents the saved data corresponding to a single discord user.
@@ -461,6 +459,8 @@ class Game(SQLBase):
         Player subclass that corresponds to this Game subclass
     [CLASS] max_players: int
         Max amount of players the game of this type can handle; 0 means infinite
+    [CLASS] bet_cap: list[int]
+        The maximum amount of chips that can be bet in a Game
     stake: int
         0 - low stakes, 1 - normal stakes, 2 - high stakes
     current_bet: str
@@ -516,6 +516,9 @@ class Game(SQLBase):
     
     Overwritten per child class
     """
+
+    bet_cap: list[int] = [100, 20, 2, 20, 3, 25]
+    """The maximum amount of chips that can be bet in a Game"""
 
     stake: Mapped[int] = mapped_column(default = 1)
     """0 - low stakes, 1 - normal stakes, 2 - high stakes"""
@@ -1066,7 +1069,7 @@ class Blackjack(Game):
     def end_round(self, session: Session) -> tuple[str, list[tuple[int, str]]]:
         """Give the winner the winnings, returning index/name of winner(s); more than 1 means tie
         
-        If tie, instead multiply bet by 3, or 9 on 21 tie; multiply limits are 100, 20, 2, 20, 3, 25
+        If tie, instead multiply bet by 3, or 9 on 21 tie; apply bet limits
         
         ### Parameters
         session: sqlalchemy.orm.Session
@@ -1114,6 +1117,12 @@ class Blackjack(Game):
             else:
                 for i in range(len(bet)):
                     bet[i] *= 3
+
+            # Conform to bet cap
+            for i in range(len(bet)):
+                if bet[i] > self.bet_cap[i]:
+                    bet[i] = self.bet_cap[i]
+
             self.current_bet = dumps(bet)
             session.commit()
         
