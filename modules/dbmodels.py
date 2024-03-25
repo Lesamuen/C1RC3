@@ -2,7 +2,6 @@
 
 print("Loading module 'dbmodels'...")
 
-from typing import List, Optional, Tuple, Dict
 from json import dumps, loads
 from random import sample
 
@@ -10,7 +9,9 @@ from sqlalchemy import ForeignKey, ForeignKeyConstraint, select, insert, update,
 from sqlalchemy.orm import Mapped, mapped_column, relationship, Session
 
 from bot import SQLBase
-from auxiliary import InvalidArgumentError, all_zero
+from auxiliary import InvalidArgumentError
+
+bet_cap: list[int]
 
 
 class User(SQLBase):
@@ -34,7 +35,7 @@ class User(SQLBase):
     id: Mapped[int] = mapped_column(primary_key = True)
     """Corresponds to Discord user ID"""
 
-    accounts: Mapped[List["ChipAccount"]] = relationship(back_populates = "owner", cascade = "all, delete-orphan")
+    accounts: Mapped[list["ChipAccount"]] = relationship(back_populates = "owner", cascade = "all, delete-orphan")
     """List of chip accounts under this User"""
 
     @staticmethod
@@ -146,7 +147,7 @@ class ChipAccount(SQLBase):
 
         return session.get(ChipAccount, name)
     
-    def get_bal(self) -> List[int]:
+    def get_bal(self) -> list[int]:
         """Returns the balance unjsonified
         
         ### Returns
@@ -155,13 +156,13 @@ class ChipAccount(SQLBase):
 
         return loads(self.chips)
 
-    def deposit(self, session: Session, amount: List[int]) -> None:
+    def deposit(self, session: Session, amount: list[int]) -> None:
         """Deposit an amount of chips into the account
 
         ### Parameters
         session: sqlalchemy.orm.Session
             Database session scope
-        amount: List[int]
+        amount: list[int]
             Amount of each type of chips to add to the balance
 
         ### Throws
@@ -173,7 +174,7 @@ class ChipAccount(SQLBase):
             if chips < 0:
                 raise InvalidArgumentError
         
-        current_chips: List[int] = loads(self.chips)
+        current_chips: list[int] = loads(self.chips)
         if len(amount) != len(current_chips):
             raise InvalidArgumentError
         
@@ -183,13 +184,13 @@ class ChipAccount(SQLBase):
         self.chips = dumps(current_chips)
         session.commit()
     
-    def withdraw(self, session: Session, amount: List[int]) -> bool:
+    def withdraw(self, session: Session, amount: list[int]) -> bool:
         """Withdraw an amount of chips from the account
 
         ### Parameters
         session: sqlalchemy.orm.Session
             Database session scope
-        amount: List[int]
+        amount: list[int]
             Amount of each type of chips to remove from the balance
 
         ### Returns
@@ -207,7 +208,7 @@ class ChipAccount(SQLBase):
             if chips < 0:
                 raise InvalidArgumentError
         
-        current_chips: List[int] = loads(self.chips)
+        current_chips: list[int] = loads(self.chips)
         if len(amount) != len(current_chips):
             raise InvalidArgumentError
         
@@ -338,7 +339,7 @@ class Player(SQLBase):
         self.name = new_name
         session.commit()
 
-    def set_bet(self, session: Session, bet: List[int]) -> None:
+    def set_bet(self, session: Session, bet: list[int]) -> None:
         """Set the Player's bet
         
         ### Parameters
@@ -351,7 +352,7 @@ class Player(SQLBase):
         self.bet = dumps(bet)
         session.commit()
 
-    def get_chips(self) -> List[int]:
+    def get_chips(self) -> list[int]:
         """Return the Player's current amount of chips unjsonified
         
         ### Returns
@@ -360,7 +361,7 @@ class Player(SQLBase):
 
         return loads(self.chips)
     
-    def set_chips(self, session: Session, amount: List[int]) -> None:
+    def set_chips(self, session: Session, amount: list[int]) -> None:
         """Set the Player's chips directly
         
         ### Parameters
@@ -373,7 +374,7 @@ class Player(SQLBase):
         self.chips = dumps(amount)
         session.commit()
 
-    def get_used(self) -> List[int]:
+    def get_used(self) -> list[int]:
         """Return the Player's used amount of chips unjsonified
         
         ### Returns
@@ -382,7 +383,7 @@ class Player(SQLBase):
 
         return loads(self.used)
     
-    def set_used(self, session: Session, amount: List[int]) -> None:
+    def set_used(self, session: Session, amount: list[int]) -> None:
         """Set the Player's used chips directly
         
         ### Parameters
@@ -395,7 +396,7 @@ class Player(SQLBase):
         self.used = dumps(amount)
         session.commit()
 
-    def pay_chips(self, session: Session, amount: List[int]) -> None:
+    def pay_chips(self, session: Session, amount: list[int]) -> None:
         """Add an amount of chips to the Player's current amount of chips
         
         ### Parameters
@@ -412,7 +413,7 @@ class Player(SQLBase):
 
         session.commit()
 
-    def use_chips(self, session: Session, amount: List[int]) -> bool:
+    def use_chips(self, session: Session, amount: list[int]) -> bool:
         """Removes a player's chips, if able, and tracks used chips
         
         ### Parameters
@@ -504,7 +505,7 @@ class Game(SQLBase):
     type: Mapped[str]
     """The type of game"""
 
-    players: Mapped[List["Player"]] = relationship(back_populates = "game", cascade = "all, delete-orphan")
+    players: Mapped[list["Player"]] = relationship(back_populates = "game", cascade = "all, delete-orphan")
     """Ref to list of players within this game"""
 
     player_class = Player
@@ -625,7 +626,7 @@ class Game(SQLBase):
 
         session.commit()
 
-    def get_bet(self) -> List[int]:
+    def get_bet(self) -> list[int]:
         """Return the current bet for the round unjsonified
         
         ### Returns
@@ -633,7 +634,7 @@ class Game(SQLBase):
         """
         return loads(self.current_bet)
 
-    def set_bet(self, session: Session, bet: List[int]) -> None:
+    def set_bet(self, session: Session, bet: list[int]) -> None:
         """Set the current bet for the round
         
         ### Parameters
@@ -758,7 +759,7 @@ class BlackjackPlayer(Player):
     state: Mapped[str] = mapped_column(default = "hit")
     """Either 'hit', 'stand', or 'bust'; represents state of player's hand"""
 
-    def get_hand(self, hidden: bool = False) -> List[int]:
+    def get_hand(self, hidden: bool = False) -> list[int]:
         """Parses hand to list of ints
         
         ### Parameters
@@ -937,7 +938,7 @@ class Blackjack(Game):
         self.deck = dumps(sample(range(52), 52))
         session.commit()
 
-    def draw(self, session: Session, amount: int) -> List[int] | int:
+    def draw(self, session: Session, amount: int) -> list[int] | int:
         """Draw a single or multiple cards
         
         ### Parameters
@@ -953,20 +954,20 @@ class Blackjack(Game):
             Cards indices drawn, if more than 1
         """
 
-        current_deck: List[int] = loads(self.deck)
+        current_deck: list[int] = loads(self.deck)
 
         if amount == 1:
             cards: int = current_deck.pop()
             self.deck = dumps(current_deck)
         elif amount > 1:
-            cards: List[int] = current_deck[-amount:]
+            cards: list[int] = current_deck[-amount:]
             del current_deck[-amount:]
             self.deck = dumps(current_deck)
 
         session.commit()
         return cards
 
-    def start_round(self, session: Session, players: List[int] = None) -> bool:
+    def start_round(self, session: Session, players: list[int] = None) -> bool:
         """Deal the initial two cards to each player given and rotate turn order
         
         ### Parameters
@@ -991,7 +992,7 @@ class Blackjack(Game):
         if players is None:
             players = range(len(self.players))
 
-        drawn: List[int] = self.draw(session, 2 * len(players))
+        drawn: list[int] = self.draw(session, 2 * len(players))
         for i in range(len(self.players)):
             if i in players:
                 self.players[i].state = "hit"
@@ -1062,10 +1063,10 @@ class Blackjack(Game):
 
         session.commit()
 
-    def end_round(self, session: Session) -> Tuple[str, List[Tuple[int, str]]]:
+    def end_round(self, session: Session) -> tuple[str, list[tuple[int, str]]]:
         """Give the winner the winnings, returning index/name of winner(s); more than 1 means tie
         
-        If tie, instead multiply bet by 3, or 9 on 21 tie
+        If tie, instead multiply bet by 3, or 9 on 21 tie; multiply limits are 100, 20, 2, 20, 3, 25
         
         ### Parameters
         session: sqlalchemy.orm.Session
@@ -1079,7 +1080,7 @@ class Blackjack(Game):
         """
 
         # Compare final hands
-        end_vals: List[int] = []
+        end_vals: list[int] = []
         for player in self.players:
             end_vals.append(player.hand_value())
 
