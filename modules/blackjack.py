@@ -11,7 +11,7 @@ from bot import bot_client, database_connector
 from auxiliary import guilds, log, get_time, ghost_reply
 from dbmodels import Blackjack, BlackjackPlayer
 from emojis import standard_deck, format_cards, format_chips
-from game import create, join, concede, chips, bet, use, convert, rename, identify
+from game import create, join, concede, identify, rename, chips, bet, use, convert
 
 bj_cmds = bot_client.create_group("bj", "Commands to run the game of Blackjack", guild_ids = guilds, guild_only = True)
 
@@ -57,7 +57,7 @@ async def bj_concede(
 
     session.close()
 
-@bj_cmds.command(name = "identify", description = "Be reminded of the other players' identities")
+@bj_cmds.command(name = "identify", description = "Be reminded of the other players' identities and chips")
 async def bj_identify(
     context: ApplicationContext
 ):

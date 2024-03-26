@@ -384,6 +384,7 @@ async def identify(context: ApplicationContext, session: Session, expected_type:
         message = "`\"The unique soul identifications for each player at this table are:\"`\n"
         for player in game.players:
             message += "**" + player.name + "**: " + bot_client.get_user(player.user_id).mention + "\n"
+            message += "    __Chips__: " + format_chips(player.get_chips()) + "\n"
         await ghost_reply(context, message, True)
 
 
