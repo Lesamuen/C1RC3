@@ -344,6 +344,8 @@ async def bj_end_round(context: ApplicationContext, session: Session, game: Blac
                 message += " (5-Card Charlie)"
             elif val == 21:
                 message += " (Blackjack)"
+        else:
+            message += "# No Hand"
         message += "\n"
     
     # End the round
