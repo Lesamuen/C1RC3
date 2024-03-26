@@ -25,8 +25,13 @@ class SQLBase(DeclarativeBase):
     """Used for all SQLAlchemy ORM classes"""
     pass
 
-def db_init() -> None:
+def db_reset() -> None:
     """Reset the database. Call this only once per structure change."""
 
     SQLBase.metadata.drop_all(database_engine)
+    SQLBase.metadata.create_all(database_engine)
+
+def db_update() -> None:
+    """Adds tables not already present in database"""
+
     SQLBase.metadata.create_all(database_engine)
