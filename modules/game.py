@@ -4,7 +4,7 @@ print("Loading module 'game'...")
 
 from typing import List, Tuple
 
-from discord import ApplicationContext, Option, OptionChoice
+from discord import ApplicationContext, Option, OptionChoice, User
 from sqlalchemy.orm import Session
 
 from auxiliary import log, get_time, all_zero, ghost_reply, guilds
@@ -413,27 +413,24 @@ async def force_end_game(
 @game_admin_cmds.command(name = "remove_player", description = "Admin command to forcibly remove a player from a game")
 async def remove_player(
     context: ApplicationContext,
-    user: Option(int, description = "ID of player to remove from the game", required = True),
+    user: Option(User, description = "User to remove from the game", required = True),
     private: Option(bool, description = "Whether to keep the response only visible to you", default = False)
 ):
     """Add the command /admin game remove_player"""
 
     session = database_connector()
 
-    # Extract chip args
-    chips: List[int] = list(locals().values())[2:8]
-
     game = Game.find_game(session, context.channel_id)
     if game is None:
         log(get_time() + " >> Admin " + str(context.author) + " tried to remove player from no game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
         await ghost_reply(context, "`\"Administrator-level Access detected. Request failed. There is no game at this table.\"`", True)
     else:
-        player = game.is_playing(session, user)
+        player = game.is_playing(session, user.id)
         if player is None:
             log(get_time() + " >> Admin " + str(context.author) + " tried to remove non-existent player in [" + str(context.guild) + "], [" + str(context.channel) + "]")
             await ghost_reply(context, "`\"Administrator-level Access detected. Request failed. This person is not playing at this table.\"`", True)
         else:
-            log(get_time() + " >> Admin " + str(context.author) + " removed player " + str(bot_client.get_user(user)) + " in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+            log(get_time() + " >> Admin " + str(context.author) + " removed player " + str(user) + " in [" + str(context.guild) + "], [" + str(context.channel) + "]")
             await ghost_reply(context, "`\"Administrator-level Access detected. Player " + player.name + " has been forcibly removed from this table.\"`", private)
             player.leave(session)
 
@@ -442,7 +439,7 @@ async def remove_player(
 @game_admin_cmds.command(name = "set_chips", description = "Admin command to manually set chips in a game")
 async def set_chips(
     context: ApplicationContext,
-    user: Option(int, description = "ID of user whose chips you are editting", required = True),
+    user: Option(User, description = "User whose chips you are editting", required = True),
     physical: Option(int, description = "The amount of physical chips to set", min_value = 0, default = 0),
     mental: Option(int, description = "The amount of mental chips to set", min_value = 0, default = 0),
     artificial: Option(int, description = "The amount of artificial chips to set", min_value = 0, default = 0),
@@ -463,13 +460,13 @@ async def set_chips(
         log(get_time() + " >> Admin " + str(context.author) + " tried to set chips with no game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
         await ghost_reply(context, "`\"Administrator-level Access detected. Request failed. There is no game at this table.\"`", True)
     else:
-        player = game.is_playing(session, user)
+        player = game.is_playing(session, user.id)
         if player is None:
             log(get_time() + " >> Admin " + str(context.author) + " tried to set chips for a non-player in [" + str(context.guild) + "], [" + str(context.channel) + "]")
             await ghost_reply(context, "`\"Administrator-level Access detected. Request failed. This person is not playing at this table.\"`", True)
         else:
             player.set_chips(session, chips)
-            log(get_time() + " >> Admin " + str(context.author) + " set chips of " + str(bot_client.get_user(user)) + " to " + str(chips) + " in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+            log(get_time() + " >> Admin " + str(context.author) + " set chips of " + str(user) + " to " + str(chips) + " in [" + str(context.guild) + "], [" + str(context.channel) + "]")
             await ghost_reply(context, "`\"Administrator-level Access detected. " + player.name + " has been granted the following chips:\"`\n## " + format_chips(chips), private)
 
     session.close()
@@ -477,7 +474,7 @@ async def set_chips(
 @game_admin_cmds.command(name = "set_used", description = "Admin command to manually set used chips in a game")
 async def set_used(
     context: ApplicationContext,
-    user: Option(int, description = "ID of user whose used chips you are editting", required = True),
+    user: Option(User, description = "User whose used chips you are editting", required = True),
     physical: Option(int, description = "The amount of physical chips to set", min_value = 0, default = 0),
     mental: Option(int, description = "The amount of mental chips to set", min_value = 0, default = 0),
     artificial: Option(int, description = "The amount of artificial chips to set", min_value = 0, default = 0),
@@ -498,13 +495,13 @@ async def set_used(
         log(get_time() + " >> Admin " + str(context.author) + " tried to set used chips with no game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
         await ghost_reply(context, "`\"Administrator-level Access detected. Request failed. There is no game at this table.\"`", True)
     else:
-        player = game.is_playing(session, user)
+        player = game.is_playing(session, user.id)
         if player is None:
             log(get_time() + " >> Admin " + str(context.author) + " tried to set used chips for a non-player in [" + str(context.guild) + "], [" + str(context.channel) + "]")
             await ghost_reply(context, "`\"Administrator-level Access detected. Request failed. This person is not playing at this table.\"`", True)
         else:
             player.set_used(session, chips)
-            log(get_time() + " >> Admin " + str(context.author) + " set used chips of " + str(bot_client.get_user(user)) + " to " + str(chips) + " in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+            log(get_time() + " >> Admin " + str(context.author) + " set used chips of " + str(user) + " to " + str(chips) + " in [" + str(context.guild) + "], [" + str(context.channel) + "]")
             await ghost_reply(context, "`\"Administrator-level Access detected. " + player.name + "'s used chips record has been has been updated to:\"`\n## " + format_chips(chips), private)
 
     session.close()
