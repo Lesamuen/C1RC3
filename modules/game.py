@@ -4,7 +4,7 @@ print("Loading module 'game'...")
 
 from typing import List, Tuple
 
-from discord import ApplicationContext, Option, Member, OptionChoice
+from discord import ApplicationContext, Option, OptionChoice
 from sqlalchemy.orm import Session
 
 from auxiliary import log, get_time, all_zero, ghost_reply, guilds
@@ -413,7 +413,7 @@ async def force_end_game(
 @game_admin_cmds.command(name = "set_chips", description = "Admin command to manually set chips in a game")
 async def set_chips(
     context: ApplicationContext,
-    user: Option(Member, description = "User whose chips you are editting", required = True),
+    user: Option(int, description = "Id of user whose chips you are editting", required = True),
     physical: Option(int, description = "The amount of physical chips to set", min_value = 0, default = 0),
     mental: Option(int, description = "The amount of mental chips to set", min_value = 0, default = 0),
     artificial: Option(int, description = "The amount of artificial chips to set", min_value = 0, default = 0),
@@ -434,7 +434,7 @@ async def set_chips(
         log(get_time() + " >> Admin " + str(context.author) + " tried to set chips with no game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
         await ghost_reply(context, "`\"Administrator-level Access detected. Request failed. There is no game at this table.\"`", True)
     else:
-        player = game.is_playing(session, user.id)
+        player = game.is_playing(session, user)
         if player is None:
             log(get_time() + " >> Admin " + str(context.author) + " tried to set chips for a non-player in [" + str(context.guild) + "], [" + str(context.channel) + "]")
             await ghost_reply(context, "`\"Administrator-level Access detected. Request failed. This person is not playing at this table.\"`", True)
@@ -448,7 +448,7 @@ async def set_chips(
 @game_admin_cmds.command(name = "set_used", description = "Admin command to manually set used chips in a game")
 async def set_used(
     context: ApplicationContext,
-    user: Option(Member, description = "User whose used chips you are editting", required = True),
+    user: Option(int, description = "ID of user whose used chips you are editting", required = True),
     physical: Option(int, description = "The amount of physical chips to set", min_value = 0, default = 0),
     mental: Option(int, description = "The amount of mental chips to set", min_value = 0, default = 0),
     artificial: Option(int, description = "The amount of artificial chips to set", min_value = 0, default = 0),
@@ -469,7 +469,7 @@ async def set_used(
         log(get_time() + " >> Admin " + str(context.author) + " tried to set used chips with no game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
         await ghost_reply(context, "`\"Administrator-level Access detected. Request failed. There is no game at this table.\"`", True)
     else:
-        player = game.is_playing(session, user.id)
+        player = game.is_playing(session, user)
         if player is None:
             log(get_time() + " >> Admin " + str(context.author) + " tried to set used chips for a non-player in [" + str(context.guild) + "], [" + str(context.channel) + "]")
             await ghost_reply(context, "`\"Administrator-level Access detected. Request failed. This person is not playing at this table.\"`", True)
