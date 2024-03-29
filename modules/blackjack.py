@@ -73,7 +73,7 @@ async def bj_identify(
 async def bj_rename(
     context: ApplicationContext,
     name: Option(str, description = "Name that C1RC3 will refer to you as", required = True, min_length = 1),
-    private: Option(bool, description = "Whether to keep the response only visible to you", default = False)
+    private: Option(bool, description = "Whether to keep the response only visible to you", required = True)
 ):
     """Add the command /bj rename"""
 
@@ -86,7 +86,7 @@ async def bj_rename(
 @bj_cmds.command(name = "chips", description = "Recount how many chips you have in your current pile")
 async def bj_chips(
     context: ApplicationContext,
-    private: Option(bool, description = "Whether to keep the response only visible to you", default = True)
+    private: Option(bool, description = "Whether to keep the response only visible to you", required = True)
 ):
     """Add the command /bj chips"""
 
