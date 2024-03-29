@@ -86,7 +86,7 @@ async def bj_rename(
 @bj_cmds.command(name = "chips", description = "Recount how many chips you have in your current pile")
 async def bj_chips(
     context: ApplicationContext,
-    private: Option(bool, description = "Whether to keep the response only visible to you", default = False)
+    private: Option(bool, description = "Whether to keep the response only visible to you", default = True)
 ):
     """Add the command /bj chips"""
 
