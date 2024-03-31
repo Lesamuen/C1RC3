@@ -672,7 +672,7 @@ class Game(SQLBase):
         False
             Less players in game than max"""
 
-        return self.max_players == 0 or len(self.players) >= self.max_players
+        return ((self.max_players != 0) and (len(self.players) >= self.max_players))
     
     def is_playing(self, session: Session, user_id: int) -> "Player | None":
         """Return Player of current game if it actually exists
@@ -714,6 +714,145 @@ class Game(SQLBase):
                 return False
 
         return True
+
+
+class MiscPlayer(Player):
+    """Represents a player of a Misc game. Inherits most attributes of Player.
+    
+    ### Attributes
+    [PRIMARY, FOREIGN] user_id: int
+        User ID of the player
+    [PRIMARY, FOREIGN] game_id: int
+        ID of the game the Player is playing in
+
+    ### Methods
+    """
+
+    __tablename__ = "misc_player"
+    __table_args__ = (
+        ForeignKeyConstraint(["user_id", "game_id"], ["player.user_id", "player.game_id"]),
+        )
+    __mapper_args__ = {
+        "polymorphic_identity": "misc"
+        }
+
+    user_id: Mapped[int] = mapped_column(primary_key = True)
+    """User ID of the player"""
+
+    game_id: Mapped[int] = mapped_column(primary_key = True)
+    """ID of the game the Player is playing in"""
+
+
+class Misc(Game):
+    """Represents a Misc game with no rules. Inherits most attributes of Game.
+    
+    ### Attributes
+    [PRIMARY, FOREIGN] id: int
+        Corresponds to the discord channel/thread ID
+    [CLASS] max_players
+        Max amount of players the game of this type can handle
+    [CLASS] player_class
+        Player subclass that corresponds to this Game subclass
+    deck: str
+        The current deck to be pulled from; jsonified array of ints where each int corresponds to default deck index
+
+    ### Methods
+    shuffle(session: sqlalchemy.orm.Session) -> None
+        Shuffle all cards back into the deck
+    get_deck() -> list[int]
+        Get the current deck unjsonified
+    draw(session: sqlalchemy.orm.Session, amount: int) -> list[int]
+        Draw a single or multiple cards
+    end_round(session: sqlalchemy.orm.Session) -> tuple[str, list[tuple[int, str]]]:
+        Give the winner the winnings, returning index/name of winner(s); more than 1 means tie
+    """
+
+    __tablename__ = "misc"
+    __mapper_args__ = {
+        "polymorphic_identity": "misc"
+        }
+
+    id: Mapped[int] = mapped_column(ForeignKey("game.id"), primary_key = True)
+    """Corresponds to the discord channel/thread ID"""
+
+    player_class = MiscPlayer
+    """Player subclass that corresponds to this Game subclass"""
+
+    max_players: int = 0
+    """Max amount of players the game of this type can handle"""
+
+    deck: Mapped[str] = mapped_column(default = "[]")
+    """The current deck to be pulled from; jsonified array of ints where each int corresponds to default deck index"""
+
+    def shuffle(self, session: Session) -> None:
+        """Shuffle all cards back into the deck
+        
+        ### Parameters
+        session: sqlalchemy.orm.Session
+            Database session scope
+        """
+
+        self.deck = dumps(sample(range(52), 52))
+        session.commit()
+
+    def get_deck(self) -> list[int]:
+        """Get the current deck unjsonified
+        
+        ### Returns
+        list[int]
+            List of card indices in the deck
+        """
+        
+        return loads(self.deck)
+
+    def draw(self, session: Session, amount: int = 1) -> list[int]:
+        """Draw a single or multiple cards
+        
+        ### Parameters
+        session: sqlalchemy.orm.Session
+            Database session scope
+        amount: int = 1
+            Amount of cards to draw
+
+        ### Throws
+        InvalidArgumentError
+            More cards to be drawn than there are in the deck
+        
+        ### Returns
+        list[int]
+            Cards indices drawn
+        """
+
+        current_deck: list[int] = loads(self.deck)
+
+        if len(current_deck) < amount:
+            raise InvalidArgumentError
+
+        cards: list[int] = current_deck[-amount:]
+        del current_deck[-amount:]
+        self.deck = dumps(current_deck)
+
+        session.commit()
+        return cards
+
+    def end_round(self, session: Session, winner: int) -> None:
+        """Give the winner the winnings and reset bets (ending round)
+        
+        ### Parameters
+        session: sqlalchemy.orm.Session
+            Database session scope
+        winner: int
+            Discord ID of the Player who is to win
+        """
+
+        for player in self.players:
+            player.set_bet(session, [0, 0, 0, 0, 0, 0])
+            if player.user_id == winner:
+                player.pay_chips(session, loads(self.current_bet))
+
+        self.current_bet = "[0, 0, 0, 0, 0, 0]"
+                
+        session.commit()
 
 
 class BlackjackPlayer(Player):
@@ -879,7 +1018,7 @@ class Blackjack(Game):
     ### Attributes
     [PRIMARY, FOREIGN] id: int
         Corresponds to the discord channel/thread ID
-    [CLASS] max_players = 4
+    [CLASS] max_players
         Max amount of players the game of this type can handle
     [CLASS] player_class
         Player subclass that corresponds to this Game subclass

@@ -52,19 +52,20 @@ import admin
 import chips
 import game
 import blackjack
+import miscgame
 
 print("\nAll bot modules successfully loaded!\nNow initiating connection to Discord servers...")
 
 # Initialize bot loop
 @bot_client.listen()
 async def on_ready():
-    log("\n" + get_time() + " >> Successfully logged in as " + str(bot_client.user) + "\n")
+    log(get_time() + " >> Successfully logged in as " + str(bot_client.user))
 @bot_client.listen()
 async def on_disconnect():
-    log("\n" + get_time() + " >> Lost connection to Discord!\n")
+    log(get_time() + " >> Lost connection to Discord!")
 @bot_client.listen()
 async def on_connect():
-    log("\n" + get_time() + " >> Connected to Discord!\n")
+    log(get_time() + " >> Connected to Discord!")
 @bot_client.listen()
 async def on_application_command_error(ctx, exc):
     # Suppress admin fail checks
