@@ -265,7 +265,9 @@ async def bj_hit(
                     await bj_end_round(context, session, game)
                 else:
                     game.next_turn(session)
-                    await context.channel.send("`\"It is now your turn, " + game.get_turn().name + ".\"`")
+                    next = game.get_turn()
+                    await context.channel.send("`\"It is now your turn, " + next.name + ".\"`")
+                    await context.channel.send(bot_client.get_user(next.user_id).mention, delete_after = 0)
             else:
                 # Busted, so test for round end
                 log("                     >> " + str(context.author) + " busted.")
@@ -275,7 +277,9 @@ async def bj_hit(
                 else:
                     # Round didn't end with bust
                     game.next_turn(session)
-                    await context.channel.send("`\"It is now your turn, " + game.get_turn().name + ".\"`")
+                    next = game.get_turn()
+                    await context.channel.send("`\"It is now your turn, " + next.name + ".\"`")
+                    await context.channel.send(bot_client.get_user(next.user_id).mention, delete_after = 0)
 
     session.close()
 
@@ -313,7 +317,9 @@ async def bj_stand(
             else:
                 # Round didn't end with stand
                 game.next_turn(session)
-                await context.channel.send("`\"It is now your turn, " + game.get_turn().name + ".\"`")
+                next = game.get_turn()
+                await context.channel.send("`\"It is now your turn, " + next.name + ".\"`")
+                await context.channel.send(bot_client.get_user(next.user_id).mention, delete_after = 0)
 
     session.close()
 
