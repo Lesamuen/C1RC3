@@ -982,7 +982,7 @@ class BlackjackPlayer(Player):
         # Remove suits and convert to direct value
         for i in range(len(hand)):
             if hand[i] == 52:
-                hand[i] = 0
+                hand[i] = 1
                 continue
             hand[i] = hand[i] % 13 + 2
             if hand[i] >= 11 and hand[i] <= 13:
