@@ -211,6 +211,7 @@ async def mg_deck(
         message = "`\"There are " + str(len(deck)) + " cards remaining.\"`"
         player = game.is_playing(session, context.author.id)
         if peek:
+            deck = deck[::-1]
             if player is None or private:
                 if (len(deck) > 26):
                     message += "\n## " + format_cards(standard_deck, deck[:26]) + "...\n*" + str(len(deck) - 26) + " cards have been omitted.*"
