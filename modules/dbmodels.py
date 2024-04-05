@@ -828,7 +828,7 @@ class Misc(Game):
         if len(current_deck) < amount:
             raise InvalidArgumentError
 
-        cards: list[int] = current_deck[-amount:]
+        cards: list[int] = current_deck[:-(amount + 1):-1]
         del current_deck[-amount:]
         self.deck = dumps(current_deck)
 
@@ -1032,7 +1032,7 @@ class Blackjack(Game):
     ### Methods
     shuffle(session: sqlalchemy.orm.Session) -> None
         Shuffle all cards back into the deck
-    draw(session: sqlalchemy.orm.Session, amount: int) -> list[int] | int
+    draw(session: sqlalchemy.orm.Session, amount: int = 1) -> list[int] | int
         Draw a single or multiple cards
     start_round(session: sqlalchemy.orm.Session, players: list[int] = None) -> bool
         Deal the initial two cards to each player given and rotate turn order
@@ -1080,31 +1080,25 @@ class Blackjack(Game):
         self.deck = dumps(sample(range(52), 52))
         session.commit()
 
-    def draw(self, session: Session, amount: int) -> list[int] | int:
+    def draw(self, session: Session, amount: int = 1) -> list[int]:
         """Draw a single or multiple cards
         
         ### Parameters
         session: sqlalchemy.orm.Session
             Database session scope
-        amount: int
+        amount: int = 1
             Amount of cards to draw
         
         ### Returns
-        int
-            Card index drawn, if only 1
         list[int]
-            Cards indices drawn, if more than 1
+            Cards indices drawn
         """
 
         current_deck: list[int] = loads(self.deck)
 
-        if amount == 1:
-            cards: int = current_deck.pop()
-            self.deck = dumps(current_deck)
-        elif amount > 1:
-            cards: list[int] = current_deck[-amount:]
-            del current_deck[-amount:]
-            self.deck = dumps(current_deck)
+        cards: list[int] = current_deck[:-(amount + 1):-1]
+        del current_deck[-amount:]
+        self.deck = dumps(current_deck)
 
         session.commit()
         return cards

@@ -255,11 +255,11 @@ async def bj_hit(
             await ghost_reply(context, "`\"You may not hit yet; it is not your turn.\"`", True)
         else:
             # No need to test for hit state; if standing or busted it cannot be their turn already
-            drawn = game.draw(session, 1)
+            drawn = game.draw(session)
             log(get_time() + " >> " + str(context.author) + " drew " + str(drawn) + " in Blackjack in [" + str(context.guild) + "], [" + str(context.channel) + "]")
             await ghost_reply(context, "`\"" + player.name + " hits,\"` *C1RC3 affirms.*\n"\
-                "*She pulls a card from the top of the deck and sets it down for all to see.*\n# " + format_cards(standard_deck, [drawn]))
-            if player.add_card(session, drawn):
+                "*She pulls a card from the top of the deck and sets it down for all to see.*\n# " + format_cards(standard_deck, drawn))
+            if player.add_card(session, drawn[0]):
                 # Test for 5 card charlie
                 if len(player.get_hand()) == 5:
                     await bj_end_round(context, session, game)
