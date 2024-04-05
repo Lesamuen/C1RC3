@@ -390,7 +390,7 @@ async def bj_end_round(context: ApplicationContext, session: Session, game: Blac
             message += "## __" + player.name + "__\n"
             hand = player.get_hand(True)
             if len(hand) == 0:
-                message += "\n"
+                message += "# No Hand\n"
             else:
                 message += "# " + format_cards(standard_deck, hand) + "\n"
         message += "`\"The first turn goes to " + game.get_turn().name + " this round.\"`"
