@@ -74,10 +74,9 @@ async def good_girl(
     ):
     """Add the command /good_girl"""
 
-    await context.respond("https://canary.discordapp.com/__development/link/", ephemeral = True, delete_after = 0)
+    await context.respond(headpats[randint(0, 19)])
     if user is not None:
         await context.channel.send(user.mention)
-    await context.channel.send(headpats[randint(0, 19)])
     log(get_time() + " >> " + str(context.author) + " headpatted " + (str(user) + " " if user is not None else "") + "in [" + str(context.guild) + "], [" + str(context.channel) + "]")
 
 
