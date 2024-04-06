@@ -325,7 +325,7 @@ async def convert(context: ApplicationContext, session: Session, option: int, am
                 # convert to int
                 consumed = [int(x) for x in consumed]
                 produced = [int(x) for x in produced]
-                if player.use_chips(session, consumed):
+                if player.use_chips(session, consumed, False):
                     player.pay_chips(session, produced)
                     log(get_time() + " >> " + str(context.author) + " converted " + str(consumed) + " to " + str(produced) + " chips in [" + str(context.guild) + "], [" + str(context.channel) + "]")
                     await ghost_reply(context, "`\"" + player.name + " has converted:\"`\n## " + format_chips(consumed) + " to " + format_chips(produced))

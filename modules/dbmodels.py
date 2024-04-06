@@ -279,7 +279,7 @@ class Player(SQLBase):
         Set the Player's used chips directly
     pay_chips(session: sqlalchemy.orm.Session, amount: list[int]) -> None
         Add an amount of chips to the Player's current amount of chips
-    use_chips(session: sqlalchemy.orm.Session, amount: list[int]) -> bool
+    use_chips(session: sqlalchemy.orm.Session, amount: list[int], track: bool = True) -> bool
         Removes a player's chips, if able, and tracks used chips
     """
 
@@ -411,7 +411,7 @@ class Player(SQLBase):
 
         session.commit()
 
-    def use_chips(self, session: Session, amount: list[int]) -> bool:
+    def use_chips(self, session: Session, amount: list[int], track: bool = True) -> bool:
         """Removes a player's chips, if able, and tracks used chips
         
         ### Parameters
@@ -419,6 +419,8 @@ class Player(SQLBase):
             Database session scope
         amount: list[int]
             The list of chips to try to remove from the Player's chips
+        track: bool = True
+            Whether to track the chips removed here or not
 
         ### Returns
         True
@@ -432,15 +434,17 @@ class Player(SQLBase):
         for i in range(len(bal)):
             if bal[i] < amount[i]:
                 return False
-        
-        used = loads(self.used)
 
         for i in range(len(bal)):
             bal[i] -= amount[i]
-            used[i] += amount[i]
+
+        if track:
+            used = loads(self.used)
+            for i in range(len(bal)):
+                used[i] += amount[i]
+            self.used = dumps(used)
 
         self.chips = dumps(bal)
-        self.used = dumps(used)
         session.commit()
         return True
 
