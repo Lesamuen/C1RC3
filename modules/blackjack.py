@@ -303,7 +303,7 @@ async def bj_stand(
             await ghost_reply(context, "`\"You currently do not have a hand to stand with; the round hasn't started yet.\"`", True)
         elif game.get_turn().user_id != context.author.id:
             log(get_time() + " >> " + str(context.author) + " stood in Blackjack outside of their turn in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-            await ghost_reply(context, "`\"" + player.name + ", it is currently not your turn. You may not stand yet.\"`")
+            await ghost_reply(context, "`\"" + player.name + ", it is currently not your turn. You may not stand yet.\"`", True)
         else:
             log(get_time() + " >> " + str(context.author) + " stood in Blackjack in [" + str(context.guild) + "], [" + str(context.channel) + "]")
             await ghost_reply(context, "`\"" + player.name + " stands,\"` *C1RC3 affirms.*")
