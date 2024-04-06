@@ -2,9 +2,7 @@
 
 print("Loading module 'emoji'...")
 
-from typing import List, Tuple
-
-chip_emojis: Tuple[str] = (
+chip_emojis: tuple[str] = (
     "<:chip1:1216075094947004617>",
     "<:chip2:1216075127481962606>",
     "<:chip3:1216075181898993664>",
@@ -13,7 +11,7 @@ chip_emojis: Tuple[str] = (
     "<:chip6:1216075286005813338>",
 )
 
-standard_deck: Tuple[str] = (
+standard_deck: tuple[str] = (
     "<:b2:1212795165467742208><:male:1212794904355405876>",
     "<:b3:1212795166583431208><:male:1212794904355405876>",
     "<:b4:1212795167795449916><:male:1212794904355405876>",
@@ -69,7 +67,7 @@ standard_deck: Tuple[str] = (
     "<:back1:1217322659982082058><:back2:1217322660724211723>"
 )
 
-def format_chips(chips: List[int]) -> str:
+def format_chips(chips: list[int]) -> str:
     """Format chips into a human readable format for Discord."""
 
     formatted = ""
@@ -90,7 +88,7 @@ def format_chips(chips: List[int]) -> str:
 
     return formatted
 
-def format_cards(card_set: Tuple[str], cards: List[int]) -> str:
+def format_cards(card_set: tuple[str], cards: list[int]) -> str:
     """Format card emojis into a human readable format for Discord"""
 
     formatted = ""

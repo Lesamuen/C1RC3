@@ -4,7 +4,6 @@ print("Loading module 'auxiliary'...")
 
 from datetime import datetime
 from json import load
-from typing import Dict, List, Any
 
 from discord import ApplicationContext
 
@@ -12,11 +11,11 @@ class InvalidArgumentError(Exception):
     pass
 
 with open("settings/perms.json", "r") as file:
-    perms: Dict[str, List[int]] = load(file)
+    perms: dict[str, list[int]] = load(file)
     """Contains all permission groups used by several commands"""
 
 with open("settings/guilds.json", "r") as file:
-    guilds: List[int] = load(file)
+    guilds: list[int] = load(file)
     """Contains all guild ids that the bot is to be used in"""
 
 def get_time() -> str:
@@ -56,7 +55,7 @@ async def ghost_reply(context: ApplicationContext, message: str, private: bool =
         await context.respond("https://canary.discordapp.com/__development/link/", ephemeral = True, delete_after = 0)
         await context.channel.send(message)
 
-def all_zero(arr: List[int]) -> bool:
+def all_zero(arr: list[int]) -> bool:
     """Check if a list of integers contains nothing but 0's.
     
     ### Parameters

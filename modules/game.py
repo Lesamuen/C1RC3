@@ -2,8 +2,6 @@
 
 print("Loading module 'game'...")
 
-from typing import List, Tuple
-
 from discord import ApplicationContext, Option, OptionChoice, User
 from sqlalchemy.orm import Session
 
@@ -192,7 +190,7 @@ async def chips(context: ApplicationContext, session: Session, private: bool, ex
             log(get_time() + " >> " + str(context.author) + " viewed chips (" + str(player.get_chips()) + ") in a game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
             await ghost_reply(context, "`\"" + player.name + ", you currently have:\"`\n# " + format_chips(player.get_chips()), private)
 
-async def bet(context: ApplicationContext, session: Session, chips: List[int], expected_type: type[Game]) -> Tuple[bool, Game]:
+async def bet(context: ApplicationContext, session: Session, chips: list[int], expected_type: type[Game]) -> tuple[bool, Game]:
     """Handle functionality for placing a bet in any game
     
     ### Parameters
@@ -240,7 +238,7 @@ async def bet(context: ApplicationContext, session: Session, chips: List[int], e
 
     return (False, None)
 
-async def use(context: ApplicationContext, session: Session, chips: List[int], expected_type: type[Game]) -> None:
+async def use(context: ApplicationContext, session: Session, chips: list[int], expected_type: type[Game]) -> None:
     """Handle functionality for using chips in any game
     
     ### Parameters
@@ -454,7 +452,7 @@ async def set_chips(
     session = database_connector()
 
     # Extract chip args
-    chips: List[int] = list(locals().values())[2:8]
+    chips: list[int] = list(locals().values())[2:8]
 
     game = Game.find_game(session, context.channel_id)
     if game is None:
@@ -489,7 +487,7 @@ async def set_used(
     session = database_connector()
 
     # Extract chip args
-    chips: List[int] = list(locals().values())[2:8]
+    chips: list[int] = list(locals().values())[2:8]
 
     game = Game.find_game(session, context.channel_id)
     if game is None:

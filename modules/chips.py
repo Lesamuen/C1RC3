@@ -2,8 +2,6 @@
 
 print("Loading module 'chips'...")
 
-from typing import List
-
 from discord import ApplicationContext, Option
 
 from bot import bot_client, database_connector
@@ -134,7 +132,7 @@ async def deposit(
     """Add the command /deposit"""
 
     # Grab chip params
-    chips: List[int] = list(locals().values())[2:8]
+    chips: list[int] = list(locals().values())[2:8]
 
     # If every single parameter is 0
     if all_zero(chips):
@@ -186,7 +184,7 @@ async def withdraw(
     """Add the command /withdraw"""
 
     # Grab chip params
-    chips: List[int] = list(locals().values())[2:8]
+    chips: list[int] = list(locals().values())[2:8]
 
     # If every single parameter is 0
     if all_zero(chips):

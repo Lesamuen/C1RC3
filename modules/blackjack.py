@@ -2,8 +2,6 @@
 
 print("Loading module 'blackjack'...")
 
-from typing import List
-
 from discord import ApplicationContext, Option, OptionChoice
 from sqlalchemy.orm import Session
 
@@ -109,7 +107,7 @@ async def bj_bet(
     """Add the command /bj bet"""
 
     # Extract chip args
-    chips: List[int] = list(locals().values())[1:7]
+    chips: list[int] = list(locals().values())[1:7]
 
     session = database_connector()
 
@@ -151,7 +149,7 @@ async def bj_use(
     """Add the command /bj use"""
 
     # Extract chip args
-    chips: List[int] = list(locals().values())[1:7]
+    chips: list[int] = list(locals().values())[1:7]
 
     session = database_connector()
 

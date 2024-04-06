@@ -2,7 +2,6 @@
 
 print("Loading module 'miscgame'...")
 
-from typing import List
 from random import randint
 
 from discord import ApplicationContext, Option, OptionChoice
@@ -109,7 +108,7 @@ async def mg_bet(
     """Add the command /mg bet"""
 
     # Extract chip args
-    chips: List[int] = list(locals().values())[1:7]
+    chips: list[int] = list(locals().values())[1:7]
 
     session = database_connector()
 
@@ -138,7 +137,7 @@ async def mg_use(
     """Add the command /mg use"""
 
     # Extract chip args
-    chips: List[int] = list(locals().values())[1:7]
+    chips: list[int] = list(locals().values())[1:7]
 
     session = database_connector()
 
