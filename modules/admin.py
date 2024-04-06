@@ -86,9 +86,10 @@ async def good_girl(
     else:
         await context.respond(headpats[randint(0, len(headpats) - 1)])
     if user1 is not None:
-        await context.channel.send(user1.mention)
         if user2 is not None:
-            await context.channel.send(user2.mention)
+            await context.channel.send(user1.mention + " " + user2.mention)
+        else:
+            await context.channel.send(user1.mention)
     log(get_time() + " >> " + str(context.author) + " headpatted " + (str(user1) + " " + ("and " + str(user2) + " " if user2 is not None else "") if user1 is not None else "")\
         + "in [" + str(context.guild) + "], [" + str(context.channel) + "]")
 
