@@ -59,7 +59,7 @@ headpats = [
     "https://tenor.com/view/head-pat-love-live-anime-gif-11053869",
     "https://tenor.com/view/pat-gif-19836590",
     "https://tenor.com/view/anime-cry-blush-cute-petting-gif-22149967",
-    "https://tenor.com/view/anime-neko-para-neko-anime-head-rub-anime-head-pat-gif-16085519",
+    "https://tenor.com/view/anime-head-pat-gif-23472600",
     "https://tenor.com/view/kanna-kanna-kamui-dragon-maid-miss-kobayashis-dragon-maid-anime-gif-16567663",
     "https://tenor.com/view/pet-head-cute-rem-re-zero-anime-gif-16038325",
     "https://tenor.com/view/dakooters-anime-headpats-pats-headpatting-gif-19110358",
@@ -67,16 +67,29 @@ headpats = [
     "https://tenor.com/view/pat-gif-19836598",
     ]
 
+double_headpats = [
+    "https://tenor.com/view/anime-cat-girls-pet-head-cute-girls-gif-17829980",
+    "https://tenor.com/view/senko-cute-smiling-gif-14951592",
+    "https://tenor.com/view/anime-neko-anime-head-pat-anime-head-rub-neko-para-gif-16085488",
+]
+
 @bot_client.slash_command(name = "good_girl", description = "Reward <3", guild_ids = guilds, guild_only = True)
 async def good_girl(
     context: ApplicationContext,
-    user: Option(User, description = "User to target with love", required = False)
+    user1: Option(User, description = "User to target with love", required = False),
+    user2: Option(User, description = "Other user to target with love", required = False)
     ):
     """Add the command /good_girl"""
 
-    await context.respond(headpats[randint(0, 19)])
-    if user is not None:
-        await context.channel.send(user.mention)
-    log(get_time() + " >> " + str(context.author) + " headpatted " + (str(user) + " " if user is not None else "") + "in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+    if user1 is not None and user2 is not None:
+        await context.respond(double_headpats[randint(0, len(double_headpats) - 1)])
+    else:
+        await context.respond(headpats[randint(0, len(headpats) - 1)])
+    if user1 is not None:
+        await context.channel.send(user1.mention)
+        if user2 is not None:
+            await context.channel.send(user2.mention)
+    log(get_time() + " >> " + str(context.author) + " headpatted " + (str(user1) + " " + ("and " + str(user2) + " " if user2 is not None else "") if user1 is not None else "")\
+        + "in [" + str(context.guild) + "], [" + str(context.channel) + "]")
 
 
