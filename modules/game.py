@@ -468,7 +468,7 @@ async def set_chips(
         else:
             player.set_chips(session, chips)
             log(get_time() + " >> Admin " + str(context.author) + " set chips of " + str(user) + " to " + str(chips) + " in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-            await ghost_reply(context, "`\"Administrator-level Access detected. " + player.name + " has been granted the following chips:\"`\n## " + format_chips(chips), private)
+            await ghost_reply(context, "`\"Administrator-level Access detected. " + player.name + " now has the following chips:\"`\n## " + format_chips(chips), private)
 
     session.close()
 
