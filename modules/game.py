@@ -385,6 +385,7 @@ async def identify(context: ApplicationContext, session: Session, expected_type:
         for player in game.players:
             message += "**" + player.name + "**: " + bot_client.get_user(player.user_id).mention + "\n"
             message += "    __Chips__: " + format_chips(player.get_chips()) + "\n"
+            message += "    __Used__: " + format_chips(player.get_used()) + "\n"
         await ghost_reply(context, message, True)
 
 
