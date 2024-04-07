@@ -254,7 +254,8 @@ async def use(context: ApplicationContext, session: Session, chips: list[int], e
 
     if all_zero(chips):
         log(get_time() + " >> " + str(context.author) + " tried to use no chips in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-        await ghost_reply(context, "You cannot use no chips.\"`", True)
+        await ghost_reply(context, "`\"You cannot use no chips.\"`", True)
+        return
 
     game = expected_type.find_game(session, context.channel_id)
     if game is None:
