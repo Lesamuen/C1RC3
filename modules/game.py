@@ -390,7 +390,7 @@ async def identify(context: ApplicationContext, session: Session, expected_type:
 game_admin_cmds = admin_cmds.create_subgroup("game", "Admin commands directly related to games in general")
 
 @game_admin_cmds.command(name = "force_end_game", description = "Admin command to end a game in this channel")
-async def force_end_game(
+async def admin_force_end_game(
     context: ApplicationContext,
     private: Option(bool, description = "Whether to keep the response only visible to you", default = False)
 ):
@@ -410,7 +410,7 @@ async def force_end_game(
     session.close()
 
 @game_admin_cmds.command(name = "remove_player", description = "Admin command to forcibly remove a player from a game")
-async def remove_player(
+async def admin_remove_player(
     context: ApplicationContext,
     user: Option(User, description = "User to remove from the game", required = True),
     private: Option(bool, description = "Whether to keep the response only visible to you", default = False)
@@ -436,7 +436,7 @@ async def remove_player(
     session.close()
 
 @game_admin_cmds.command(name = "set_chips", description = "Admin command to manually set chips in a game")
-async def set_chips(
+async def admin_set_chips(
     context: ApplicationContext,
     user: Option(User, description = "User whose chips you are editting", required = True),
     physical: Option(int, description = "The amount of physical chips to set", min_value = 0, default = 0),
@@ -471,7 +471,7 @@ async def set_chips(
     session.close()
 
 @game_admin_cmds.command(name = "set_used", description = "Admin command to manually set used chips in a game")
-async def set_used(
+async def admin_set_used(
     context: ApplicationContext,
     user: Option(User, description = "User whose used chips you are editting", required = True),
     physical: Option(int, description = "The amount of physical chips to set", min_value = 0, default = 0),
@@ -506,7 +506,7 @@ async def set_used(
     session.close()
 
 @game_admin_cmds.command(name = "set_stake", description = "Admin command to change the stake of a game in this channel")
-async def set_stake(
+async def admin_set_stake(
     context: ApplicationContext,
     stake: Option(int, description = "What stake to set the game to", required = True, choices = [
         OptionChoice("Low Stakes", 0),
@@ -535,5 +535,46 @@ async def set_stake(
             message += "High."
         message += "\"`"
         await ghost_reply(context, message, private)
+
+    session.close()
+
+
+@game_admin_cmds.command(name = "merge", description = "Admin command to merge two players in a game")
+async def admin_merge(
+    context: ApplicationContext,
+    kept: Option(User, description = "Player that will keep their body", required = True),
+    absorbed: Option(User, description = "Player that will be merged into the other", required = True)
+):
+    """Add the command /admin game merge"""
+
+    session = database_connector()
+
+    game = Game.find_game(session, context.channel_id)
+    if game is None:
+        log(get_time() + " >> Admin " + str(context.author) + " tried to merge players for no game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+        await ghost_reply(context, "`\"Administrator-level Access detected. Request failed. There is no game at this table.\"`", True)
+    else:
+        player1 = game.is_playing(session, kept.id)
+        player2 = game.is_playing(session, absorbed.id)
+        if player1 is None or player2 is None:
+            log(get_time() + " >> Admin " + str(context.author) + " tried to merge non-players in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+            await ghost_reply(context, "`\"Administrator-level Access detected. Request failed. One or more of these people is not playing at this table.\"`", True)
+        elif game.is_midround():
+            log(get_time() + " >> Admin " + str(context.author) + " tried to merge players midround in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+            await ghost_reply(context, "`\"Administrator-level Access detected. Request failed. I am unable to merge players in the middle of a round.\"`", True)
+        else:
+            log(get_time() + " >> Admin " + str(context.author) + " merged players " + str(absorbed) + " into " + str(kept) + " in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+            await ghost_reply(context, "`\"Administrator-level Access detected. Merge request has been processed. " + player2.name + "'s chips and winnings shall be combined with " + player1.name + "'s.\"`")
+            player1.pay_chips(session, player2.get_chips())
+            # Jank way of adding used chips without adding new function lol
+            player1.pay_chips(session, player2.get_used())
+            player1.use_chips(session, player2.get_used())
+            await context.channel.send("`\"" + player1.name + " now has:\"`\n## " + format_chips(player1.get_chips()) + "\n`\"and has used:\"`\n## " + format_chips(player1.get_used()))
+
+            # Combine names
+            player1.rename(session, player1.name + " / " + player2.name)
+
+            # Delete old player
+            player2.leave(session)
 
     session.close()
