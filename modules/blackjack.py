@@ -10,6 +10,7 @@ from auxiliary import guilds, log, get_time, ghost_reply
 from dbmodels import Blackjack, BlackjackPlayer
 from emojis import standard_deck, format_cards, format_chips
 from game import create, join, concede, identify, rename, chips, bet, use, convert
+from admin import admin_cmds
 
 bj_cmds = bot_client.create_group("bj", "Commands to run the game of Blackjack", guild_ids = guilds, guild_only = True)
 
@@ -395,3 +396,47 @@ async def bj_end_round(context: ApplicationContext, session: Session, game: Blac
     log("                     >> " + str([str(bot_client.get_user(game.players[winner[0]].user_id)) for winner in winners]) + " won.")
 
     await context.channel.send(message)
+
+
+bj_admin_cmds = admin_cmds.create_subgroup("bj", "Admin commands directly related to blackjack")
+
+@bj_admin_cmds.command(name = "show_deck", description = "Admin command to view a blackjack deck")
+async def bj_admin_show_deck(
+    context: ApplicationContext,
+):
+    """Add the command /admin bj show_deck"""
+
+    session = database_connector()
+
+    game: Blackjack = Blackjack.find_game(session, context.channel_id)
+    if game is None:
+        log(get_time() + " >> Admin " + str(context.author) + " tried to show deck in Blackjack with no game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+        await ghost_reply(context, "`\"There is no Blackjack game running at this table at the moment.\"`", True)
+    else:
+        deck = game.get_deck()
+        # Reverse deck order because drawing is from end
+        deck = deck[::-1]
+        await ghost_reply(context, "`\"Administrator-level Access detected. Scanning deck...\"`\n"\
+            "```" + str(deck) + "```")
+
+    session.close()
+
+@bj_admin_cmds.command(name = "shuffle", description = "Admin command to shuffle a blackjack deck")
+async def bj_admin_shuffle(
+    context: ApplicationContext,
+):
+    """Add the command /admin bj shuffle"""
+
+    session = database_connector()
+
+    game: Blackjack = Blackjack.find_game(session, context.channel_id)
+    if game is None:
+        log(get_time() + " >> Admin " + str(context.author) + " tried to shuffle deck in Blackjack with no game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+        await ghost_reply(context, "`\"There is no Blackjack game running at this table at the moment.\"`", True)
+    else:
+        game.shuffle(session)
+        await ghost_reply(context, "`\"Administrator-level Access detected. Manually shuffling deck...\"`\n"\
+            "*C1RC3 places all of the cards into a compartment that slides open in her arm, and shuts it."\
+                " A moment of whirring later, she opens it again and pulls out a newly shuffled deck.*")
+
+    session.close()

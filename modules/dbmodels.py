@@ -1048,6 +1048,8 @@ class Blackjack(Game):
         Advance the turn counter
     end_round(session: sqlalchemy.orm.Session) -> tuple[str, list[tuple[int, str]]]:
         Give the winner the winnings, returning index/name of winner(s); more than 1 means tie
+    get_deck() -> list[int]
+        Get the current deck unjsonified
     """
 
     __tablename__ = "blackjack"
@@ -1265,3 +1267,12 @@ class Blackjack(Game):
         
         return (win_con, winners)
 
+    def get_deck(self) -> list[int]:
+        """Get the current deck unjsonified
+        
+        ### Returns
+        list[int]
+            List of card indices in the deck
+        """
+        
+        return loads(self.deck)
