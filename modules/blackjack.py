@@ -270,7 +270,8 @@ async def bj_hit(
             else:
                 # Busted, so test for round end
                 log("                     >> " + str(context.author) + " busted.")
-                await context.channel.send("*C1RC3 shakes her head as she calculates the hand.* `\"Unfortunately, you have busted, " + player.name + ".\"`")
+                await context.channel.send("*C1RC3 shakes her head as she calculates the hand.* `\"Unfortunately, you have busted, " + player.name + ".\"`"\
+                    "\n*The facedown card magically flips itself over, revealing the unfortunate hand:*\n## " + format_cards(standard_deck, player.get_hand()))
                 if game.is_all_done():
                     await bj_end_round(context, session, game)
                 else:
