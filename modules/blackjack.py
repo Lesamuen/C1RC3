@@ -361,8 +361,10 @@ async def bj_end_round(context: ApplicationContext, session: Session, game: Blac
             message += " with a 5-card Charlie"
         elif win_con == "b":
             message += " with a Blackjack"
-        message += ".\"`\n*C1RC3 opens a compartment in her abdomen where a pile of fresh chips lays, and pushes it over to " + winners[0][1] + ", making a sizeable pile of:*\n"\
-            + "# " + format_chips(game.players[winners[0][0]].get_chips())
+        message += ".\"`\n*C1RC3 opens a compartment in her abdomen where a pile of fresh chips lays, and pushes it over to " + winners[0][1] + ", making a sizeable pile of:*\n# "\
+            + format_chips(game.players[winners[0][0]].get_chips())
+        next_better = game.advance_bet_turn(session)
+        message += "\n`\"" + next_better.name + " shall decide the next initial bet.\"`"
     else:
         message += "`\""
         if len(winners) == 2:

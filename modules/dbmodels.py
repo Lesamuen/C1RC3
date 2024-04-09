@@ -163,7 +163,7 @@ class ChipAccount(SQLBase):
         amount: list[int]
             Amount of each type of chips to add to the balance
 
-        ### Throws
+        ### Raises
         InvalidArgumentError
             Amount given is negative or not enough chip arguments
         """
@@ -197,7 +197,7 @@ class ChipAccount(SQLBase):
         False
             Any amount of chips was more than balance
 
-        ### Throws
+        ### Raises
         InvalidArgumentError
             Amount given is negative or not enough chip arguments
         """
@@ -229,7 +229,7 @@ class ChipAccount(SQLBase):
         new: str
             The new name to attach the account to
 
-        ### Throws
+        ### Raises
         InvalidArgumentError
             New name is empty string
         """
@@ -265,6 +265,8 @@ class Player(SQLBase):
     ### Methods
     leave(session: sqlalchemy.orm.Session) -> None
         Remove Player from Game, i.e. delete Player from database
+    get_index() -> int
+        Get index of player in corresponding game's player list
     rename(session: sqlalchemy.orm.Session, new_name: str) -> None
         Change the name of the player
     set_bet(session: sqlalchemy.orm.Session, bet: list[int]) -> None
@@ -315,14 +317,32 @@ class Player(SQLBase):
     
     def leave(self, session: Session) -> None:
         """Remove Player from Game, i.e. delete Player from database
+
+        Also handle bet turn updates as a result of leaving
         
         ### Parameters
         session: sqlalchemy.orm.Session
             Database session scope
         """
 
+        if self.get_index() < self.game.bet_turn:
+            self.game.bet_turn -= 1
+        self.game.bet_turn %= (len(self.game.players) - 1)
+
         session.delete(self)
         session.commit()
+
+    def get_index(self) -> int:
+        """Get index of player in corresponding game's player list
+        
+        ### Returns
+        int
+            The index of the player
+        """
+
+        for i in range(len(self.game.players)):
+            if self.game.players[i] == self:
+                return i
 
     def rename(self, session: Session, new_name: str) -> None:
         """Change the name of the player
@@ -467,6 +487,8 @@ class Game(SQLBase):
         The maximum amount of chips that can be bet in a Game
     stake: int
         0 - low stakes, 1 - normal stakes, 2 - high stakes
+    bet_turn: int
+        Player index whose turn it is to bet
     current_bet: str
         The current bet for the round within the game
     started: bool
@@ -483,6 +505,10 @@ class Game(SQLBase):
         Wipe the Game from the database
     set_stake(session: sqlalchemy.orm.Session, bet: list[int], stake: int = 1) -> None
         Set the current bet for the round
+    get_bet_turn() -> Player
+        Return the player who will initiate the bet for the round
+    advance_bet_turn(session: sqlalchemy.orm.Session, target: int = -1) -> Player
+        Advances the bet turn
     get_bet() -> list[int]
         Return the current bet for the round unjsonified
     set_bet(session: sqlalchemy.orm.Session, bet: list[int]) -> None
@@ -523,6 +549,9 @@ class Game(SQLBase):
 
     bet_cap: list[int] = [100, 20, 2, 20, 3, 25]
     """The maximum amount of chips that can be bet in a Game"""
+
+    bet_turn: Mapped[int] = mapped_column(default = 0)
+    """Player index whose turn it is to bet"""
 
     stake: Mapped[int] = mapped_column(default = 1)
     """0 - low stakes, 1 - normal stakes, 2 - high stakes"""
@@ -621,7 +650,7 @@ class Game(SQLBase):
         stake: int
             What to set the stake to
 
-        ### Throws
+        ### Raises
         InvalidArgumentError
             Stake is not one of the valid states
         """
@@ -632,6 +661,43 @@ class Game(SQLBase):
         self.stake = stake
 
         session.commit()
+
+    def get_bet_turn(self) -> Player:
+        """Return the player who will initiate the bet for the round
+        
+        ### Returns
+        Player
+            The player that corresponds to the bet_turn index
+        """
+        return self.players[self.bet_turn]
+
+    def advance_bet_turn(self, session: Session, target: int = -1) -> Player:
+        """Advances the bet turn
+        
+        ### Parameters
+        session: sqlalchemy.orm.Session
+            Database session scope
+        target: int = -1
+            If any non-negative number, will just try to set bet_turn to that
+
+        ### Returns
+        Player
+            The player whose turn it is now to bet
+
+        ### Raises
+        InvalidArgumentError
+            Target is outside of player list bounds
+        """
+
+        if target < 0:
+            self.bet_turn = (self.bet_turn + 1) % len(self.players)
+        elif target >= len(self.players):
+            raise InvalidArgumentError
+        else:
+            self.bet_turn = target
+
+        session.commit()
+        return self.get_bet_turn()
 
     def get_bet(self) -> list[int]:
         """Return the current bet for the round unjsonified
@@ -818,7 +884,7 @@ class Misc(Game):
         amount: int = 1
             Amount of cards to draw
 
-        ### Throws
+        ### Raises
         InvalidArgumentError
             More cards to be drawn than there are in the deck
         

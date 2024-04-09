@@ -86,9 +86,12 @@ async def join(context: ApplicationContext, session: Session, name: str, expecte
             if game.join_game(session, context.author.id, name) is not None:
                 log(get_time() + " >> " + str(context.author) + " joined a game as " + name + " in [" + str(context.guild) + "], [" + str(context.channel) + "]")
                 await ghost_reply(context, "*C1RC3 nods.* `\"Request accepted. " + name + " is now participating in this game.\"`")
+                if len(game.players) == 1:
+                    # First to join
+                    await context.channel.send("`\"As the first player, you shall be responsible for initiating the first bet of the game.\"`")
             else:
                 log(get_time() + " >> " + str(context.author) + " tried to rejoin a game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-                await ghost_reply(context, "`\"...You are already part of this table.\"`", True)
+                await ghost_reply(context, "`\"You are already part of this table.\"`", True)
 
 async def concede(context: ApplicationContext, session: Session, expected_type: type[Game]) -> None:
     """Handle functionality for conceding in any game
@@ -230,6 +233,9 @@ async def bet(context: ApplicationContext, session: Session, chips: list[int], e
         elif game.is_midround():
             log(get_time() + " >> " + str(context.author) + " tried to bet mid-game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
             await ghost_reply(context, "`\"You cannot bet right now, in the middle of a round.\"`", True)
+        elif game.get_bet_turn().bet == "[0, 0, 0, 0, 0, 0]" and player != game.get_bet_turn():
+            log(get_time() + " >> " + str(context.author) + " tried to bet out of turn in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+            await ghost_reply(context, "`\"You cannot bet until the initial bet has been decided on.\"`", True)
         else:
             log(get_time() + " >> " + str(context.author) + " placed bet of " + str(chips) + " in [" + str(context.guild) + "], [" + str(context.channel) + "]")
             player.set_bet(session, chips)
@@ -539,6 +545,31 @@ async def admin_set_stake(
 
     session.close()
 
+@game_admin_cmds.command(name = "set_bet_turn", description = "Admin command to change whose turn it is to bet in a game")
+async def admin_set_bet_turn(
+    context: ApplicationContext,
+    index: Option(int, description = "Index of player to set bet turn to", required = True, min_value = 0),
+    private: Option(bool, description = "Whether to keep the response only visible to you", default = False)
+):
+    """Add the command /admin game set_bet_turn"""
+
+    session = database_connector()
+
+    game = Game.find_game(session, context.channel_id)
+    if game is None:
+        log(get_time() + " >> Admin " + str(context.author) + " tried to change bet turn for no game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+        await ghost_reply(context, "`\"Administrator-level Access detected. Request failed. There is no game at this table.\"`", True)
+    else:
+        try:
+            game.advance_bet_turn(session, index)
+        except:
+            log(get_time() + " >> Admin " + str(context.author) + " tried to change bet turn of game out of bounds in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+            await ghost_reply(context, "`\"Administrator-level Access detected. Request failed. Index is out of bounds of player list.\"`", True)
+        else:
+            log(get_time() + " >> Admin " + str(context.author) + " changed bet turn of game to " + str(index) + " in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+            await ghost_reply(context, "`\"Administrator-level Access detected. It is now " + game.get_bet_turn().name + "'s turn to initiate the bet.\"`", private)
+
+    session.close()
 
 @game_admin_cmds.command(name = "merge", description = "Admin command to merge two players in a game")
 async def admin_merge(
