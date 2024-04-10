@@ -131,9 +131,11 @@ async def bj_bet(
             for player in game.players:
                 message += "## __" + player.name + "__\n"
                 message += "# " + format_cards(standard_deck, player.get_hand(True)) + "\n"
-            message += "`\"The first turn goes to " + game.get_turn().name + " this round.\"`"
+            next = game.get_turn()
+            message += "`\"The first turn goes to " + next.name + " this round.\"`"
             
             await context.channel.send(message)
+            await context.channel.send(bot_client.get_user(next.user_id).mention, delete_after = 0)
 
     session.close()
 
