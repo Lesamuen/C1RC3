@@ -521,6 +521,8 @@ class Game(SQLBase):
         Return Player of current game if it actually exists
     bets_aligned() -> bool:
         Test if all players' bets are aligned and set
+    end_round(session: sqlalchemy.orm.Session):
+        Do general round end logic
     """
 
     __tablename__ = "game"
@@ -719,6 +721,10 @@ class Game(SQLBase):
 
         self.current_bet = dumps(bet)
 
+        # Setting bet equivalent to starting round
+        if not self.started:
+            self.started = True
+
         session.commit()
 
     def is_midround(self) -> bool:
@@ -784,6 +790,21 @@ class Game(SQLBase):
                 return False
 
         return True
+
+    def end_round(self, session: Session):
+        """Do general round end logic
+        
+        To be called at end of subclassed functions
+
+        ### Parameters
+        session: sqlalchemy.orm.Session
+            Database session scope
+        """
+
+        self.current_bet = "[0, 0, 0, 0, 0, 0]"
+        for player in self.players:
+            player.bet = "[0, 0, 0, 0, 0, 0]"
+        self.advance_bet_turn(session)
 
 
 class MiscPlayer(Player):
@@ -916,13 +937,11 @@ class Misc(Game):
         """
 
         for player in self.players:
-            player.set_bet(session, [0, 0, 0, 0, 0, 0])
             if player.user_id == winner:
                 player.pay_chips(session, loads(self.current_bet))
+                break
 
-        self.current_bet = "[0, 0, 0, 0, 0, 0]"
-                
-        session.commit()
+        super().end_round(session)
 
 
 class BlackjackPlayer(Player):
@@ -939,7 +958,7 @@ class BlackjackPlayer(Player):
         Either 'hit', 'stand', or 'bust'; represents state of player's hand
 
     ### Methods
-    get_hand() -> list[int]
+    get_hand(hidden: bool = False) -> list[int]
         Parses hand to list of ints
     stand(session: sqlalchemy.orm.Session) -> None
         Set state to standing
@@ -1191,9 +1210,6 @@ class Blackjack(Game):
             Deck was not shuffled
         """
 
-        if not self.started:
-            self.started = True
-
         if shuffled := (len(loads(self.deck)) <= 26):
             self.shuffle(session)
 
@@ -1310,9 +1326,7 @@ class Blackjack(Game):
             # Give winner the bet value, then reset bets
             winner: BlackjackPlayer = self.players[winners[0][0]]
             winner.pay_chips(session, loads(self.current_bet))
-            self.current_bet = "[0, 0, 0, 0, 0, 0]"
-            for player in self.players:
-                player.set_bet(session, [0, 0, 0, 0, 0, 0])
+            super().end_round(session)
         else:
             # Multiply bet
             bet = loads(self.current_bet)
@@ -1342,3 +1356,278 @@ class Blackjack(Game):
         """
         
         return loads(self.deck)
+
+
+class TourneyPlayer(Player):
+    """Represents a player of Tourney. Inherits most attributes of Player.
+    
+    ### Attributes
+    [PRIMARY, FOREIGN] user_id: int
+        User ID of the player
+    [PRIMARY, FOREIGN] game_id: int
+        ID of the game the Player is playing in
+    hand: str
+        Jsonified list of cards within player's hand and whether they have been played
+    played: int
+        The index of the hand that will be played in this turn
+    points: int
+        How many points the player has in the current round
+
+    ### Methods
+    get_hand() -> list[list[int | bool]]
+        Parses hand to list of pairs of cards and whether they've been played or not
+    play_card(session: sqlalchemy.orm.Session, index: int) -> bool
+        Present a card to be evaluated against other players' cards
+    tiebreaker() -> int
+        Get card that hasn't been played yet
+    """
+
+    __tablename__ = "tourney_player"
+    __table_args__ = (
+        ForeignKeyConstraint(["user_id", "game_id"], ["player.user_id", "player.game_id"]),
+        )
+    __mapper_args__ = {
+        "polymorphic_identity": "tourney"
+        }
+
+    user_id: Mapped[int] = mapped_column(primary_key = True)
+    """User ID of the player"""
+
+    game_id: Mapped[int] = mapped_column(primary_key = True)
+    """ID of the game the Player is playing in"""
+
+    hand: Mapped[str] = mapped_column(default = "[]")
+    """Jsonified list of cards within player's hand and whether they have been played"""
+
+    played: Mapped[int] = mapped_column(default = -1)
+    """The index of the hand that will be played in this turn"""
+
+    points: Mapped[int] = mapped_column(default = 0)
+    """How many points the player has in the current round"""
+
+    def get_hand(self) -> list[list[int | bool]]:
+        """Parses hand to list of ints
+
+        ### Returns
+        list[list[int | bool]]
+            Each pair has an int corresponds to index in deck and whether card has already been played
+        """
+
+        return loads(self.hand)
+    
+    def play_card(self, session: Session, index: int) -> bool:
+        """Present a card to be evaluated against other players' cards
+        
+        ### Parameters
+        session: sqlalchemy.orm.Session
+            Database session scope
+        index: int
+            Index of the card to present in the hand
+
+        ### Returns
+        bool
+            Whether operation successful or card already played
+
+        ### Raises
+        InvalidArgumentError
+            The index given is out of bounds
+        """
+
+        hand: list[list[int | bool]] = loads(self.hand)
+
+        if index >= len(hand):
+            raise InvalidArgumentError
+        
+        if hand[index][1]:
+            return False
+        
+        self.played = index
+
+        session.commit()
+        return True
+
+    def tiebreaker(self) -> int:
+        """Get card that hasn't been played yet
+
+        ### Returns
+        int
+            First card that is unplayed
+        """
+
+        for card in loads(self.hand):
+            if not card[1]:
+                return card[0]
+        
+        return 0
+
+class Tourney(Game):
+    """Represents a game of Tourney. Inherits most attributes of Game.
+    
+    ### Attributes
+    [PRIMARY, FOREIGN] id: int
+        Corresponds to the discord channel/thread ID
+    [CLASS] max_players
+        Max amount of players the game of this type can handle
+    [CLASS] player_class
+        Player subclass that corresponds to this Game subclass
+    turn: int
+        The current turn of the round
+
+    ### Methods
+    start_round(session: sqlalchemy.orm.Session)
+        Deal the initial two cards to each player given and rotate turn order
+    all_played() -> bool
+        Test whether every player has played a card
+    evaluate_turn(session: sqlalchemy.orm.Session) -> TourneyPlayer
+        Compare cards and reward point to winner
+    end_round(session: sqlalchemy.orm.Session) -> list[TourneyPlayer]
+        Evaluate winner of round and reward them
+    """
+
+    __tablename__ = "tourney"
+    __mapper_args__ = {
+        "polymorphic_identity": "tourney"
+        }
+
+    id: Mapped[int] = mapped_column(ForeignKey("game.id"), primary_key = True)
+    """Corresponds to the discord channel/thread ID"""
+
+    player_class = TourneyPlayer
+    """Player subclass that corresponds to this Game subclass"""
+
+    max_players: int = 6
+    """Max amount of players the game of this type can handle"""
+
+    turn: Mapped[int] = mapped_column(default = 1)
+    """The current turn of the round"""
+
+    def start_round(self, session: Session):
+        """Deal initial cards, reset states
+        
+        ### Parameters
+        session: sqlalchemy.orm.Session
+            Database session scope
+        """
+
+        draw = sample(range(52), len(self.players) * (len(self.players) + 2))
+
+        player: TourneyPlayer
+        for player in self.players:
+            player.played = -1
+            player.points = 0
+            # Cards added to hand equal to number of players plus 2
+            player.hand = dumps([[card, False] for card in draw[:-(len(self.players) + 3):-1]])
+            del draw[-(len(self.players) + 2):]
+
+        # Reset turn counter
+        self.turn = 1
+
+        session.commit()
+
+    def all_played(self) -> bool:
+        """Test whether every player has played a card
+
+        ### Returns
+        bool
+            Whether every played has played a card
+        """
+
+        player: TourneyPlayer
+        for player in self.players:
+            if player.played == -1:
+                return False
+
+        return True
+
+    def evaluate_turn(self, session: Session) -> TourneyPlayer:
+        """Compare cards and reward point to winner
+        
+        ### Parameters
+        session: sqlalchemy.orm.Session
+            Database session scope
+
+        ### Returns
+        TourneyPlayer
+            Player that won the turn
+
+        ### Raises
+        InvalidArgumentError
+            At least one player has not played a card
+        """
+
+        # Load played cards, set played flag to True for each card, and reset played for next turn
+        played = []
+        player: TourneyPlayer
+        for player in self.players:
+            if player.played == -1:
+                session.rollback()
+                raise InvalidArgumentError
+            hand = loads(player.hand)
+            card = hand[player.played][0]
+            played.append(card)
+            hand[player.played] = [card, True]
+            player.hand = dumps(hand)
+            player.played = -1
+
+        # Evaluate card values in terms of value before suit
+        played = [((card % 13) * 4) + (card // 13) for card in played]
+
+        # Compare cards
+        max = -1
+        winner = 0
+        for i in range(len(played)):
+            if played[i] > max:
+                winner = i
+                max = played[i]
+
+        # Award point
+        winner: TourneyPlayer = self.players[winner]
+        winner.points += 1
+
+        # Advance turn counter
+        self.turn += 1
+
+        session.commit()
+        return winner
+
+    def end_round(self, session: Session) -> list[TourneyPlayer]:
+        """Evaluate winner of round and reward them
+        
+        ### Parameters
+        session: sqlalchemy.orm.Session
+            Database session scope
+
+        ### Returns
+        list[TourneyPlayer]
+            All players that tied for winner in ascending order by tiebreaker
+        """
+
+        # Evaluate winners, or ties
+        # First get top points
+        max = 0
+        player: TourneyPlayer
+        for player in self.players:
+            if player.points > max:
+                max = player.points
+        # Then get all winners
+        winners: list[TourneyPlayer] = []
+        for player in self.players:
+            if player.points == max:
+                winners.append(player)
+
+        # Break ties by looking at final card; all players should have 1 card unplayed at end of round
+        winners.sort(reverse = True, key = lambda player: player.tiebreaker())
+
+        # Reward winner; in general scenario, 1 player wins minimum 2 pts, so bet multiplied by pts - 1
+        reward = self.get_bet()
+        reward = [chip * (max - 1) for chip in reward]
+        # Clamp reward
+        for i in range(len(reward)):
+            if reward[i] > self.bet_cap[i]:
+                reward[i] = self.bet_cap[i]
+        winners[0].pay_chips(session, reward)
+
+        # General end round logic
+        super().end_round(session)
+
+        return winners

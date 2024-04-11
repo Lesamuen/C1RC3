@@ -34,7 +34,7 @@ async def bj_create(
 @bj_cmds.command(name = "join", description = "Join a Blackjack game in this channel")
 async def bj_join(
     context: ApplicationContext,
-    name: Option(str, description = "The name that C1RC3 will refer to you as", required = True, min_length = 1)
+    name: Option(str, description = "The name that C1RC3 will refer to you as", required = True, min_length = 1, max_length = 20)
 ):
     """Add the command /bj join"""
 
@@ -71,7 +71,7 @@ async def bj_identify(
 @bj_cmds.command(name = "rename", description = "Ask C1RC3 to call you something else, in case your name has been changed")
 async def bj_rename(
     context: ApplicationContext,
-    name: Option(str, description = "Name that C1RC3 will refer to you as", required = True, min_length = 1),
+    name: Option(str, description = "Name that C1RC3 will refer to you as", required = True, min_length = 1, max_length = 20),
     private: Option(bool, description = "Whether to keep the response only visible to you", required = True)
 ):
     """Add the command /bj rename"""
@@ -366,8 +366,7 @@ async def bj_end_round(context: ApplicationContext, session: Session, game: Blac
             message += " with a Blackjack"
         message += ".\"`\n*C1RC3 opens a compartment in her abdomen where a pile of fresh chips lays, and pushes it over to " + winners[0][1] + ", making a sizeable pile of:*\n# "\
             + format_chips(game.players[winners[0][0]].get_chips())
-        next_better = game.advance_bet_turn(session)
-        message += "\n`\"" + next_better.name + " shall decide the next initial bet.\"`"
+        message += "\n`\"" + game.get_bet_turn().name + " shall decide the next initial bet.\"`"
     else:
         message += "`\""
         if len(winners) == 2:

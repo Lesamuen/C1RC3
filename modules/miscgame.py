@@ -34,7 +34,7 @@ async def mg_create(
 @mg_cmds.command(name = "join", description = "Join a Misc game in this channel")
 async def mg_join(
     context: ApplicationContext,
-    name: Option(str, description = "The name that C1RC3 will refer to you as", required = True, min_length = 1)
+    name: Option(str, description = "The name that C1RC3 will refer to you as", required = True, min_length = 1, max_length = 20)
 ):
     """Add the command /mg join"""
 
@@ -71,7 +71,7 @@ async def mg_identify(
 @mg_cmds.command(name = "rename", description = "Ask C1RC3 to call you something else, in case your name has been changed")
 async def mg_rename(
     context: ApplicationContext,
-    name: Option(str, description = "Name that C1RC3 will refer to you as", required = True, min_length = 1),
+    name: Option(str, description = "Name that C1RC3 will refer to you as", required = True, min_length = 1, max_length = 20),
     private: Option(bool, description = "Whether to keep the response only visible to you", required = False)
 ):
     """Add the command /mg rename"""
@@ -117,7 +117,7 @@ async def mg_bet(
 
     if bet_placed:
         if game.bets_aligned():
-            log(get_time() + " >> The Blackjack round has started in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+            log(get_time() + " >> The Misc game round has started in [" + str(context.guild) + "], [" + str(context.channel) + "]")
             game.set_bet(session, chips)
             
             await context.channel.send("`\"The players have agreed on a bet. The round has begun.\"`\n")
@@ -312,6 +312,7 @@ async def mg_win_bet(
             message = "`\"The Casino congratulates " + player.name + " for winning this round.\"`"\
                 "\n*C1RC3 opens a compartment in her abdomen where a pile of fresh chips lays, and pushes it over to " + player.name + ", making a sizeable pile of:*\n"\
                 + "# " + format_chips(player.get_chips())
+            message += "\n`\"" + game.get_bet_turn().name + " shall decide the next initial bet.\"`"
             await ghost_reply(context, message)
 
     session.close()

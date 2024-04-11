@@ -51,8 +51,9 @@ import dbmodels
 import admin
 import chips
 import game
-import blackjack
 import miscgame
+import blackjack
+import tourney
 
 print("\nAll bot modules successfully loaded!\nNow initiating connection to Discord servers...")
 
