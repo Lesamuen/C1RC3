@@ -512,6 +512,35 @@ async def admin_set_used(
 
     session.close()
 
+@game_admin_cmds.command(name = "set_bet", description = "Admin command to manually change the bet in a game")
+async def admin_set_bet(
+    context: ApplicationContext,
+    physical: Option(int, description = "The amount of physical chips to set", min_value = 0, default = 0),
+    mental: Option(int, description = "The amount of mental chips to set", min_value = 0, default = 0),
+    artificial: Option(int, description = "The amount of artificial chips to set", min_value = 0, default = 0),
+    supernatural: Option(int, description = "The amount of supernatural chips to set", min_value = 0, default = 0),
+    merge: Option(int, description = "The amount of merge chips to set", min_value = 0, default = 0),
+    swap: Option(int, description = "The amount of swap chips to set", min_value = 0, default = 0),
+    private: Option(bool, description = "Whether to keep the response only visible to you", default = False)
+):
+    """Add the command /admin game set_bet"""
+
+    session = database_connector()
+
+    # Extract chip args
+    chips: list[int] = list(locals().values())[1:7]
+
+    game = Game.find_game(session, context.channel_id)
+    if game is None:
+        log(get_time() + " >> Admin " + str(context.author) + " tried to set bet with no game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+        await ghost_reply(context, "`\"Administrator-level Access detected. Request failed. There is no game at this table.\"`", True)
+    else:
+        game.set_bet(session, chips)
+        log(get_time() + " >> Admin " + str(context.author) + " set bet to " + str(chips) + " in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+        await ghost_reply(context, "`\"Administrator-level Access detected. The bet in this game has been has been updated to:\"`\n## " + format_chips(chips), private)
+
+    session.close()
+
 @game_admin_cmds.command(name = "set_stake", description = "Admin command to change the stake of a game in this channel")
 async def admin_set_stake(
     context: ApplicationContext,
