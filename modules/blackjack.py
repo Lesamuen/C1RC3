@@ -400,6 +400,14 @@ async def bj_end_round(context: ApplicationContext, session: Session, game: Blac
     log("                     >> " + str([str(bot_client.get_user(game.players[winner[0]].user_id)) for winner in winners]) + " won.")
 
     await context.channel.send(message)
+    if len(winners) == 1:
+        # Ping everyone for end of round
+        mention = ""
+        for player in game.players:
+            mention += bot_client.get_user(player.user_id).mention + " "
+        await context.channel.send(mention, delete_after = 0)
+    else:
+        await context.channel.send(bot_client.get_user(game.get_turn().user_id).mention, delete_after = 0)
 
 
 bj_admin_cmds = admin_cmds.create_subgroup("bj", "Admin commands directly related to blackjack")

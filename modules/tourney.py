@@ -126,6 +126,12 @@ async def ty_bet(
             " A moment of whirring later, she opens it again and pulls out a newly shuffled deck."\
             " She begins to draw cards from the deck, sliding " + str(len(game.players) + 2) + " of them face-down to each player.*\n"\
             "`\"Match 1 out of " + str(len(game.players) + 1) + " has commenced. Each of you, please send forth the card you wish to compete.\"`")
+        
+        # Ping everyone for beginning of match
+        mention = ""
+        for player in game.players:
+            mention += bot_client.get_user(player.user_id).mention + " "
+        await context.channel.send(mention, delete_after = 0)
 
     session.close()
 
@@ -317,6 +323,12 @@ async def ty_play(
                         
                         await context.channel.send(message)
                         await context.channel.send(message2)
+
+                        # Ping everyone for end of match/round
+                        mention = ""
+                        for player in game.players:
+                            mention += bot_client.get_user(player.user_id).mention + " "
+                        await context.channel.send(mention, delete_after = 0)
 
     session.close()
 
