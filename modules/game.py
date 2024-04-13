@@ -2,6 +2,8 @@
 
 print("Loading module 'game'...")
 
+from random import randint
+
 from discord import ApplicationContext, Option, OptionChoice, User
 from sqlalchemy.orm import Session
 
@@ -53,7 +55,7 @@ async def create(context: ApplicationContext, session: Session, stake: int, expe
             message += "normal "
         elif stake == 2:
             message += "high "
-        message += "stakes game has been processed. I will be acting as your table's arbitrator. Please state your name for the record, in order for your participation to be counted.\"`"
+        message += "stakes game has been processed. I, C1RC3 #" + str(randint(0, 63)) + ", will be acting as your table's arbitrator. Please state your name for the record, in order for your participation to be counted.\"`"
         await ghost_reply(context, message)
 
 async def join(context: ApplicationContext, session: Session, name: str, expected_type: type[Game]) -> None:
