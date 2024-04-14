@@ -35,7 +35,7 @@ def log(out: str) -> None:
 
     print(out)
 
-    with open("logs/" + datetime.now().strftime("%Y-%m-%d") + ".txt", "a") as log_file:
+    with open("logs/" + datetime.now().strftime("%Y-%m-%d") + ".txt", "a", encoding = "utf-8") as log_file:
         log_file.write(out + "\n")
 
 async def ghost_reply(context: ApplicationContext, message: str, private: bool = False) -> None:
