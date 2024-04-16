@@ -2,6 +2,8 @@
 
 print("Loading module 'bot'...")
 
+from traceback import format_exception
+
 import discord
 import discord.ext.commands as discomm
 from sqlalchemy import create_engine
@@ -27,9 +29,10 @@ async def on_disconnect():
 async def on_connect():
     log(get_time() + " >> Connected to Discord!")
 @bot_client.listen()
-async def on_application_command_error(ctx, exc):
-    # Suppress admin fail checks
-    return
+async def on_application_command_error(context: discord.ApplicationContext, exception: discord.DiscordException):
+    log(get_time() + " >> UNEXPECTED ERROR occurred while handling " + str(context.author) + "'s command in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+    log("".join(format_exception(exception)))
+    await context.respond("*C1RC3's face is briefly replaced by a bright red exclamation mark.* `\"AN ERROR HAS OCCURED. PLEASE CONTACT YOUR LOCAL ADMINISTRATOR FOR ASSISTANCE IN DIAGNOSIS.\"`")
 
 
 # Database stuff (SQLite and SQLAlchemy)
