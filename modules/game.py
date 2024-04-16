@@ -390,7 +390,7 @@ async def identify(context: ApplicationContext, session: Session, expected_type:
         log(get_time() + " >> " + str(context.author) + " identified players in [" + str(context.guild) + "], [" + str(context.channel) + "]")
         message = "`\"The unique soul identifications for each player at this table are:\"`\n"
         for player in game.players:
-            message += "**" + player.name + "**: " + bot_client.get_user(player.user_id).mention + "\n"
+            message += "**" + player.name + "**: " + player.mention() + "\n"
             message += "    __Chips__: " + format_chips(player.get_chips()) + "\n"
             message += "    __Used__: " + format_chips(player.get_used()) + "\n"
         await ghost_reply(context, message, True)

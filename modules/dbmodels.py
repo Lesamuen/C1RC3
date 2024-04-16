@@ -5,10 +5,11 @@ print("Loading module 'dbmodels'...")
 from json import dumps, loads
 from random import sample
 
-from sqlalchemy import ForeignKey, ForeignKeyConstraint, select, insert, update, delete
+from discord import User as DiscordUser
+from sqlalchemy import ForeignKey, ForeignKeyConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship, Session
 
-from bot import SQLBase
+from bot import SQLBase, bot_client
 from auxiliary import InvalidArgumentError
 
 
@@ -265,6 +266,10 @@ class Player(SQLBase):
     ### Methods
     leave(session: sqlalchemy.orm.Session) -> None
         Remove Player from Game, i.e. delete Player from database
+    user() -> discord.User
+        Get associated Discord user
+    mention() -> str
+        Get Discord mention string of associated Discord user
     get_index() -> int
         Get index of player in corresponding game's player list
     rename(session: sqlalchemy.orm.Session, new_name: str) -> None
@@ -331,6 +336,26 @@ class Player(SQLBase):
 
         session.delete(self)
         session.commit()
+
+    def user(self) -> DiscordUser:
+        """Get associated Discord user
+        
+        ### Returns
+        discord.User
+            Reference to the Discord user
+        """
+
+        return bot_client.get_user(self.user_id)
+    
+    def mention(self) -> str:
+        """Get Discord mention string of associated Discord user
+        
+        ### Returns
+        str
+            The mention string for the Discord user
+        """
+
+        return bot_client.get_user(self.user_id).mention
 
     def get_index(self) -> int:
         """Get index of player in corresponding game's player list

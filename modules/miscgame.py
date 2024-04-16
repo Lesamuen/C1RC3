@@ -125,7 +125,7 @@ async def mg_bet(
             # Ping everyone for beginning of round
             mention = ""
             for player in game.players:
-                mention += bot_client.get_user(player.user_id).mention + " "
+                mention += player.mention() + " "
             await context.channel.send(mention, delete_after = 0)
 
     session.close()

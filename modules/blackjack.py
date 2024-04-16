@@ -135,7 +135,7 @@ async def bj_bet(
             message += "`\"The first turn goes to " + next.name + " this round.\"`"
             
             await context.channel.send(message)
-            await context.channel.send(bot_client.get_user(next.user_id).mention, delete_after = 0)
+            await context.channel.send(next.mention(), delete_after = 0)
 
     session.close()
 
@@ -268,7 +268,7 @@ async def bj_hit(
                     game.next_turn(session)
                     next = game.get_turn()
                     await context.channel.send("`\"It is now your turn, " + next.name + ".\"`")
-                    await context.channel.send(bot_client.get_user(next.user_id).mention, delete_after = 0)
+                    await context.channel.send(next.mention(), delete_after = 0)
             else:
                 # Busted, so test for round end
                 log("                     >> " + str(context.author) + " busted.")
@@ -281,7 +281,7 @@ async def bj_hit(
                     game.next_turn(session)
                     next = game.get_turn()
                     await context.channel.send("`\"It is now your turn, " + next.name + ".\"`")
-                    await context.channel.send(bot_client.get_user(next.user_id).mention, delete_after = 0)
+                    await context.channel.send(next.mention(), delete_after = 0)
 
     session.close()
 
@@ -321,7 +321,7 @@ async def bj_stand(
                 game.next_turn(session)
                 next = game.get_turn()
                 await context.channel.send("`\"It is now your turn, " + next.name + ".\"`")
-                await context.channel.send(bot_client.get_user(next.user_id).mention, delete_after = 0)
+                await context.channel.send(next.mention(), delete_after = 0)
 
     session.close()
 
@@ -397,17 +397,17 @@ async def bj_end_round(context: ApplicationContext, session: Session, game: Blac
             else:
                 message += "# " + format_cards(standard_deck, hand) + "\n"
         message += "`\"The first turn goes to " + game.get_turn().name + " this round.\"`"
-    log("                     >> " + str([str(bot_client.get_user(game.players[winner[0]].user_id)) for winner in winners]) + " won.")
+    log("                     >> " + str([str(game.players[winner[0]].user()) for winner in winners]) + " won.")
 
     await context.channel.send(message)
     if len(winners) == 1:
         # Ping everyone for end of round
         mention = ""
         for player in game.players:
-            mention += bot_client.get_user(player.user_id).mention + " "
+            mention += player.mention() + " "
         await context.channel.send(mention, delete_after = 0)
     else:
-        await context.channel.send(bot_client.get_user(game.get_turn().user_id).mention, delete_after = 0)
+        await context.channel.send(game.get_turn().mention(), delete_after = 0)
 
 
 bj_admin_cmds = admin_cmds.create_subgroup("bj", "Admin commands directly related to blackjack")
