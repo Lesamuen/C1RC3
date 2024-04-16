@@ -46,7 +46,6 @@ else:
 
 # Import all modules, setting up event listeners
 from bot import bot_client
-from auxiliary import log, get_time
 import dbmodels
 import admin
 import chips
@@ -58,18 +57,5 @@ import tourney
 print("\nAll bot modules successfully loaded!\nNow initiating connection to Discord servers...")
 
 # Initialize bot loop
-@bot_client.listen()
-async def on_ready():
-    log(get_time() + " >> Successfully logged in as " + str(bot_client.user))
-@bot_client.listen()
-async def on_disconnect():
-    log(get_time() + " >> Lost connection to Discord!")
-@bot_client.listen()
-async def on_connect():
-    log(get_time() + " >> Connected to Discord!")
-@bot_client.listen()
-async def on_application_command_error(ctx, exc):
-    # Suppress admin fail checks
-    return
 
 bot_client.run(bot_token)
