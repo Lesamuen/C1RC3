@@ -47,7 +47,7 @@ async def create(context: ApplicationContext, session: Session, stake: int, expe
         await ghost_reply(context, "`\"There is already a game running at this table.\"`", True)
     else:
         expected_type.create_game(session, context.channel_id, stake)
-        log(get_time() + " >> " + str(context.author) + " started a " + str(expected_type) + " game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+        log(get_time() + " >> " + str(context.author) + " started a <" + expected_type.type + "> game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
         message = "*C1RC3 approaches you when you call for a dealer, and takes her place at the dealer's stand.*\n`\"Your request for a "
         if stake == 0:
             message += "low "
