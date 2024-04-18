@@ -296,7 +296,7 @@ async def ty_play(
                             "`\"" + winner.name + " takes this match! You have been awarded a point, bringing you to a total of " + str(winner.points) + " points.\"`\n"\
                             "*C1RC3 waves her hand, and the center of the table clears itself.*"
                         
-                        log("                     >> Tourney match #" + str(game.turn) + " ended with " + str(winner.user()) + " in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+                        log("                     >> Tourney match #" + str(game.turn - 1) + " ended with " + str(winner.user()) + " in [" + str(context.guild) + "], [" + str(context.channel) + "]")
                         
                         # Test to see if the round is over
                         if game.turn <= len(game.players) + 1:
