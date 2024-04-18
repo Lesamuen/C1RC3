@@ -276,11 +276,14 @@ async def ty_play(
                 success = player.play_card(session, card - 1)
             except:
                 await ghost_reply(context, "`\"You do not have that many cards in your hand.\"`", True)
+                log(get_time() + " >> " + str(context.author) + " failed to play Tourney card #" + str(card - 1) + " in [" + str(context.guild) + "], [" + str(context.channel) + "]")
             else:
                 if not success:
                     await ghost_reply(context, "`\"You've already played that card before.\"`", True)
+                    log(get_time() + " >> " + str(context.author) + " failed to play Tourney card #" + str(card - 1) + " in [" + str(context.guild) + "], [" + str(context.channel) + "]")
                 else:
                     await ghost_reply(context, "*C1RC3 looks at the card " + player.name + " slid forward to the center of the table, and confirms,* `\"" + player.name + " has chosen a card.\"`")
+                    log(get_time() + " >> " + str(context.author) + " played Tourney card #" + str(card - 1) + " in [" + str(context.guild) + "], [" + str(context.channel) + "]")
 
                     # Test to see if the turn is over
                     if game.all_played():
@@ -292,6 +295,8 @@ async def ty_play(
                         message += "\n*Everyone's cards flash red, except for " + winner.name + "'s.*\n"\
                             "`\"" + winner.name + " takes this match! You have been awarded a point, bringing you to a total of " + str(winner.points) + " points.\"`\n"\
                             "*C1RC3 waves her hand, and the center of the table clears itself.*"
+                        
+                        log("                     >> Tourney match #" + str(game.turn) + " ended with " + str(winner.user()) + " in [" + str(context.guild) + "], [" + str(context.channel) + "]")
                         
                         # Test to see if the round is over
                         if game.turn <= len(game.players) + 1:
@@ -320,6 +325,8 @@ async def ty_play(
                             message2 += "\"`\n*C1RC3 opens a compartment in her abdomen where a pile of fresh chips lays, and pushes it over to " + winners[0].name + ", making a sizeable pile of:*\n# "\
                                 + format_chips(winners[0].get_chips())
                             message2 += "\n\n`\"" + game.get_bet_turn().name + " shall decide the next initial bet.\"`"
+                            
+                            log("                     >> Tourney round ended with " + str(winners[0].user()) + " as winner in [" + str(context.guild) + "], [" + str(context.channel) + "]")
                         
                         await context.channel.send(message)
                         await context.channel.send(message2)
