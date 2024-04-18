@@ -1248,13 +1248,13 @@ class Blackjack(Game):
                 self.players[i].hand = dumps(drawn[-2:])
                 del drawn[-2:]
             else:
-                self.players[i].state = "stand"
+                self.players[i].state = "bust"
                 self.players[i].hand = "[]"
 
         self.round_turn = (self.round_turn + 1) % len(self.players)
         self.curr_turn = self.round_turn
 
-        if self.players[self.curr_turn].state == "stand":
+        if self.players[self.curr_turn].state == "bust":
             self.next_turn(session)
 
         session.commit()

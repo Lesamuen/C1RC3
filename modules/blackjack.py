@@ -224,7 +224,7 @@ async def bj_hand(
                     message += "\n"
             hand = player.get_hand()
             if len(hand) == 0:
-                message += "\n`\"Here is your current hand:\"`\n\n## Total Value: 0"
+                message += "\n`\"Here is your current hand:\"`\n\n## Total Value: N/A"
             else:
                 message += "\n`\"Here is your current hand:\"`\n# " + format_cards(standard_deck, hand) + "\n## Total Value: " + str(player.hand_value())
             await ghost_reply(context, message, True)
