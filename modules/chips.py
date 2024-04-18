@@ -6,7 +6,7 @@ from discord import ApplicationContext, Option
 
 from bot import bot_client, database_connector
 from auxiliary import guilds, log, get_time, all_zero, ghost_reply
-from dbmodels import User, ChipAccount
+from dbmodels import ChipAccount
 from emojis import format_chips
 
 chip_cmds = bot_client.create_group("chip", "Commands related to chip-holding accounts out of game", guild_ids = guilds, guild_only = True)
@@ -21,9 +21,7 @@ async def open_account(
 
     session = database_connector()
 
-    user: User = User.find_user(session, context.author.id)
-
-    success: bool = user.create_account(session, name)
+    success: bool = ChipAccount.create_account(session, context.author.id, name)
 
     if success:
         log(get_time() + " >> " + str(context.author) + " opened an account under the name \"" + name
@@ -108,9 +106,9 @@ async def balance(
         
         response = "*You feel a small tingle all over your body as C1RC3 scans your magical signature, and her face flashes green for a moment.*"\
             "\n`\"Request approved. The account under the name '" + account.name + "' currently contains:\"`\n# "
-        response += format_chips(account.get_bal(), private)
+        response += format_chips(account.get_bal())
 
-        await ghost_reply(context, response)
+        await ghost_reply(context, response, private)
     else:
         log(get_time() + " >> " + str(context.author) + " tried to access other's account \"" + name + "\" in [" + str(context.guild) + "], [" + str(context.channel) + "]")
         await ghost_reply(context, "`\"Request denied. This account does not belong to you.\"`", True)

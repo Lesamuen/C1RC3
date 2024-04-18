@@ -5,89 +5,12 @@ print("Loading module 'dbmodels'...")
 from json import dumps, loads
 from random import sample
 
-from discord import User as DiscordUser
+from discord import User
 from sqlalchemy import ForeignKey, ForeignKeyConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship, Session
 
 from bot import SQLBase, bot_client
 from auxiliary import InvalidArgumentError
-
-
-class User(SQLBase):
-    """Represents the saved data corresponding to a single discord user.
-
-    ### Attributes
-    [PRIMARY] id: int
-        Corresponds to Discord user ID
-    [BACKREF] accounts: list[ChipAccount]
-        List of chip accounts under this User
-        
-    ### Methods
-    [STATIC] find_user(session: sqlalchemy.orm.Session, id: str) -> User
-        Returns the User object corresponding to the given Discord ID
-    create_account(session: sqlalchemy.orm.Session, name: str) -> bool
-        Tries to open a chip account under the given name
-    """
-
-    __tablename__ = "user"
-
-    id: Mapped[int] = mapped_column(primary_key = True)
-    """Corresponds to Discord user ID"""
-
-    accounts: Mapped[list["ChipAccount"]] = relationship(back_populates = "owner", cascade = "all, delete-orphan")
-    """List of chip accounts under this User"""
-
-    @staticmethod
-    def find_user(session: Session, id: int) -> "User":
-        """Return the User object corresponding to the given Discord ID
-
-        ### Parameters
-        session: sqlalchemy.orm.Session
-            Database session scope
-        id: int
-            Discord user ID
-
-        ### Returns
-        User object with matching id. Creates new user object if no match found.
-        """
-
-        found_user = session.get(User, id)
-        
-        if found_user is None:
-            # Create new default user data if no matching user data found
-            new_user = User(id = id)
-            session.add(new_user)
-            session.commit()
-            return new_user
-        else:
-            return found_user
-        
-    def create_account(self, session: Session, name: str) -> bool:
-        """Attempt to open a chip account under the given name
-
-        ### Parameters
-        session: sqlalchemy.orm.Session
-            Database session scope
-        name: str
-            In-character name that the account is going under
-
-        ### Returns
-        True
-            Successfully created account
-        False
-            Account already existed
-        """
-
-        found_account = session.get(ChipAccount, name)
-        
-        if found_account is None:
-            # Create new account
-            new_account = ChipAccount(owner_id = self.id, name = name)
-            session.add(new_account)
-            session.commit()
-            return True
-        else:
-            return False
 
 
 class ChipAccount(SQLBase):
@@ -96,14 +19,14 @@ class ChipAccount(SQLBase):
     ### Attributes
     [PRIMARY] name: str
         Unique name that the account is under
-    [FOREIGN] owner_id: int
+    owner_id: int
         ID of User who owns this account
-    [BACKREF] owner: User
-        Direct reference to User who owns this account
     chips: str
         Jsonified array of chips of each type within the account
         
     ### Methods
+    [STATIC] create_account(session: sqlalchemy.orm.Session, name: str) -> bool
+        Attempt to open a chip account under the given name
     [STATIC] find_account(session: sqlalchemy.orm.Session, username: str) -> ChipAccount | None
         Returns the ChipAccount if it exists
     get_bal() -> list[int]
@@ -121,15 +44,42 @@ class ChipAccount(SQLBase):
     name: Mapped[str] = mapped_column(primary_key = True)
     """Unique name that the account is under"""
 
-    owner_id: Mapped[int] = mapped_column(ForeignKey("user.id", ondelete = "CASCADE"))
+    owner_id: Mapped[int]
     """ID of User who owns this account"""
-
-    owner: Mapped["User"] = relationship(back_populates = "accounts")
-    """Direct reference to User who owns this account"""
     
     chips: Mapped[str] = mapped_column(default = "[0, 0, 0, 0, 0, 0]")
     """Jsonified array of chips of each type within the account"""
 
+    @staticmethod
+    def create_account(session: Session, id: int, name: str) -> bool:
+        """Attempt to open a chip account under the given name
+
+        ### Parameters
+        session: sqlalchemy.orm.Session
+            Database session scope
+        id: int
+            ID of Discord user
+        name: str
+            In-character name that the account is going under
+
+        ### Returns
+        True
+            Successfully created account
+        False
+            Account already existed
+        """
+
+        found_account = session.get(ChipAccount, name)
+        
+        if found_account is None:
+            # Create new account
+            new_account = ChipAccount(owner_id = id, name = name)
+            session.add(new_account)
+            session.commit()
+            return True
+        else:
+            return False
+        
     @staticmethod
     def find_account(session: Session, name: str) -> "ChipAccount | None":
         """Returns the ChipAccount if it exists
@@ -337,7 +287,7 @@ class Player(SQLBase):
         session.delete(self)
         session.commit()
 
-    def user(self) -> DiscordUser:
+    def user(self) -> User:
         """Get associated Discord user
         
         ### Returns
