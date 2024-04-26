@@ -10,7 +10,7 @@ from sqlalchemy import ForeignKey, ForeignKeyConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship, Session
 
 from bot import SQLBase, bot_client
-from auxiliary import InvalidArgumentError
+from auxiliary import InvalidArgumentError, clamp
 
 
 class ChipAccount(SQLBase):
@@ -1313,9 +1313,7 @@ class Blackjack(Game):
                     bet[i] *= 3
 
             # Conform to bet cap
-            for i in range(len(bet)):
-                if bet[i] > self.bet_cap[i]:
-                    bet[i] = self.bet_cap[i]
+            clamp(bet, self.bet_cap)
 
             self.current_bet = dumps(bet)
             session.commit()
@@ -1597,9 +1595,7 @@ class Tourney(Game):
         reward = self.get_bet()
         reward = [chip * (max - 1) for chip in reward]
         # Clamp reward
-        for i in range(len(reward)):
-            if reward[i] > self.bet_cap[i]:
-                reward[i] = self.bet_cap[i]
+        clamp(reward, self.bet_cap)
         winners[0].pay_chips(session, reward)
 
         # General end round logic

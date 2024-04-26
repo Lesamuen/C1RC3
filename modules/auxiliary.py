@@ -1,4 +1,4 @@
-"""Contains miscellaneous functions used in most cases"""
+"""Contains miscellaneous functions/objects used in other modules"""
 
 print("Loading module 'auxiliary'...")
 
@@ -54,6 +54,27 @@ async def ghost_reply(context: ApplicationContext, message: str, private: bool =
     else:
         await context.respond("https://canary.discordapp.com/__development/link/", ephemeral = True, delete_after = 0)
         await context.channel.send(message)
+
+def clamp(arr: list[int | float], max: list[int | float]) -> None:
+    """Clamp each value in a list to those in another list.
+    
+    ### Parameters
+    arr: list[int | float]
+        The list to clamp (MODIFIED IN-PLACE)
+    max: list[int | float]
+        The list of maximum values
+
+    ### Raises
+    InvalidArgumentError
+        Lists are not the same length
+    """
+
+    if len(arr) != len(max):
+        raise InvalidArgumentError
+    
+    for i in range(len(arr)):
+        if arr[i] > max[i]:
+            arr[i] = max[i]
 
 def all_zero(arr: list[int]) -> bool:
     """Check if a list of integers contains nothing but 0's.
