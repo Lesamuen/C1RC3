@@ -282,7 +282,8 @@ class Player(SQLBase):
 
         if self.get_index() < self.game.bet_turn:
             self.game.bet_turn -= 1
-        self.game.bet_turn %= (len(self.game.players) - 1)
+        if len(self.game.players) > 1:
+            self.game.bet_turn %= (len(self.game.players) - 1)
 
         session.delete(self)
         session.commit()
