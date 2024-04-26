@@ -1,7 +1,10 @@
 """Main bot application file to run directly with Python"""
 
-# Allows for other .py files to be found in /modules folder
+from traceback import format_exception
 from sys import path as syspath
+from time import sleep
+
+# Allows for other .py files to be found in /modules folder
 syspath.append(syspath[0] + "\\modules")
 
 # Load environment
@@ -46,6 +49,7 @@ else:
 
 # Import all modules, setting up event listeners
 from bot import bot_client
+from auxiliary import log, get_time
 import dbmodels
 import admin
 import chips
@@ -54,8 +58,16 @@ import miscgame
 import blackjack
 import tourney
 
-print("\nAll bot modules successfully loaded!\nNow initiating connection to Discord servers...")
+print("All bot modules successfully loaded!\n")
 
 # Initialize bot loop
 
-bot_client.run(bot_token)
+while True:
+    try:
+        log(get_time() + " >> Initializing connection to Discord...")
+        bot_client.run(bot_token)
+    except Exception as err:
+        log(get_time() + " >> UNEXPECTED ERROR occurred during bot loop; bot has closed!")
+        log("".join(format_exception(err)))
+        log("                     >> Relaunching bot in 5 minutes...")
+        sleep(300)
