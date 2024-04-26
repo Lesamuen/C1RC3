@@ -5,7 +5,6 @@ print("Loading module 'bot'...")
 from traceback import format_exception
 
 import discord
-import discord.ext.commands as discomm
 from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
@@ -16,7 +15,7 @@ intents = discord.Intents.default()
 intents.message_content = True
 intents.members = True
 
-bot_client = discomm.Bot(intents = intents)
+bot_client = discord.Bot(intents = intents)
 """Main bot object"""
 
 @bot_client.listen()
