@@ -1,6 +1,7 @@
 """Directly runs database-related commands; use for structure changes and data migration"""
 
 import sqlite3
+from traceback import format_exception
 from sys import path as syspath
 syspath.append(syspath[0] + "\\modules")
 
@@ -18,4 +19,7 @@ stmts = [
 ]
 
 for stmt in stmts:
-    print(c.execute(stmt).fetchall())
+    try:
+        print(c.execute(stmt).fetchall())
+    except Exception as err:
+        print("".join(format_exception(err)))
