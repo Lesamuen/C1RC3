@@ -224,6 +224,8 @@ class Player(SQLBase):
         Get index of player in corresponding game's player list
     rename(session: sqlalchemy.orm.Session, new_name: str) -> None
         Change the name of the player
+    get_bet() -> list[int]
+        Get the Player's current bet
     set_bet(session: sqlalchemy.orm.Session, bet: list[int]) -> None
         Set the Player's bet
     get_chips() -> list[int]
@@ -332,6 +334,16 @@ class Player(SQLBase):
 
         self.name = new_name
         session.commit()
+
+    def get_bet(self) -> list[int]:
+        """Get the Player's current bet
+        
+        ### Returns
+        list[int]
+            The player's current bet, deserialized
+        """
+
+        return loads(self.bet)
 
     def set_bet(self, session: Session, bet: list[int]) -> None:
         """Set the Player's bet

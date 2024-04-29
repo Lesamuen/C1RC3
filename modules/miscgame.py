@@ -4,178 +4,22 @@ print("Loading module 'miscgame'...")
 
 from random import randint
 
-from discord import ApplicationContext, Option, OptionChoice
+from discord import ApplicationContext, Option
 
 from bot import bot_client, database_connector
-from auxiliary import guilds, log, get_time, ghost_reply, InvalidArgumentError
+from auxiliary import log, get_time, ghost_reply, InvalidArgumentError
 from dbmodels import Misc, MiscPlayer
 from emojis import standard_deck, format_cards, format_chips
-from game import create, join, concede, identify, rename, chips, bet, use, convert
+from game import base_game_cmds
 
-mg_cmds = bot_client.create_group("mg", "Commands to run a Misc game", guild_ids = guilds, guild_only = True)
+# Inherit and register command group to Discord
+mg_cmds = base_game_cmds.copy()
+mg_cmds.name = "mg"
+mg_cmds.description = "Commands to run a Miscellaneous game"
+for cmd in mg_cmds.walk_commands():
+    cmd.game_type = Misc
+bot_client.add_application_command(mg_cmds)
 
-@mg_cmds.command(name = "create", description = "Start a Misc game in this channel")
-async def mg_create(
-    context: ApplicationContext,
-    stake: Option(int, description = "What stake to set the game to", required = True, choices = [
-        OptionChoice("Low Stakes", 0),
-        OptionChoice("Normal Stakes", 1),
-        OptionChoice("High Stakes", 2),
-    ])
-):
-    """Add the command /mg create"""
-
-    session = database_connector()
-
-    await create(context, session, stake, Misc)
-
-    session.close()
-
-@mg_cmds.command(name = "join", description = "Join a Misc game in this channel")
-async def mg_join(
-    context: ApplicationContext,
-    name: Option(str, description = "The name that C1RC3 will refer to you as", required = True, min_length = 1, max_length = 20)
-):
-    """Add the command /mg join"""
-
-    session = database_connector()
-
-    await join(context, session, name, Misc)
-
-    session.close()
-
-@mg_cmds.command(name = "concede", description = "Tell C1RC3 you lost (use when fully TFed or at the end of a mental round)")
-async def mg_concede(
-    context: ApplicationContext
-):
-    """Add the command /mg concede"""
-
-    session = database_connector()
-
-    await concede(context, session, Misc)
-
-    session.close()
-
-@mg_cmds.command(name = "identify", description = "Be reminded of the other players' identities and chips")
-async def mg_identify(
-    context: ApplicationContext
-):
-    """Add the command /mg identify"""
-
-    session = database_connector()
-
-    await identify(context, session, Misc)
-
-    session.close()
-
-@mg_cmds.command(name = "rename", description = "Ask C1RC3 to call you something else, in case your name has been changed")
-async def mg_rename(
-    context: ApplicationContext,
-    name: Option(str, description = "Name that C1RC3 will refer to you as", required = True, min_length = 1, max_length = 20),
-    private: Option(bool, description = "Whether to keep the response only visible to you", required = False)
-):
-    """Add the command /mg rename"""
-
-    session = database_connector()
-
-    await rename(context, session, name, private, Misc)
-
-    session.close()
-
-@mg_cmds.command(name = "chips", description = "Recount how many chips you have in your current pile")
-async def mg_chips(
-    context: ApplicationContext,
-    private: Option(bool, description = "Whether to keep the response only visible to you", required = True)
-):
-    """Add the command /mg chips"""
-
-    session = database_connector()
-
-    await chips(context, session, private, Misc)
-
-    session.close()
-
-@mg_cmds.command(name = "bet", description = "Bet an amount of chips")
-async def mg_bet(
-    context: ApplicationContext,
-    physical: Option(int, description = "The amount of physical chips to bet", min_value = 0, max_value = 100, default = 0),
-    mental: Option(int, description = "The amount of mental chips to bet", min_value = 0, max_value = 20, default = 0),
-    artificial: Option(int, description = "The amount of artificial chips to bet", min_value = 0, max_value = 2, default = 0),
-    supernatural: Option(int, description = "The amount of supernatural chips to bet", min_value = 0, max_value = 20, default = 0),
-    merge: Option(int, description = "The amount of merge chips to bet", min_value = 0, max_value = 3, default = 0),
-    swap: Option(int, description = "The amount of swap chips to bet", min_value = 0, max_value = 25, default = 0)
-):
-    """Add the command /mg bet"""
-
-    # Extract chip args
-    chips: list[int] = list(locals().values())[1:7]
-
-    session = database_connector()
-
-    game: Misc
-    bet_placed, game = await bet(context, session, chips, Misc)
-
-    if bet_placed:
-        if game.bets_aligned():
-            log(get_time() + " >> The Misc game round has started in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-            game.set_bet(session, chips)
-            
-            await context.channel.send("`\"The players have agreed on a bet. The round has begun.\"`\n")
-            
-            # Ping everyone for beginning of round
-            mention = ""
-            for player in game.players:
-                mention += player.mention() + " "
-            await context.channel.send(mention, delete_after = 0)
-
-    session.close()
-
-@mg_cmds.command(name = "use", description = "Use an amount of chips from your current pile")
-async def mg_use(
-    context: ApplicationContext,
-    physical: Option(int, description = "The amount of physical chips to use", min_value = 0, default = 0),
-    mental: Option(int, description = "The amount of mental chips to use", min_value = 0, default = 0),
-    artificial: Option(int, description = "The amount of artificial chips to use", min_value = 0, default = 0),
-    supernatural: Option(int, description = "The amount of supernatural chips to use", min_value = 0, default = 0),
-    merge: Option(int, description = "The amount of merge chips to use", min_value = 0, default = 0),
-    swap: Option(int, description = "The amount of swap chips to use", min_value = 0, default = 0)
-):
-    """Add the command /mg use"""
-
-    # Extract chip args
-    chips: list[int] = list(locals().values())[1:7]
-
-    session = database_connector()
-
-    await use(context, session, chips, Misc)
-
-    session.close()
-
-@mg_cmds.command(name = "convert", description = "Convert one type of chips to another")
-async def mg_convert(
-    context: ApplicationContext,
-    type: Option(int, description = "What chips to convert", required = True, choices = [
-        OptionChoice("Mental -> x10 Physical", 0),
-        OptionChoice("Artificial -> x40 Physical, x3 Mental", 1),
-        OptionChoice("x40 Physical, x3 Mental -> Artificial", 2),
-        OptionChoice("Supernatural -> x5 Physical", 3),
-        OptionChoice("Supernatural -> x1/2 Mental", 4),
-        OptionChoice("x5 Physical -> Supernatural", 5),
-        OptionChoice("x1/2 Mental -> Supernatural", 6),
-        OptionChoice("Merge -> x30 Physical", 7),
-        OptionChoice("Merge -> x3 Mental", 8),
-        OptionChoice("Swap -> x5 Physical", 9),
-        OptionChoice("Swap -> x1/2 Mental", 10),
-    ]),
-    amount: Option(int, description = "The amount of chips to convert", min_value = 1)
-):
-    """Add the command /mg convert"""
-
-    session = database_connector()
-
-    await convert(context, session, type, amount, Misc)
-
-    session.close()
 
 @mg_cmds.command(name = "shuffle", description = "Shuffle the standard deck in this game")
 async def mg_shuffle(
@@ -322,3 +166,31 @@ async def mg_win_bet(
             await ghost_reply(context, message)
 
     session.close()
+
+async def mg_start_round(context: ApplicationContext):
+    """Test for round start"""
+
+    session = database_connector()
+
+    game: Misc = Misc.find_game(session, context.channel_id)
+
+    if game is not None and not game.is_midround() and game.bets_aligned():
+        log(get_time() + " >> The Misc game round has started in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+        bet_placed = game.players[0].get_bet()
+        game.set_bet(session, bet_placed)
+        
+        await context.channel.send("`\"The players have agreed on a bet. The round has begun.\"`\n")
+        
+        # Ping everyone for beginning of round
+        mention = ""
+        for player in game.players:
+            mention += player.mention() + " "
+        await context.channel.send(mention, delete_after = 0)
+
+    session.close()
+
+# Register round start logic to invoke after betting
+for cmd in mg_cmds.walk_commands():
+    if cmd.name == "bet":
+        cmd.after_invoke(mg_start_round)
+        break

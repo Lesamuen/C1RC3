@@ -4,14 +4,13 @@ print("Loading module 'game'...")
 
 from random import randint
 
-from discord import ApplicationContext, Option, OptionChoice, User
-from sqlalchemy.orm import Session
+from discord import ApplicationContext, Option, OptionChoice, User, SlashCommandGroup, option
 
 from auxiliary import log, get_time, all_zero, ghost_reply, guilds
 from dbmodels import Game, Player
 from emojis import format_chips
 from admin import admin_cmds
-from bot import database_connector, bot_client
+from bot import database_connector
 
 chip_conversions = (
     ((0, 1, 0, 0, 0, 0), (10, 0, 0, 0, 0, 0)),
@@ -27,19 +26,24 @@ chip_conversions = (
     ((0, 0, 0, 0, 0, 1), (0, 0.5, 0, 0, 0, 0)),
 )
 
-async def create(context: ApplicationContext, session: Session, stake: int, expected_type: type[Game]) -> None:
-    """Handle functionality for creating any game
-    
-    ### Parameters
-    context: discord.ApplicationContext
-        Application command context
-    session: sqlalchemy.orm.Session
-        Current database scope
-    stake: int
-        Code for the stake level of the created game
-    expected_type: type[dbmodels.Game]
-        Game subclass this command was sent for
+base_game_cmds = SlashCommandGroup("game_template", "If you can see this, something went wrong", guild_ids = guilds, guild_only = True)
+"""Use .copy() to create another group, then change .name, .description, and then set .game_type for each cmd. Then use bot_client.add_application_command to register"""
+
+@base_game_cmds.command(name = "create", description = "Start a game in this channel")
+@option("stake", int, description = "What stake to set the game to", required = True, choices = [
+        OptionChoice("Low Stakes", 0),
+        OptionChoice("Normal Stakes", 1),
+        OptionChoice("High Stakes", 2),
+    ])
+async def create(context: ApplicationContext, stake: int):
+    """Add the command /<prefix> create <stake>
+
+    Starts a game in a channel.
     """
+
+    expected_type: type[Game] = context.command.game_type
+
+    session = database_connector()
 
     game = Game.find_game(session, context.channel_id)
     if game is not None:
@@ -55,24 +59,24 @@ async def create(context: ApplicationContext, session: Session, stake: int, expe
             message += "normal "
         elif stake == 2:
             message += "high "
-        message += "stakes game has been processed. I, C1RC3 #" + str(randint(0, 63)) + ", will be acting as your table's arbitrator. Please state your name for the record, in order for your participation to be counted.\"`"
+        message += "stakes game has been processed. I am C1RC3 #" + str(randint(0, 63)) + ", and I shall be your table's arbitrator today. Please state your name for the record, in order for your participation to be counted.\"`"
         await ghost_reply(context, message)
 
-async def join(context: ApplicationContext, session: Session, name: str, expected_type: type[Game]) -> None:
-    """Handle functionality for joining any game
-    
-    ### Parameters
-    context: discord.ApplicationContext
-        Application command context
-    session: sqlalchemy.orm.Session
-        Current database scope
-    name: str
-        Name to refer to new Player as
-    expected_type: type[dbmodels.Game]
-        Game subclass this command was sent for
+    session.close()
+
+@base_game_cmds.command(name = "join", description = "Join a game in this channel")
+@option("name", str, description = "The name of your character; how C1RC3 refers to you", required = True, min_length = 1, max_length = 20)
+async def join(context: ApplicationContext, name: str):
+    """Add the command /<prefix> join <name>
+
+    Join a game as a player in a channel.
     """
 
-    game: expected_type = expected_type.find_game(session, context.channel_id)
+    expected_type: type[Game] = context.command.game_type
+
+    session = database_connector()
+
+    game: Game = expected_type.find_game(session, context.channel_id)
     if game is None:
         log(get_time() + " >> " + str(context.author) + " tried to join no game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
         await ghost_reply(context, "`\"There is no game of that type running at this table at the moment.\"`", True)
@@ -95,17 +99,18 @@ async def join(context: ApplicationContext, session: Session, name: str, expecte
                 log(get_time() + " >> " + str(context.author) + " tried to rejoin a game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
                 await ghost_reply(context, "`\"You are already part of this table.\"`", True)
 
-async def concede(context: ApplicationContext, session: Session, expected_type: type[Game]) -> None:
-    """Handle functionality for conceding in any game
-    
-    ### Parameters
-    context: discord.ApplicationContext
-        Application command context
-    session: sqlalchemy.orm.Session
-        Current database scope
-    expected_type: type[dbmodels.Game]
-        Game subclass this command was sent for
+    session.close()
+
+@base_game_cmds.command(name = "concede", description = "Declare your loss (i.e. you've been fully TFed)")
+async def concede(context: ApplicationContext):
+    """Add the command /<prefix> concede
+
+    Forfeit a game.
     """
+
+    expected_type: type[Game] = context.command.game_type
+
+    session = database_connector()
     
     game = expected_type.find_game(session, context.channel_id)
     if game is None:
@@ -168,19 +173,74 @@ async def concede(context: ApplicationContext, session: Session, expected_type: 
                     await context.channel.send("*With no one left sitting at the table, C1RC3 simply walks off to attend to other tables.*")
                     game.end(session)
 
-async def chips(context: ApplicationContext, session: Session, private: bool, expected_type: type[Game]) -> None:
-    """Handle functionality for viewing chips in any game
-    
-    ### Parameters
-    context: discord.ApplicationContext
-        Application command context
-    session: sqlalchemy.orm.Session
-        Current database scope
-    private: bool
-        Whether bot responds to user in private
-    expected_type: type[dbmodels.Game]
-        Game subclass this command was sent for
+    session.close()
+
+@base_game_cmds.command(name = "identify", description = "Be reminded of other players' identities and chips")
+async def identify(context: ApplicationContext):
+    """Add the command /<prefix> identify
+
+    For a player to view others' chips & discord users.
     """
+
+    expected_type: type[Game] = context.command.game_type
+
+    session = database_connector()
+
+    game = expected_type.find_game(session, context.channel_id)
+    if game is None:
+        log(get_time() + " >> " + str(context.author) + " tried to identify players at an empty table in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+        await ghost_reply(context, "`\"There is no game of that type running at this table at the moment.\"`", True)
+    else:
+        log(get_time() + " >> " + str(context.author) + " identified players in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+        message = "`\"The unique soul identifications for each player at this table are:\"`\n"
+        for player in game.players:
+            message += "**" + player.name + "**: " + player.mention() + "\n"
+            message += "    __Chips__: " + format_chips(player.get_chips()) + "\n"
+            message += "    __Used__: " + format_chips(player.get_used()) + "\n"
+        await ghost_reply(context, message, True)
+
+    session.close()
+
+@base_game_cmds.command(name = "rename", description = "Ask to be called something else")
+@option("new_name", str, description = "New name C1RC3 will refer to you by", required = True, min_length = 1, max_length = 20)
+@option("private", bool, description = "Whether to keep the response only visible to you", required = True)
+async def rename(context: ApplicationContext, new_name: str, private: bool):
+    """Add the command /<prefix> rename <new_name> <private>
+
+    For a player to go by a new name.
+    """
+
+    expected_type: type[Game] = context.command.game_type
+
+    session = database_connector()
+
+    game = expected_type.find_game(session, context.channel_id)
+    if game is None:
+        log(get_time() + " >> " + str(context.author) + " tried to rename with no game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+        await ghost_reply(context, "`\"There is no game of that type running at this table at the moment.\"`", True)
+    else:
+        player = game.is_playing(session, context.author.id)
+        if player is None:
+            log(get_time() + " >> " + str(context.author) + " tried to rename in the wrong game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+            await ghost_reply(context, "`\"You cannot rename yourself in a game you are not a part of.\"`", True)
+        else:
+            player.rename(session, new_name)
+            log(get_time() + " >> " + str(context.author) + " renamed to " + new_name + " in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+            await ghost_reply(context, "*C1RC3 nods.* `\"Very well. I will refer to you as " + new_name + " from now on.\"`", private)
+
+    session.close()
+
+@base_game_cmds.command(name = "chips", description = "Recount how many chips you have in the game")
+@option("private", bool, description = "Whether to keep the response only visible to you", required = True)
+async def chips(context: ApplicationContext, private: bool):
+    """Add the command /<prefix> chips <private>
+
+    For a player to view their own chips.
+    """
+
+    expected_type: type[Game] = context.command.game_type
+
+    session = database_connector()
     
     game = expected_type.find_game(session, context.channel_id)
     if game is None:
@@ -195,33 +255,32 @@ async def chips(context: ApplicationContext, session: Session, private: bool, ex
             log(get_time() + " >> " + str(context.author) + " viewed chips (" + str(player.get_chips()) + ") in a game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
             await ghost_reply(context, "`\"" + player.name + ", you currently have:\"`\n# " + format_chips(player.get_chips()), private)
 
-async def bet(context: ApplicationContext, session: Session, chips: list[int], expected_type: type[Game]) -> tuple[bool, Game]:
-    """Handle functionality for placing a bet in any game
-    
-    ### Parameters
-    context: discord.ApplicationContext
-        Application command context
-    session: sqlalchemy.orm.Session
-        Current database scope
-    chips: list[int]
-        Values of chips to bet in order of type
-    expected_type: type[dbmodels.Game]
-        Game subclass this command was sent for
+    session.close()
 
-    ### Returns
-    bool
-        True
-            The bet was successfully placed
-        False
-            The bet failed to be placed
-    dbmodels.Game
-        The game of the channel if bet placed; None if not
+@base_game_cmds.command(name = "bet", description = "Bet an amount of chips")
+@option("physical", int, description = "The amount of physical chips to bet", min_value = 0, max_value = 100, default = 0)
+@option("mental", int, description = "The amount of mental chips to bet", min_value = 0, max_value = 20, default = 0)
+@option("artificial", int, description = "The amount of artificial chips to bet", min_value = 0, max_value = 2, default = 0)
+@option("supernatural", int, description = "The amount of supernatural chips to bet", min_value = 0, max_value = 20, default = 0)
+@option("merge", int, description = "The amount of merge chips to bet", min_value = 0, max_value = 3, default = 0)
+@option("swap", int, description = "The amount of swap chips to bet", min_value = 0, max_value = 25, default = 0)
+async def bet(context: ApplicationContext, physical: int, mental: int, artificial: int, supernatural: int, merge: int, swap: int):
+    """Add the command /<prefix> bet [chip amounts]
+    
+    Places a bet for a player in a game.
     """
+
+    expected_type: type[Game] = context.command.game_type
+
+    # Extract chip args
+    chips: list[int] = list(locals().values())[1:7]
 
     if all_zero(chips):
         log(get_time() + " >> " + str(context.author) + " tried to bet nothing in [" + str(context.guild) + "], [" + str(context.channel) + "]")
         await ghost_reply(context, "`\"You cannot bet nothing.\"`", True)
-        return (False, None)
+        return
+
+    session = database_connector()
 
     game = expected_type.find_game(session, context.channel_id)
     if game is None:
@@ -242,23 +301,28 @@ async def bet(context: ApplicationContext, session: Session, chips: list[int], e
             log(get_time() + " >> " + str(context.author) + " placed bet of " + str(chips) + " in [" + str(context.guild) + "], [" + str(context.channel) + "]")
             player.set_bet(session, chips)
             await ghost_reply(context, "*C1RC3 nods to your request, as she reiterates,* `\"" + player.name + " has placed a bet of:\"`\n## " + format_chips(chips))
-            return (True, game)
 
-    return (False, None)
+    session.close()
 
-async def use(context: ApplicationContext, session: Session, chips: list[int], expected_type: type[Game]) -> None:
-    """Handle functionality for using chips in any game
-    
-    ### Parameters
-    context: discord.ApplicationContext
-        Application command context
-    session: sqlalchemy.orm.Session
-        Current database scope
-    chips: list[int]
-        Values of chips to use in order of type
-    expected_type: type[dbmodels.Game]
-        Game subclass this command was sent for
+@base_game_cmds.command(name = "use", description = "Use an amount of chips from your stash")
+@option("physical", int, description = "The amount of physical chips to use", min_value = 0, default = 0)
+@option("mental", int, description = "The amount of mental chips to use", min_value = 0, default = 0)
+@option("artificial", int, description = "The amount of artificial chips to use", min_value = 0, default = 0)
+@option("supernatural", int, description = "The amount of supernatural chips to use", min_value = 0, default = 0)
+@option("merge", int, description = "The amount of merge chips to use", min_value = 0, default = 0)
+@option("swap", int, description = "The amount of swap chips to use", min_value = 0, default = 0)
+async def use(context: ApplicationContext, physical: int, mental: int, artificial: int, supernatural: int, merge: int, swap: int):
+    """Add the command /<prefix> use [chip amounts]
+
+    For a player to consume their chips.
     """
+
+    expected_type: type[Game] = context.command.game_type
+
+    # Extract chip args
+    chips: list[int] = list(locals().values())[1:7]
+
+    session = database_connector()
 
     if all_zero(chips):
         log(get_time() + " >> " + str(context.author) + " tried to use no chips in [" + str(context.guild) + "], [" + str(context.channel) + "]")
@@ -286,21 +350,32 @@ async def use(context: ApplicationContext, session: Session, chips: list[int], e
                 log(get_time() + " >> " + str(context.author) + " tried to use " + str(chips) + " chips in [" + str(context.guild) + "], [" + str(context.channel) + "]")
                 await ghost_reply(context, "`\"You do not possess enough chips to use that many.\"`", True)
 
-async def convert(context: ApplicationContext, session: Session, option: int, amount: int, expected_type: type[Game]) -> None:
-    """Handle functionality for converting chips in any game
-    
-    ### Parameters
-    context: discord.ApplicationContext
-        Application command context
-    session: sqlalchemy.orm.Session
-        Current database scope
-    option: int
-        Index for conversion type of chip_conversions
-    amount: int
-        Amount to multiply conversion by
-    expected_type: type[dbmodels.Game]
-        Game subclass this command was sent for
+    session.close()
+
+@base_game_cmds.command(name = "convert", description = "Convert one type of chips to another")
+@option("conversion", int, description = "What types of chips to convert", required = True, choices = [
+    OptionChoice("Mental -> x10 Physical", 0),
+    OptionChoice("Artificial -> x40 Physical, x3 Mental", 1),
+    OptionChoice("x40 Physical, x3 Mental -> Artificial", 2),
+    OptionChoice("Supernatural -> x5 Physical", 3),
+    OptionChoice("Supernatural -> x1/2 Mental", 4),
+    OptionChoice("x5 Physical -> Supernatural", 5),
+    OptionChoice("x1/2 Mental -> Supernatural", 6),
+    OptionChoice("Merge -> x30 Physical", 7),
+    OptionChoice("Merge -> x3 Mental", 8),
+    OptionChoice("Swap -> x5 Physical", 9),
+    OptionChoice("Swap -> x1/2 Mental", 10),
+])
+@option("amount", int, description = "The amount of chips to convert", min_value = 1)
+async def convert(context: ApplicationContext, conversion: int, amount: int):
+    """Add the command /<prefix> convert <conversion> <amount>
+
+    For a player to dissolve/craft an amount of chips.
     """
+
+    expected_type: type[Game] = context.command.game_type
+
+    session = database_connector()
 
     game = expected_type.find_game(session, context.channel_id)
     if game is None:
@@ -316,7 +391,7 @@ async def convert(context: ApplicationContext, session: Session, option: int, am
             await ghost_reply(context, "`\"You cannot convert chips right now, in the middle of a round.\"`", True)
         else:
             # test to see if conversion results in whole numbers
-            consumed, produced = chip_conversions[option]
+            consumed, produced = chip_conversions[conversion]
             consumed = [x * amount for x in consumed]
             produced = [x * amount for x in produced]
 
@@ -339,61 +414,8 @@ async def convert(context: ApplicationContext, session: Session, option: int, am
                 else:
                     log(get_time() + " >> " + str(context.author) + " converted more chips than they had (" + str(consumed) + ") in [" + str(context.guild) + "], [" + str(context.channel) + "]")
                     await ghost_reply(context, "`\"You do not possess enough chips to convert that many.\"`", True)
-           
-async def rename(context: ApplicationContext, session: Session, new_name: str, private: bool, expected_type: type[Game]) -> None:
-    """Handle functionality for renaming a player in any game
-    
-    ### Parameters
-    context: discord.ApplicationContext
-        Application command context
-    session: sqlalchemy.orm.Session
-        Current database scope
-    new_name: str
-        The new name to set the player to
-    private: bool
-        Whether bot responds to user in private
-    expected_type: type[dbmodels.Game]
-        Game subclass this command was sent for
-    """
 
-    game = expected_type.find_game(session, context.channel_id)
-    if game is None:
-        log(get_time() + " >> " + str(context.author) + " tried to rename with no game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-        await ghost_reply(context, "`\"There is no game of that type running at this table at the moment.\"`", True)
-    else:
-        player = game.is_playing(session, context.author.id)
-        if player is None:
-            log(get_time() + " >> " + str(context.author) + " tried to rename in the wrong game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-            await ghost_reply(context, "`\"You cannot rename yourself in a game you are not a part of.\"`", True)
-        else:
-            player.rename(session, new_name)
-            log(get_time() + " >> " + str(context.author) + " renamed to " + new_name + " in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-            await ghost_reply(context, "*C1RC3 nods.* `\"Very well. I will refer to you as " + new_name + " from now on.\"`", private)
-
-async def identify(context: ApplicationContext, session: Session, expected_type: type[Game]) -> None:
-    """Handle functionality for identifying other players in any game
-    
-    ### Parameters
-    context: discord.ApplicationContext
-        Application command context
-    session: sqlalchemy.orm.Session
-        Current database scope
-    expected_type: type[dbmodels.Game]
-        Game subclass this command was sent for
-    """
-
-    game = expected_type.find_game(session, context.channel_id)
-    if game is None:
-        log(get_time() + " >> " + str(context.author) + " tried to identify players at an empty table in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-        await ghost_reply(context, "`\"There is no game of that type running at this table at the moment.\"`", True)
-    else:
-        log(get_time() + " >> " + str(context.author) + " identified players in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-        message = "`\"The unique soul identifications for each player at this table are:\"`\n"
-        for player in game.players:
-            message += "**" + player.name + "**: " + player.mention() + "\n"
-            message += "    __Chips__: " + format_chips(player.get_chips()) + "\n"
-            message += "    __Used__: " + format_chips(player.get_used()) + "\n"
-        await ghost_reply(context, message, True)
+    session.close()
 
 
 game_admin_cmds = admin_cmds.create_subgroup("game", "Admin commands directly related to games in general")
