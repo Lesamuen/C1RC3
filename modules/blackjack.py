@@ -16,8 +16,10 @@ from admin import admin_cmds
 bj_cmds = base_game_cmds.copy()
 bj_cmds.name = "bj"
 bj_cmds.description = "Commands to run the game of Blackjack"
-for cmd in bj_cmds.walk_commands():
+for i, cmd in enumerate(bj_cmds.subcommands):
+    cmd = cmd.copy()
     cmd.game_type = Blackjack
+    bj_cmds.subcommands[i] = cmd
 bot_client.add_application_command(bj_cmds)
 
 

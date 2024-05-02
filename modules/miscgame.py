@@ -16,8 +16,10 @@ from game import base_game_cmds
 mg_cmds = base_game_cmds.copy()
 mg_cmds.name = "mg"
 mg_cmds.description = "Commands to run a Miscellaneous game"
-for cmd in mg_cmds.walk_commands():
+for i, cmd in enumerate(mg_cmds.subcommands):
+    cmd = cmd.copy()
     cmd.game_type = Misc
+    mg_cmds.subcommands[i] = cmd
 bot_client.add_application_command(mg_cmds)
 
 

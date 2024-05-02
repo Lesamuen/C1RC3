@@ -14,8 +14,10 @@ from game import base_game_cmds
 ty_cmds = base_game_cmds.copy()
 ty_cmds.name = "ty"
 ty_cmds.description = "Commands to run the game of Tourney"
-for cmd in ty_cmds.walk_commands():
+for i, cmd in enumerate(ty_cmds.subcommands):
+    cmd = cmd.copy()
     cmd.game_type = Tourney
+    ty_cmds.subcommands[i] = cmd
 bot_client.add_application_command(ty_cmds)
 
 
