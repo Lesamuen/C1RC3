@@ -27,7 +27,10 @@ bot_client.add_application_command(bj_cmds)
 async def bj_hand(
     context: ApplicationContext
 ):
-    """Add the command /bj hand"""
+    """Add the command /bj hand
+    
+    See player's hand & hand value & others' hands
+    """
 
     session = database_connector()
     
@@ -72,7 +75,10 @@ async def bj_hand(
 async def bj_hit(
     context: ApplicationContext
 ):
-    """Add the command /bj hit"""
+    """Add the command /bj hit
+    
+    Hit in Blackjack
+    """
 
     session = database_connector()
     
@@ -126,7 +132,10 @@ async def bj_hit(
 async def bj_stand(
     context: ApplicationContext
 ):
-    """Add the command /bj stand"""
+    """Add the command /bj stand
+    
+    Stand in Blackjack
+    """
 
     session = database_connector()
     
@@ -289,7 +298,10 @@ bj_admin_cmds = admin_cmds.create_subgroup("bj", "Admin commands directly relate
 async def bj_admin_show_deck(
     context: ApplicationContext,
 ):
-    """Add the command /admin bj show_deck"""
+    """Add the command /admin bj show_deck
+    
+    Reveal deck
+    """
 
     session = database_connector()
 
@@ -310,7 +322,10 @@ async def bj_admin_show_deck(
 async def bj_admin_shuffle(
     context: ApplicationContext,
 ):
-    """Add the command /admin bj shuffle"""
+    """Add the command /admin bj shuffle
+    
+    Shuffle deck manually
+    """
 
     session = database_connector()
 

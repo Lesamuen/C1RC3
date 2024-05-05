@@ -15,7 +15,10 @@ chip_cmds = bot_client.create_group("chip", "Commands related to chip-holding ac
 @option("name", str, description = "The name of the character holding the account", required = True, min_length = 1, max_length = 50)
 @option("private", bool, description = "Whether to keep the response only visible to you", required = True)
 async def open_account(context: ApplicationContext, name: str, private: bool):
-    """Add the command /open_account"""
+    """Add the command /chip open_account
+    
+    Create a chips holding account
+    """
 
     session = database_connector()
 
@@ -37,7 +40,10 @@ async def open_account(context: ApplicationContext, name: str, private: bool):
 @option("new_name", str, description = "The new name of the account", required = True, min_length = 1, max_length = 50)
 @option("private", bool, description = "Whether to keep the response only visible to you", required = True)
 async def change_name(context: ApplicationContext, name: str, new_name: str, private: bool):
-    """Add the command /change_name"""
+    """Add the command /chip change_name
+    
+    Change name of chip account
+    """
 
     session = database_connector()
 
@@ -81,7 +87,10 @@ async def change_name(context: ApplicationContext, name: str, new_name: str, pri
 @option("name", str, description = "The name the account is under", required = True, min_length = 1, max_length = 50)
 @option("private", bool, description = "Whether to keep the response only visible to you", required = True)
 async def balance(context: ApplicationContext, name: str, private: bool):
-    """Add the command /balance"""
+    """Add the command /chip balance
+    
+    Check balance of chip account
+    """
 
     session = database_connector()
 
@@ -119,7 +128,10 @@ async def balance(context: ApplicationContext, name: str, private: bool):
 @option("merge", int, description = "The amount of merge chips to deposit", min_value = 0, default = 0)
 @option("swap", int, description = "The amount of swap chips to deposit", min_value = 0, default = 0)
 async def deposit(context: ApplicationContext, name: str, private: bool, physical: int, mental: int, artificial: int, supernatural: int, merge: int, swap: int):
-    """Add the command /deposit"""
+    """Add the command /chip deposit
+    
+    Add chips to chip account
+    """
 
     # Grab chip params
     chips: list[int] = list(locals().values())[3:9]
@@ -170,7 +182,10 @@ async def deposit(context: ApplicationContext, name: str, private: bool, physica
 @option("swap", int, description = "The amount of swap chips to withdraw", min_value = 0, default = 0)
 async def withdraw(
     context: ApplicationContext, name: str, private: bool, physical: int, mental: int, artificial: int, supernatural: int, merge: int, swap: int):
-    """Add the command /withdraw"""
+    """Add the command /chip withdraw
+    
+    Remove chips from chip account
+    """
 
     # Grab chip params
     chips: list[int] = list(locals().values())[3:9]

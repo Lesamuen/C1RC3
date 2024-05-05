@@ -25,7 +25,10 @@ bot_client.add_application_command(ty_cmds)
 async def ty_hand(
     context: ApplicationContext
 ):
-    """Add the command /ty hand"""
+    """Add the command /ty hand
+    
+    View player hand
+    """
 
     session = database_connector()
     
@@ -58,7 +61,10 @@ async def ty_hand(
 async def ty_recon(
     context: ApplicationContext,
 ):
-    """Add the command /ty recon"""
+    """Add the command /ty recon
+    
+    View everyone's points and used cards
+    """
 
     session = database_connector()
     
@@ -91,7 +97,10 @@ async def ty_recon(
 @ty_cmds.command(name = "play", description = "Choose one of your cards to send into the Tourney")
 @option("card", int, description = "Which card to play", min_value = 1, max_value = 8)
 async def ty_play(context: ApplicationContext, card: int):
-    """Add the command /ty play"""
+    """Add the command /ty play
+    
+    Play a card
+    """
 
     session = database_connector()
 

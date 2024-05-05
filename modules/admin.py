@@ -36,7 +36,10 @@ admin_cmds.checks = [check_admin]
 
 @admin_cmds.command(name = "bad_girl", description = "Admin command to shut C1RC3 down")
 async def bad_girl(context: ApplicationContext):
-    """Add the command /bad_girl"""
+    """Add the command /admin bad_girl
+    
+    Shut C1RC3 down externally
+    """
 
     await context.respond("https://tenor.com/view/anime-dan-machi-sad-sad-face-sorrow-gif-13886240")
     log(get_time() + " >> Admin " + str(context.author) + " externally shut down C1RC3 from [" + str(context.guild) + "], [" + str(context.channel) + "]")

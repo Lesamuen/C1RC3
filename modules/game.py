@@ -423,7 +423,10 @@ game_admin_cmds = admin_cmds.create_subgroup("game", "Admin commands directly re
 @game_admin_cmds.command(name = "force_end_game", description = "Admin command to end a game in this channel")
 @option("private", bool, description = "Whether to keep the response only visible to you", default = False)
 async def admin_force_end_game(context: ApplicationContext, private: bool):
-    """Add the command /admin game force_end_game"""
+    """Add the command /admin game force_end_game
+    
+    Delete a game
+    """
 
     session = database_connector()
 
@@ -442,7 +445,10 @@ async def admin_force_end_game(context: ApplicationContext, private: bool):
 @option("user", User, description = "User to remove from the game", required = True)
 @option("private", bool, description = "Whether to keep the response only visible to you", default = False)
 async def admin_remove_player(context: ApplicationContext, user: User, private: bool):
-    """Add the command /admin game remove_player"""
+    """Add the command /admin game remove_player
+    
+    Delete a player from a game
+    """
 
     session = database_connector()
 
@@ -472,7 +478,10 @@ async def admin_remove_player(context: ApplicationContext, user: User, private: 
 @option("swap", int, description = "The amount of swap chips to set", min_value = 0, default = 0)
 @option("private", bool, description = "Whether to keep the response only visible to you", default = False)
 async def admin_set_chips(context: ApplicationContext, user: User, physical: int, mental: int, artificial: int, supernatural: int, merge: int, swap: int, private: bool):
-    """Add the command /admin game set_chips"""
+    """Add the command /admin game set_chips
+    
+    Set a player's chips
+    """
 
     session = database_connector()
 
@@ -505,7 +514,10 @@ async def admin_set_chips(context: ApplicationContext, user: User, physical: int
 @option("swap", int, description = "The amount of swap chips to set", min_value = 0, default = 0)
 @option("private", bool, description = "Whether to keep the response only visible to you", default = False)
 async def admin_set_used(context: ApplicationContext, user: User, physical: int, mental: int, artificial: int, supernatural: int, merge: int, swap: int, private: bool):
-    """Add the command /admin game set_used"""
+    """Add the command /admin game set_used
+    
+    Set a player's used chips
+    """
 
     session = database_connector()
 
@@ -537,7 +549,10 @@ async def admin_set_used(context: ApplicationContext, user: User, physical: int,
 @option("swap", int, description = "The amount of swap chips to set", min_value = 0, default = 0)
 @option("private", bool, description = "Whether to keep the response only visible to you", default = False)
 async def admin_set_bet(context: ApplicationContext, physical: int, mental: int, artificial: int, supernatural: int, merge: int, swap: int, private: bool):
-    """Add the command /admin game set_bet"""
+    """Add the command /admin game set_bet
+    
+    Set game's bet
+    """
 
     session = database_connector()
 
@@ -563,7 +578,10 @@ async def admin_set_bet(context: ApplicationContext, physical: int, mental: int,
 ])
 @option("private", bool, description = "Whether to keep the response only visible to you", default = False)
 async def admin_set_stake(context: ApplicationContext, stake: int, private: bool):
-    """Add the command /admin game set_stake"""
+    """Add the command /admin game set_stake
+    
+    Set game's stake
+    """
 
     session = database_connector()
 
@@ -590,7 +608,10 @@ async def admin_set_stake(context: ApplicationContext, stake: int, private: bool
 @option("index", int, description = "Index of player to set bet turn to", required = True, min_value = 0)
 @option("private", bool, description = "Whether to keep the response only visible to you", default = False)
 async def admin_set_bet_turn(context: ApplicationContext, index: int, private: bool):
-    """Add the command /admin game set_bet_turn"""
+    """Add the command /admin game set_bet_turn
+    
+    Set game's bet turn
+    """
 
     session = database_connector()
 
@@ -614,7 +635,10 @@ async def admin_set_bet_turn(context: ApplicationContext, index: int, private: b
 @option("kept", User, description = "Player that will keep their body", required = True)
 @option("absorbed", User, description = "Player that will be merged into the other", required = True)
 async def admin_merge(context: ApplicationContext, kept: User, absorbed: User):
-    """Add the command /admin game merge"""
+    """Add the command /admin game merge
+    
+    Merge two players
+    """
 
     session = database_connector()
 

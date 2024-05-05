@@ -27,7 +27,10 @@ bot_client.add_application_command(mg_cmds)
 async def mg_shuffle(
     context: ApplicationContext
 ):
-    """Add the command /mg shuffle"""
+    """Add the command /mg shuffle
+    
+    Shuffle the deck
+    """
 
     session = database_connector()
     
@@ -46,7 +49,10 @@ async def mg_shuffle(
 @option("peek", bool, description = "Whether to see the cards themselves", required = True)
 @option("private", bool, description = "Whether the cards can only be seen by you or not (only if not peeking). Always True if not playing.", required = True)
 async def mg_deck(context: ApplicationContext, peek: bool, private: bool):
-    """Add the command /mg deck"""
+    """Add the command /mg deck
+    
+    View the deck
+    """
 
     session = database_connector()
     
@@ -84,7 +90,10 @@ async def mg_deck(context: ApplicationContext, peek: bool, private: bool):
 @option("amount", int, description = "The amount of cards to draw", min_value = 1, max_value = 26)
 @option("private", bool, description = "Whether the cards drawn can only be seen by you or not", required = True)
 async def mg_draw(context: ApplicationContext, amount: int, private: bool):
-    """Add the command /mg draw"""
+    """Add the command /mg draw
+    
+    Draw from the deck
+    """
 
     session = database_connector()
     
@@ -118,7 +127,10 @@ async def mg_draw(context: ApplicationContext, amount: int, private: bool):
 @option("sides", int, description = "The amount of sides each dice has", min_value = 1, max_value = 9999999999)
 @option("private", bool, description = "Whether the dice can only be seen by you or not", required = True)
 async def mg_roll(context: ApplicationContext, amount: int, sides: int, private: bool):
-    """Add the command /mg roll"""
+    """Add the command /mg roll
+    
+    Roll an amount of dice
+    """
 
     message = "*You have rolled " + str(amount) + "d" + str(sides) + ":*\n"
     sum = randint(1, sides)
@@ -137,7 +149,10 @@ async def mg_roll(context: ApplicationContext, amount: int, sides: int, private:
 async def mg_win_bet(
     context: ApplicationContext
 ):
-    """Add the command /mg win_bet"""
+    """Add the command /mg win_bet
+    
+    Win a round
+    """
 
     session = database_connector()
     
