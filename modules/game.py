@@ -4,7 +4,7 @@ print("Loading module 'game'...")
 
 from random import randint
 
-from discord import ApplicationContext, Option, OptionChoice, User, SlashCommandGroup, option
+from discord import ApplicationContext, OptionChoice, User, SlashCommandGroup, option
 
 from auxiliary import log, get_time, all_zero, ghost_reply, guilds
 from dbmodels import Game, Player
@@ -421,10 +421,8 @@ async def convert(context: ApplicationContext, conversion: int, amount: int):
 game_admin_cmds = admin_cmds.create_subgroup("game", "Admin commands directly related to games in general")
 
 @game_admin_cmds.command(name = "force_end_game", description = "Admin command to end a game in this channel")
-async def admin_force_end_game(
-    context: ApplicationContext,
-    private: Option(bool, description = "Whether to keep the response only visible to you", default = False)
-):
+@option("private", bool, description = "Whether to keep the response only visible to you", default = False)
+async def admin_force_end_game(context: ApplicationContext, private: bool):
     """Add the command /admin game force_end_game"""
 
     session = database_connector()
@@ -441,11 +439,9 @@ async def admin_force_end_game(
     session.close()
 
 @game_admin_cmds.command(name = "remove_player", description = "Admin command to forcibly remove a player from a game")
-async def admin_remove_player(
-    context: ApplicationContext,
-    user: Option(User, description = "User to remove from the game", required = True),
-    private: Option(bool, description = "Whether to keep the response only visible to you", default = False)
-):
+@option("user", User, description = "User to remove from the game", required = True)
+@option("private", bool, description = "Whether to keep the response only visible to you", default = False)
+async def admin_remove_player(context: ApplicationContext, user: User, private: bool):
     """Add the command /admin game remove_player"""
 
     session = database_connector()
@@ -467,17 +463,15 @@ async def admin_remove_player(
     session.close()
 
 @game_admin_cmds.command(name = "set_chips", description = "Admin command to manually set chips in a game")
-async def admin_set_chips(
-    context: ApplicationContext,
-    user: Option(User, description = "User whose chips you are editting", required = True),
-    physical: Option(int, description = "The amount of physical chips to set", min_value = 0, default = 0),
-    mental: Option(int, description = "The amount of mental chips to set", min_value = 0, default = 0),
-    artificial: Option(int, description = "The amount of artificial chips to set", min_value = 0, default = 0),
-    supernatural: Option(int, description = "The amount of supernatural chips to set", min_value = 0, default = 0),
-    merge: Option(int, description = "The amount of merge chips to set", min_value = 0, default = 0),
-    swap: Option(int, description = "The amount of swap chips to set", min_value = 0, default = 0),
-    private: Option(bool, description = "Whether to keep the response only visible to you", default = False)
-):
+@option("user", User, description = "User whose chips you are editting", required = True)
+@option("physical", int, description = "The amount of physical chips to set", min_value = 0, default = 0)
+@option("mental", int, description = "The amount of mental chips to set", min_value = 0, default = 0)
+@option("artificial", int, description = "The amount of artificial chips to set", min_value = 0, default = 0)
+@option("supernatural", int, description = "The amount of supernatural chips to set", min_value = 0, default = 0)
+@option("merge", int, description = "The amount of merge chips to set", min_value = 0, default = 0)
+@option("swap", int, description = "The amount of swap chips to set", min_value = 0, default = 0)
+@option("private", bool, description = "Whether to keep the response only visible to you", default = False)
+async def admin_set_chips(context: ApplicationContext, user: User, physical: int, mental: int, artificial: int, supernatural: int, merge: int, swap: int, private: bool):
     """Add the command /admin game set_chips"""
 
     session = database_connector()
@@ -502,17 +496,15 @@ async def admin_set_chips(
     session.close()
 
 @game_admin_cmds.command(name = "set_used", description = "Admin command to manually set used chips in a game")
-async def admin_set_used(
-    context: ApplicationContext,
-    user: Option(User, description = "User whose used chips you are editting", required = True),
-    physical: Option(int, description = "The amount of physical chips to set", min_value = 0, default = 0),
-    mental: Option(int, description = "The amount of mental chips to set", min_value = 0, default = 0),
-    artificial: Option(int, description = "The amount of artificial chips to set", min_value = 0, default = 0),
-    supernatural: Option(int, description = "The amount of supernatural chips to set", min_value = 0, default = 0),
-    merge: Option(int, description = "The amount of merge chips to set", min_value = 0, default = 0),
-    swap: Option(int, description = "The amount of swap chips to set", min_value = 0, default = 0),
-    private: Option(bool, description = "Whether to keep the response only visible to you", default = False)
-):
+@option("user", User, description = "User whose used chips you are editting", required = True)
+@option("physical", int, description = "The amount of physical chips to set", min_value = 0, default = 0)
+@option("mental", int, description = "The amount of mental chips to set", min_value = 0, default = 0)
+@option("artificial", int, description = "The amount of artificial chips to set", min_value = 0, default = 0)
+@option("supernatural", int, description = "The amount of supernatural chips to set", min_value = 0, default = 0)
+@option("merge", int, description = "The amount of merge chips to set", min_value = 0, default = 0)
+@option("swap", int, description = "The amount of swap chips to set", min_value = 0, default = 0)
+@option("private", bool, description = "Whether to keep the response only visible to you", default = False)
+async def admin_set_used(context: ApplicationContext, user: User, physical: int, mental: int, artificial: int, supernatural: int, merge: int, swap: int, private: bool):
     """Add the command /admin game set_used"""
 
     session = database_connector()
@@ -537,16 +529,14 @@ async def admin_set_used(
     session.close()
 
 @game_admin_cmds.command(name = "set_bet", description = "Admin command to manually change the bet in a game")
-async def admin_set_bet(
-    context: ApplicationContext,
-    physical: Option(int, description = "The amount of physical chips to set", min_value = 0, default = 0),
-    mental: Option(int, description = "The amount of mental chips to set", min_value = 0, default = 0),
-    artificial: Option(int, description = "The amount of artificial chips to set", min_value = 0, default = 0),
-    supernatural: Option(int, description = "The amount of supernatural chips to set", min_value = 0, default = 0),
-    merge: Option(int, description = "The amount of merge chips to set", min_value = 0, default = 0),
-    swap: Option(int, description = "The amount of swap chips to set", min_value = 0, default = 0),
-    private: Option(bool, description = "Whether to keep the response only visible to you", default = False)
-):
+@option("physical", int, description = "The amount of physical chips to set", min_value = 0, default = 0)
+@option("mental", int, description = "The amount of mental chips to set", min_value = 0, default = 0)
+@option("artificial", int, description = "The amount of artificial chips to set", min_value = 0, default = 0)
+@option("supernatural", int, description = "The amount of supernatural chips to set", min_value = 0, default = 0)
+@option("merge", int, description = "The amount of merge chips to set", min_value = 0, default = 0)
+@option("swap", int, description = "The amount of swap chips to set", min_value = 0, default = 0)
+@option("private", bool, description = "Whether to keep the response only visible to you", default = False)
+async def admin_set_bet(context: ApplicationContext, physical: int, mental: int, artificial: int, supernatural: int, merge: int, swap: int, private: bool):
     """Add the command /admin game set_bet"""
 
     session = database_connector()
@@ -566,15 +556,13 @@ async def admin_set_bet(
     session.close()
 
 @game_admin_cmds.command(name = "set_stake", description = "Admin command to change the stake of a game in this channel")
-async def admin_set_stake(
-    context: ApplicationContext,
-    stake: Option(int, description = "What stake to set the game to", required = True, choices = [
-        OptionChoice("Low Stakes", 0),
-        OptionChoice("Normal Stakes", 1),
-        OptionChoice("High Stakes", 2),
-    ]),
-    private: Option(bool, description = "Whether to keep the response only visible to you", default = False)
-):
+@option("stake", int, description = "What stake to set the game to", required = True, choices = [
+    OptionChoice("Low Stakes", 0),
+    OptionChoice("Normal Stakes", 1),
+    OptionChoice("High Stakes", 2),
+])
+@option("private", bool, description = "Whether to keep the response only visible to you", default = False)
+async def admin_set_stake(context: ApplicationContext, stake: int, private: bool):
     """Add the command /admin game set_stake"""
 
     session = database_connector()
@@ -599,11 +587,9 @@ async def admin_set_stake(
     session.close()
 
 @game_admin_cmds.command(name = "set_bet_turn", description = "Admin command to change whose turn it is to bet in a game")
-async def admin_set_bet_turn(
-    context: ApplicationContext,
-    index: Option(int, description = "Index of player to set bet turn to", required = True, min_value = 0),
-    private: Option(bool, description = "Whether to keep the response only visible to you", default = False)
-):
+@option("index", int, description = "Index of player to set bet turn to", required = True, min_value = 0)
+@option("private", bool, description = "Whether to keep the response only visible to you", default = False)
+async def admin_set_bet_turn(context: ApplicationContext, index: int, private: bool):
     """Add the command /admin game set_bet_turn"""
 
     session = database_connector()
@@ -625,11 +611,9 @@ async def admin_set_bet_turn(
     session.close()
 
 @game_admin_cmds.command(name = "merge", description = "Admin command to merge two players in a game")
-async def admin_merge(
-    context: ApplicationContext,
-    kept: Option(User, description = "Player that will keep their body", required = True),
-    absorbed: Option(User, description = "Player that will be merged into the other", required = True)
-):
+@option("kept", User, description = "Player that will keep their body", required = True)
+@option("absorbed", User, description = "Player that will be merged into the other", required = True)
+async def admin_merge(context: ApplicationContext, kept: User, absorbed: User):
     """Add the command /admin game merge"""
 
     session = database_connector()

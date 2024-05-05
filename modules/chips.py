@@ -2,7 +2,7 @@
 
 print("Loading module 'chips'...")
 
-from discord import ApplicationContext, Option
+from discord import ApplicationContext, option
 
 from bot import bot_client, database_connector
 from auxiliary import guilds, log, get_time, all_zero, ghost_reply
@@ -12,11 +12,9 @@ from emojis import format_chips
 chip_cmds = bot_client.create_group("chip", "Commands related to chip-holding accounts out of game", guild_ids = guilds, guild_only = True)
 
 @chip_cmds.command(name = "open_account", description = "Open an account for you to keep track of the chips you've won from tables.")
-async def open_account(
-    context: ApplicationContext,
-    name: Option(str, description = "The name of the person holding the account", required = True, min_length = 1),
-    private: Option(bool, description = "Whether to keep the response only visible to you", default = False)
-):
+@option("name", str, description = "The name of the character holding the account", required = True, min_length = 1, max_length = 50)
+@option("private", bool, description = "Whether to keep the response only visible to you", required = True)
+async def open_account(context: ApplicationContext, name: str, private: bool):
     """Add the command /open_account"""
 
     session = database_connector()
@@ -35,12 +33,10 @@ async def open_account(
     session.close()
 
 @chip_cmds.command(name = "change_name", description = "Update the holder's name on an account.")
-async def change_name(
-    context: ApplicationContext,
-    name: Option(str, description = "The original name of the casino account", required = True, min_length = 1),
-    new_name: Option(str, description = "The new name of the account", required = True, min_length = 1),
-    private: Option(bool, description = "Whether to keep the response only visible to you", default = False)
-):
+@option("name", str, description = "The original name of the casino account", required = True, min_length = 1, max_length = 50)
+@option("new_name", str, description = "The new name of the account", required = True, min_length = 1, max_length = 50)
+@option("private", bool, description = "Whether to keep the response only visible to you", required = True)
+async def change_name(context: ApplicationContext, name: str, new_name: str, private: bool):
     """Add the command /change_name"""
 
     session = database_connector()
@@ -82,11 +78,9 @@ async def change_name(
     session.close()
 
 @chip_cmds.command(name = "balance", description = "Check how many chips you have in an account.")
-async def balance(
-    context: ApplicationContext,
-    name: Option(str, description = "The name the account is under", required = True, min_length = 1),
-    private: Option(bool, description = "Whether to keep the response only visible to you", default = False)
-):
+@option("name", str, description = "The name the account is under", required = True, min_length = 1, max_length = 50)
+@option("private", bool, description = "Whether to keep the response only visible to you", required = True)
+async def balance(context: ApplicationContext, name: str, private: bool):
     """Add the command /balance"""
 
     session = database_connector()
@@ -116,21 +110,19 @@ async def balance(
     session.close()
 
 @chip_cmds.command(name = "deposit", description = "Deposit an amount of chips into an account.")
-async def deposit(
-    context: ApplicationContext,
-    name: Option(str, description = "The name the account is under", required = True, min_length = 1),
-    physical: Option(int, description = "The amount of physical chips to deposit", min_value = 0, default = 0),
-    mental: Option(int, description = "The amount of mental chips to deposit", min_value = 0, default = 0),
-    artificial: Option(int, description = "The amount of artificial chips to deposit", min_value = 0, default = 0),
-    supernatural: Option(int, description = "The amount of supernatural chips to deposit", min_value = 0, default = 0),
-    merge: Option(int, description = "The amount of merge chips to deposit", min_value = 0, default = 0),
-    swap: Option(int, description = "The amount of swap chips to deposit", min_value = 0, default = 0),
-    private: Option(bool, description = "Whether to keep the response only visible to you", default = False)
-):
+@option("name", str, description = "The name the account is under", required = True, min_length = 1, max_length = 50)
+@option("private", bool, description = "Whether to keep the response only visible to you", required = True)
+@option("physical", int, description = "The amount of physical chips to deposit", min_value = 0, default = 0)
+@option("mental", int, description = "The amount of mental chips to deposit", min_value = 0, default = 0)
+@option("artificial", int, description = "The amount of artificial chips to deposit", min_value = 0, default = 0)
+@option("supernatural", int, description = "The amount of supernatural chips to deposit", min_value = 0, default = 0)
+@option("merge", int, description = "The amount of merge chips to deposit", min_value = 0, default = 0)
+@option("swap", int, description = "The amount of swap chips to deposit", min_value = 0, default = 0)
+async def deposit(context: ApplicationContext, name: str, private: bool, physical: int, mental: int, artificial: int, supernatural: int, merge: int, swap: int):
     """Add the command /deposit"""
 
     # Grab chip params
-    chips: list[int] = list(locals().values())[2:8]
+    chips: list[int] = list(locals().values())[3:9]
 
     # If every single parameter is 0
     if all_zero(chips):
@@ -168,21 +160,20 @@ async def deposit(
     session.close()
 
 @chip_cmds.command(name = "withdraw", description = "Withdraw an amount of chips from an account.")
+@option("name", str, description = "The name the account is under", required = True, min_length = 1, max_length = 50)
+@option("private", bool, description = "Whether to keep the response only visible to you", required = True)
+@option("physical", int, description = "The amount of physical chips to withdraw", min_value = 0, default = 0)
+@option("mental", int, description = "The amount of mental chips to withdraw", min_value = 0, default = 0)
+@option("artificial", int, description = "The amount of artificial chips to withdraw", min_value = 0, default = 0)
+@option("supernatural", int, description = "The amount of supernatural chips to withdraw", min_value = 0, default = 0)
+@option("merge", int, description = "The amount of merge chips to withdraw", min_value = 0, default = 0)
+@option("swap", int, description = "The amount of swap chips to withdraw", min_value = 0, default = 0)
 async def withdraw(
-    context: ApplicationContext,
-    name: Option(str, description = "The name the account is under", required = True, min_length = 1),
-    physical: Option(int, description = "The amount of physical chips to withdraw", min_value = 0, default = 0),
-    mental: Option(int, description = "The amount of mental chips to withdraw", min_value = 0, default = 0),
-    artificial: Option(int, description = "The amount of artificial chips to withdraw", min_value = 0, default = 0),
-    supernatural: Option(int, description = "The amount of supernatural chips to withdraw", min_value = 0, default = 0),
-    merge: Option(int, description = "The amount of merging chips to withdraw", min_value = 0, default = 0),
-    swap: Option(int, description = "The amount of swap chips to withdraw", min_value = 0, default = 0),
-    private: Option(bool, description = "Whether to keep the response only visible to you", default = False)
-):
+    context: ApplicationContext, name: str, private: bool, physical: int, mental: int, artificial: int, supernatural: int, merge: int, swap: int):
     """Add the command /withdraw"""
 
     # Grab chip params
-    chips: list[int] = list(locals().values())[2:8]
+    chips: list[int] = list(locals().values())[3:9]
 
     # If every single parameter is 0
     if all_zero(chips):

@@ -4,7 +4,7 @@ print("Loading module 'admin'...")
 
 from random import randint
 
-from discord import ApplicationContext, Option, User
+from discord import ApplicationContext, User, option
 
 from bot import bot_client
 from auxiliary import perms, guilds, log, get_time, ghost_reply
@@ -74,23 +74,24 @@ double_headpats = [
 ]
 
 @bot_client.slash_command(name = "good_girl", description = "Reward <3", guild_ids = guilds, guild_only = True)
-async def good_girl(
-    context: ApplicationContext,
-    user1: Option(User, description = "User to target with love", required = False),
-    user2: Option(User, description = "Other user to target with love", required = False)
-    ):
-    """Add the command /good_girl"""
+@option("user", User, description = "User to target with love", required = True)
+@option("user2", User, description = "Other user to target with love", required = False)
+async def good_girl(context: ApplicationContext, user: User, user2: User):
+    """Add the command /good_girl
+    
+    Throw a headpat at someone
+    """
 
-    if user1 is not None and user2 is not None:
+    if user is not None and user2 is not None:
         await context.respond(double_headpats[randint(0, len(double_headpats) - 1)])
     else:
         await context.respond(headpats[randint(0, len(headpats) - 1)])
-    if user1 is not None:
+    if user is not None:
         if user2 is not None:
-            await context.channel.send(user1.mention + " " + user2.mention)
+            await context.channel.send(user.mention + " " + user2.mention)
         else:
-            await context.channel.send(user1.mention)
-    log(get_time() + " >> " + str(context.author) + " headpatted " + (str(user1) + " " + ("and " + str(user2) + " " if user2 is not None else "") if user1 is not None else "")\
+            await context.channel.send(user.mention)
+    log(get_time() + " >> " + str(context.author) + " headpatted " + (str(user) + " " + ("and " + str(user2) + " " if user2 is not None else "") if user is not None else "")\
         + "in [" + str(context.guild) + "], [" + str(context.channel) + "]")
 
 

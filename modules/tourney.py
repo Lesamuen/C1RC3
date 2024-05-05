@@ -2,7 +2,7 @@
 
 print("Loading module 'tourney'...")
 
-from discord import ApplicationContext, Option
+from discord import ApplicationContext, option
 
 from bot import bot_client, database_connector
 from auxiliary import log, get_time, ghost_reply
@@ -89,10 +89,8 @@ async def ty_recon(
     session.close()
 
 @ty_cmds.command(name = "play", description = "Choose one of your cards to send into the Tourney")
-async def ty_play(
-    context: ApplicationContext,
-    card: Option(int, description = "Which card to play", min_value = 1, max_value = 8)
-):
+@option("card", int, description = "Which card to play", min_value = 1, max_value = 8)
+async def ty_play(context: ApplicationContext, card: int):
     """Add the command /ty play"""
 
     session = database_connector()
