@@ -6,7 +6,7 @@ from random import randint
 
 from discord import ApplicationContext, OptionChoice, User, SlashCommandGroup, option
 
-from auxiliary import log, get_time, all_zero, ghost_reply, guilds
+from auxiliary import log, get_time, all_zero, ghost_reply, guilds, InvalidArgumentError
 from dbmodels import Game, Player
 from emojis import format_chips
 from admin import admin_cmds
@@ -417,6 +417,182 @@ async def convert(context: ApplicationContext, conversion: int, amount: int):
 
     session.close()
 
+@base_game_cmds.command(name = "tfadd", description = "Add a TF to a player")
+@option("player", User, description = "The player to add a TF to", required = True)
+@option("description", str, description = "What the TF is", required = True, min_length = 1, max_length = 100)
+@option("cost", int, description = "How much the TF costs", required = True, min_value = 1, max_value = 999)
+@option("cost_type", int, description = "What type of chips this costs", required = True, choices = [
+    OptionChoice("Physical", 0),
+    OptionChoice("Mental", 1),
+    OptionChoice("Artificial", 2),
+    OptionChoice("Supernatural", 3),
+    OptionChoice("Merge", 4),
+    OptionChoice("Swap", 5),
+])
+async def tfadd(context: ApplicationContext, player: User, description: str, cost: int, cost_type: int):
+    """Add the command /<prefix> tfadd <player> <description> <cost> <cost_type>
+
+    Add a tf entry to another player
+    """
+
+    expected_type: type[Game] = context.command.game_type
+
+    session = database_connector()
+
+    game = expected_type.find_game(session, context.channel_id)
+    if game is None:
+        log(get_time() + " >> " + str(context.author) + " added tf with no game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+        await ghost_reply(context, "`\"There is no game of that type running at this table at the moment.\"`", True)
+    else:
+        author = game.is_playing(session, context.author.id)
+        if author is None:
+            log(get_time() + " >> " + str(context.author) + " added tf in the wrong game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+            await ghost_reply(context, "`\"You cannot edit tfs in a game you are not a part of.\"`", True)
+        else:
+            target = game.is_playing(session, player.id)
+            if target is None:
+                log(get_time() + " >> " + str(context.author) + " added tf to someone who's not playing in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+                await ghost_reply(context, "`\"You cannot edit the tfs of someone who is not playing.\"`", True)
+            else:
+                target.add_tf_entry(session, description, cost, cost_type)
+                log(get_time() + " >> " + str(context.author) + " added tf " + str([description, cost, cost_type]) + " to " + str(player) + " in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+                await ghost_reply(context, "`\"TF successfully added.\"`", True)
+    
+    session.close()
+
+@base_game_cmds.command(name = "tfremove", description = "Remove a TF from a player")
+@option("player", User, description = "The player to remove a TF from", required = True)
+@option("index", int, description = "Which TF to remove", required = True, min_value = 0)
+async def tfremove(context: ApplicationContext, player: User, index: int):
+    """Add the command /<prefix> tfremove <player> <index>
+
+    Remove a tf entry from another player
+    """
+
+    expected_type: type[Game] = context.command.game_type
+
+    session = database_connector()
+
+    game = expected_type.find_game(session, context.channel_id)
+    if game is None:
+        log(get_time() + " >> " + str(context.author) + " removed tf with no game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+        await ghost_reply(context, "`\"There is no game of that type running at this table at the moment.\"`", True)
+    else:
+        author = game.is_playing(session, context.author.id)
+        if author is None:
+            log(get_time() + " >> " + str(context.author) + " removed tf in the wrong game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+            await ghost_reply(context, "`\"You cannot edit tfs in a game you are not a part of.\"`", True)
+        else:
+            target = game.is_playing(session, player.id)
+            if target is None:
+                log(get_time() + " >> " + str(context.author) + " removed tf of someone who's not playing in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+                await ghost_reply(context, "`\"You cannot edit the tfs of someone who is not playing.\"`", True)
+            else:
+                try:
+                    target.remove_tf_entry(session, index)
+                except InvalidArgumentError:
+                    log(get_time() + " >> " + str(context.author) + " removed tf " + str(index) + " that doesn't exist from " + str(player) + " in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+                    await ghost_reply(context, "`\"You cannot remove a TF that doesn't exist.\"`", True)
+                else:
+                    log(get_time() + " >> " + str(context.author) + " removed tf " + str(index) + " from " + str(player) + " in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+                    await ghost_reply(context, "`\"TF successfully removed.\"`", True)
+    
+    session.close()
+
+@base_game_cmds.command(name = "tfmark", description = "Mark a TF of a player as done")
+@option("player", User, description = "The player to mark a TF of", required = True)
+@option("index", int, description = "Which TF to mark as done", required = True, min_value = 0)
+async def tfmark(context: ApplicationContext, player: User, index: int):
+    """Add the command /<prefix> tfmark <player> <index>
+
+    Mark the tf entry of another player as done
+    """
+
+    expected_type: type[Game] = context.command.game_type
+
+    session = database_connector()
+
+    game = expected_type.find_game(session, context.channel_id)
+    if game is None:
+        log(get_time() + " >> " + str(context.author) + " marked tf with no game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+        await ghost_reply(context, "`\"There is no game of that type running at this table at the moment.\"`", True)
+    else:
+        author = game.is_playing(session, context.author.id)
+        if author is None:
+            log(get_time() + " >> " + str(context.author) + " marked tf in the wrong game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+            await ghost_reply(context, "`\"You cannot edit tfs in a game you are not a part of.\"`", True)
+        else:
+            target = game.is_playing(session, player.id)
+            if target is None:
+                log(get_time() + " >> " + str(context.author) + " marked tf of someone who's not playing in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+                await ghost_reply(context, "`\"You cannot edit the tfs of someone who is not playing.\"`", True)
+            else:
+                try:
+                    target.toggle_tf_entry(session, index)
+                except InvalidArgumentError:
+                    log(get_time() + " >> " + str(context.author) + " marked tf " + str(index) + " that doesn't exist of " + str(player) + " in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+                    await ghost_reply(context, "`\"You cannot mark a TF that doesn't exist.\"`", True)
+                else:
+                    log(get_time() + " >> " + str(context.author) + " marked tf " + str(index) + " of " + str(player) + " in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+                    await ghost_reply(context, "`\"TF successfully marked.\"`", True)
+    
+    session.close()
+
+@base_game_cmds.command(name = "tflist", description = "List the TFs of a player")
+@option("player", User, description = "The player to view the TFs of", required = True)
+async def tflist(context: ApplicationContext, player: User):
+    """Add the command /<prefix> tflist <player>
+
+    View the tf entries of another player or yourself
+    """
+
+    expected_type: type[Game] = context.command.game_type
+
+    session = database_connector()
+
+    cost_types = ["PHYS", "MENT", "ARTI", "SUPE", "MERG", "SWAP"]
+
+    game = expected_type.find_game(session, context.channel_id)
+    if game is None:
+        log(get_time() + " >> " + str(context.author) + " viewed tfs with no game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+        await ghost_reply(context, "`\"There is no game of that type running at this table at the moment.\"`", True)
+    else:
+        target = game.is_playing(session, player.id)
+        if target is None:
+            log(get_time() + " >> " + str(context.author) + " viewed tfs of someone who's not playing in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+            await ghost_reply(context, "`\"You cannot view the tfs of someone who is not playing.\"`", True)
+        elif context.author == player:
+            # Viewing own tfs
+            message = "*Your current TFs:*\n```\n"
+
+            for entry in target.get_tf_entry():
+                if entry[3]:
+                    message += entry[0] + " (" + str(entry[1]) + " " + cost_types[entry[2]] + ")\n"
+
+            message += "```"
+
+            log(get_time() + " >> " + str(context.author) + " viewed their own tfs in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+            await ghost_reply(context, message, True)
+        else:
+            message = "*" + target.name + "'s current TFs:*\n```\nTO DO\n"
+
+            for index, entry in enumerate(target.get_tf_entry()):
+                if not entry[3]:
+                    message += "    " + str(index) + ": " + entry[0] + " (" + str(entry[1]) + " " + cost_types[entry[2]] + ")\n"
+
+            message += "\nFINISHED\n"
+
+            for index, entry in enumerate(target.get_tf_entry()):
+                if entry[3]:
+                    message += "    " + str(index) + ": " + entry[0] + " (" + str(entry[1]) + " " + cost_types[entry[2]] + ")\n"
+
+            message += "```"
+
+            log(get_time() + " >> " + str(context.author) + " viewed tfs of " + str(player) + " in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+            await ghost_reply(context, message, True)
+    
+    session.close()
+
 
 game_admin_cmds = admin_cmds.create_subgroup("game", "Admin commands directly related to games in general")
 
@@ -669,5 +845,39 @@ async def admin_merge(context: ApplicationContext, kept: User, absorbed: User):
 
             # Delete old player
             player2.leave(session)
+
+    session.close()
+
+@game_admin_cmds.command(name = "swap", description = "Admin command to swap two players in a game")
+@option("user1", User, description = "Player to be swapped", required = True)
+@option("user2", User, description = "Player to be swapped", required = True)
+async def admin_swap(context: ApplicationContext, user1: User, user2: User):
+    """Add the command /admin game swap
+    
+    Swap two players' tf lists
+    """
+
+    session = database_connector()
+
+    game = Game.find_game(session, context.channel_id)
+    if game is None:
+        log(get_time() + " >> Admin " + str(context.author) + " tried to swap players for no game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+        await ghost_reply(context, "`\"Administrator-level Access detected. Request failed. There is no game at this table.\"`", True)
+    else:
+        player1 = game.is_playing(session, user1.id)
+        player2 = game.is_playing(session, user2.id)
+        if player1 is None or player2 is None:
+            log(get_time() + " >> Admin " + str(context.author) + " tried to swap non-players in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+            await ghost_reply(context, "`\"Administrator-level Access detected. Request failed. One or more of these people is not playing at this table.\"`", True)
+        elif game.is_midround():
+            log(get_time() + " >> Admin " + str(context.author) + " tried to swap players midround in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+            await ghost_reply(context, "`\"Administrator-level Access detected. Request failed. I am unable to merge players in the middle of a round.\"`", True)
+        else:
+            temp_tfs = player1.get_tf_entry()
+            player1.set_tf_entry(session, player2.get_tf_entry())
+            player2.set_tf_entry(session, temp_tfs)
+            
+            log(get_time() + " >> Admin " + str(context.author) + " swapped players " + str(user1) + " and " + str(user2) + " in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+            await ghost_reply(context, "`\"Administrator-level Access detected. Player swap has been processed.\"`", True)
 
     session.close()

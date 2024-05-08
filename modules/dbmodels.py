@@ -212,6 +212,8 @@ class Player(SQLBase):
         Jsonified array of chips of each type the Player has used this game
     bet: str
         How many chips the Player is currently willing to bet
+    tfs: str
+        Jsonified array of TFs planned on Players
 
     ### Methods
     leave(session: sqlalchemy.orm.Session) -> None
@@ -240,6 +242,16 @@ class Player(SQLBase):
         Add an amount of chips to the Player's current amount of chips
     use_chips(session: sqlalchemy.orm.Session, amount: list[int], track: bool = True) -> bool
         Removes a player's chips, if able, and tracks used chips
+    get_tf_entry() -> list[list[str | int | bool]]
+        Returns unjsonified tf entries
+    set_tf_entry(session: sqlalchemy.orm.Session, tfs: list[list[str | int | bool]]) -> None
+        Directly set entire tf list
+    add_tf_entry(session: sqlalchemy.orm.Session, desc: str, cost: int, type: int) -> None
+        Adds an entry to the list of tfs on the player
+    remove_tf_entry(session: sqlalchemy.orm.Session, index: int) -> None
+        Removes an entry from the list of tfs on the player
+    toggle_tf_entry(session: sqlalchemy.orm.Session, index: int) -> None
+        Marks an entry from the list of tfs as done or not
     """
 
     __tablename__ = "player"
@@ -271,6 +283,12 @@ class Player(SQLBase):
 
     bet: Mapped[str] = mapped_column(default = "[0, 0, 0, 0, 0, 0]")
     """How many chips the Player is currently willing to bet"""
+
+    tfs: Mapped[str] = mapped_column(default = "[]")
+    """Jsonified array of TFs planned on Players
+    
+    Entry is tuple of str (desc), int (cost), int (type), bool (done)
+    """
     
     def leave(self, session: Session) -> None:
         """Remove Player from Game, i.e. delete Player from database
@@ -455,6 +473,93 @@ class Player(SQLBase):
         self.chips = dumps(bal)
         session.commit()
         return True
+    
+    def get_tf_entry(self) -> list[list[str | int | bool]]:
+        """Returns unjsonified tf entries
+        
+        ### Returns
+        list[list[str | int | bool]]
+            Unjsonified version of tf list
+        """
+
+        return loads(self.tfs)
+    
+    def set_tf_entry(self, session: Session, tfs: list[list[str | int | bool]]) -> None:
+        """Directly set entire tf list
+        
+        ### Parameters
+        session: sqlalchemy.orm.Session
+            Database session scope
+        tfs: list[list[str | int | bool]]
+            List of TFs to set to
+        """
+
+        self.tfs = dumps(tfs)
+        session.commit()
+    
+    def add_tf_entry(self, session: Session, desc: str, cost: int, type: int) -> None:
+        """Adds an entry to the list of tfs on the player
+
+        ### Parameters
+        session: sqlalchemy.orm.Session
+            Database session scope
+        desc: str
+            Description of the tf
+        cost: int
+            Chip cost of the tf
+        type: int
+            Type of chips cost
+        """
+
+        tfs: list[list] = loads(self.tfs)
+        tfs.append([desc, cost, type, False])
+        self.tfs = dumps(tfs)
+
+        session.commit()
+
+    def remove_tf_entry(self, session: Session, index: int) -> None:
+        """Removes an entry from the list of tfs on the player
+        
+        ### Parameters
+        session: sqlalchemy.orm.Session
+            Database session scope
+        index: int
+            Index for tf entry
+
+        ### Raises
+        InvalidArgumentError
+            Index out of bounds
+        """
+
+        tfs: list[list] = loads(self.tfs)
+        if index >= len(tfs):
+            raise InvalidArgumentError
+        tfs.pop(index)
+        self.tfs = dumps(tfs)
+
+        session.commit()
+
+    def toggle_tf_entry(self, session: Session, index: int) -> None:
+        """Marks an entry from the list of tfs as done or not
+        
+        ### Parameters
+        session: sqlalchemy.orm.Session
+            Database session scope
+        index: int
+            Index for tf entry
+
+        ### Raises
+        InvalidArgumentError
+            Index out of bounds
+        """
+
+        tfs: list[list] = loads(self.tfs)
+        if index >= len(tfs):
+            raise InvalidArgumentError
+        tfs[index][3] = not tfs[index][3]
+        self.tfs = dumps(tfs)
+
+        session.commit()
 
 
 class Game(SQLBase):
