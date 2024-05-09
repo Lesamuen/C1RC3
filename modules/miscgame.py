@@ -46,8 +46,8 @@ async def mg_shuffle(
     session.close()
 
 @mg_cmds.command(name = "deck", description = "Check the cards left in the deck (you don't have to be playing)")
-@option("peek", bool, description = "Whether to see the cards themselves", required = True)
-@option("private", bool, description = "Whether the cards can only be seen by you or not (only if not peeking). Always True if not playing.", required = True)
+@option("peek", bool, description = "Whether to see the cards themselves")
+@option("private", bool, description = "Whether the cards can only be seen by you or not (only if not peeking). Always True if not playing.")
 async def mg_deck(context: ApplicationContext, peek: bool, private: bool):
     """Add the command /mg deck
     
@@ -88,7 +88,7 @@ async def mg_deck(context: ApplicationContext, peek: bool, private: bool):
 
 @mg_cmds.command(name = "draw", description = "Draw an amount of cards from the deck")
 @option("amount", int, description = "The amount of cards to draw", min_value = 1, max_value = 26)
-@option("private", bool, description = "Whether the cards drawn can only be seen by you or not", required = True)
+@option("private", bool, description = "Whether the cards drawn can only be seen by you or not")
 async def mg_draw(context: ApplicationContext, amount: int, private: bool):
     """Add the command /mg draw
     
@@ -125,7 +125,7 @@ async def mg_draw(context: ApplicationContext, amount: int, private: bool):
 @mg_cmds.command(name = "roll", description = "Roll some dice (does not require a game)")
 @option("amount", int, description = "The number of dice to roll", min_value = 1, max_value = 100)
 @option("sides", int, description = "The amount of sides each dice has", min_value = 1, max_value = 9999999999)
-@option("private", bool, description = "Whether the dice can only be seen by you or not", required = True)
+@option("private", bool, description = "Whether the dice can only be seen by you or not")
 async def mg_roll(context: ApplicationContext, amount: int, sides: int, private: bool):
     """Add the command /mg roll
     

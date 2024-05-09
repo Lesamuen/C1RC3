@@ -77,7 +77,7 @@ double_headpats = [
 ]
 
 @bot_client.slash_command(name = "good_girl", description = "Reward <3", guild_ids = guilds, guild_only = True)
-@option("user", User, description = "User to target with love", required = True)
+@option("user", User, description = "User to target with love")
 @option("user2", User, description = "Other user to target with love", required = False)
 async def good_girl(context: ApplicationContext, user: User, user2: User):
     """Add the command /good_girl

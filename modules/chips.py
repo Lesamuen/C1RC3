@@ -12,8 +12,8 @@ from emojis import format_chips
 chip_cmds = bot_client.create_group("chip", "Commands related to chip-holding accounts out of game", guild_ids = guilds, guild_only = True)
 
 @chip_cmds.command(name = "open_account", description = "Open an account for you to keep track of the chips you've won from tables.")
-@option("name", str, description = "The name of the character holding the account", required = True, min_length = 1, max_length = 50)
-@option("private", bool, description = "Whether to keep the response only visible to you", required = True)
+@option("name", str, description = "The name of the character holding the account", min_length = 1, max_length = 50)
+@option("private", bool, description = "Whether to keep the response only visible to you")
 async def open_account(context: ApplicationContext, name: str, private: bool):
     """Add the command /chip open_account
     
@@ -36,9 +36,9 @@ async def open_account(context: ApplicationContext, name: str, private: bool):
     session.close()
 
 @chip_cmds.command(name = "change_name", description = "Update the holder's name on an account.")
-@option("name", str, description = "The original name of the casino account", required = True, min_length = 1, max_length = 50)
-@option("new_name", str, description = "The new name of the account", required = True, min_length = 1, max_length = 50)
-@option("private", bool, description = "Whether to keep the response only visible to you", required = True)
+@option("name", str, description = "The original name of the casino account", min_length = 1, max_length = 50)
+@option("new_name", str, description = "The new name of the account", min_length = 1, max_length = 50)
+@option("private", bool, description = "Whether to keep the response only visible to you")
 async def change_name(context: ApplicationContext, name: str, new_name: str, private: bool):
     """Add the command /chip change_name
     
@@ -84,8 +84,8 @@ async def change_name(context: ApplicationContext, name: str, new_name: str, pri
     session.close()
 
 @chip_cmds.command(name = "balance", description = "Check how many chips you have in an account.")
-@option("name", str, description = "The name the account is under", required = True, min_length = 1, max_length = 50)
-@option("private", bool, description = "Whether to keep the response only visible to you", required = True)
+@option("name", str, description = "The name the account is under", min_length = 1, max_length = 50)
+@option("private", bool, description = "Whether to keep the response only visible to you")
 async def balance(context: ApplicationContext, name: str, private: bool):
     """Add the command /chip balance
     
@@ -119,8 +119,8 @@ async def balance(context: ApplicationContext, name: str, private: bool):
     session.close()
 
 @chip_cmds.command(name = "deposit", description = "Deposit an amount of chips into an account.")
-@option("name", str, description = "The name the account is under", required = True, min_length = 1, max_length = 50)
-@option("private", bool, description = "Whether to keep the response only visible to you", required = True)
+@option("name", str, description = "The name the account is under", min_length = 1, max_length = 50)
+@option("private", bool, description = "Whether to keep the response only visible to you")
 @option("physical", int, description = "The amount of physical chips to deposit", min_value = 0, default = 0)
 @option("mental", int, description = "The amount of mental chips to deposit", min_value = 0, default = 0)
 @option("artificial", int, description = "The amount of artificial chips to deposit", min_value = 0, default = 0)
@@ -172,8 +172,8 @@ async def deposit(context: ApplicationContext, name: str, private: bool, physica
     session.close()
 
 @chip_cmds.command(name = "withdraw", description = "Withdraw an amount of chips from an account.")
-@option("name", str, description = "The name the account is under", required = True, min_length = 1, max_length = 50)
-@option("private", bool, description = "Whether to keep the response only visible to you", required = True)
+@option("name", str, description = "The name the account is under", min_length = 1, max_length = 50)
+@option("private", bool, description = "Whether to keep the response only visible to you")
 @option("physical", int, description = "The amount of physical chips to withdraw", min_value = 0, default = 0)
 @option("mental", int, description = "The amount of mental chips to withdraw", min_value = 0, default = 0)
 @option("artificial", int, description = "The amount of artificial chips to withdraw", min_value = 0, default = 0)

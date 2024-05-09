@@ -30,7 +30,7 @@ base_game_cmds = SlashCommandGroup("game_template", "If you can see this, someth
 """Use .copy() to create another group, then change .name, .description, and then set .game_type for each cmd. Then use bot_client.add_application_command to register"""
 
 @base_game_cmds.command(name = "create", description = "Start a game in this channel")
-@option("stake", int, description = "What stake to set the game to", required = True, choices = [
+@option("stake", int, description = "What stake to set the game to", choices = [
         OptionChoice("Low Stakes", 0),
         OptionChoice("Normal Stakes", 1),
         OptionChoice("High Stakes", 2),
@@ -65,7 +65,7 @@ async def create(context: ApplicationContext, stake: int):
     session.close()
 
 @base_game_cmds.command(name = "join", description = "Join a game in this channel")
-@option("name", str, description = "The name of your character; how C1RC3 refers to you", required = True, min_length = 1, max_length = 20)
+@option("name", str, description = "The name of your character; how C1RC3 refers to you", min_length = 1, max_length = 20)
 async def join(context: ApplicationContext, name: str):
     """Add the command /<prefix> join <name>
 
@@ -202,8 +202,8 @@ async def identify(context: ApplicationContext):
     session.close()
 
 @base_game_cmds.command(name = "rename", description = "Ask to be called something else")
-@option("new_name", str, description = "New name C1RC3 will refer to you by", required = True, min_length = 1, max_length = 20)
-@option("private", bool, description = "Whether to keep the response only visible to you", required = True)
+@option("new_name", str, description = "New name C1RC3 will refer to you by", min_length = 1, max_length = 20)
+@option("private", bool, description = "Whether to keep the response only visible to you")
 async def rename(context: ApplicationContext, new_name: str, private: bool):
     """Add the command /<prefix> rename <new_name> <private>
 
@@ -231,7 +231,7 @@ async def rename(context: ApplicationContext, new_name: str, private: bool):
     session.close()
 
 @base_game_cmds.command(name = "chips", description = "Recount how many chips you have in the game")
-@option("private", bool, description = "Whether to keep the response only visible to you", required = True)
+@option("private", bool, description = "Whether to keep the response only visible to you")
 async def chips(context: ApplicationContext, private: bool):
     """Add the command /<prefix> chips <private>
 
@@ -353,7 +353,7 @@ async def use(context: ApplicationContext, physical: int, mental: int, artificia
     session.close()
 
 @base_game_cmds.command(name = "convert", description = "Convert one type of chips to another")
-@option("conversion", int, description = "What types of chips to convert", required = True, choices = [
+@option("conversion", int, description = "What types of chips to convert", choices = [
     OptionChoice("Mental -> x10 Physical", 0),
     OptionChoice("Artificial -> x40 Physical, x3 Mental", 1),
     OptionChoice("x40 Physical, x3 Mental -> Artificial", 2),
@@ -418,10 +418,10 @@ async def convert(context: ApplicationContext, conversion: int, amount: int):
     session.close()
 
 @base_game_cmds.command(name = "tfadd", description = "Add a TF to a player")
-@option("player", User, description = "The player to add a TF to", required = True)
-@option("description", str, description = "What the TF is", required = True, min_length = 1, max_length = 100)
-@option("cost", int, description = "How much the TF costs", required = True, min_value = 1, max_value = 999)
-@option("cost_type", int, description = "What type of chips this costs", required = True, choices = [
+@option("player", User, description = "The player to add a TF to")
+@option("description", str, description = "What the TF is", min_length = 1, max_length = 100)
+@option("cost", int, description = "How much the TF costs", min_value = 1, max_value = 999)
+@option("cost_type", int, description = "What type of chips this costs", choices = [
     OptionChoice("Physical", 0),
     OptionChoice("Mental", 1),
     OptionChoice("Artificial", 2),
@@ -461,8 +461,8 @@ async def tfadd(context: ApplicationContext, player: User, description: str, cos
     session.close()
 
 @base_game_cmds.command(name = "tfremove", description = "Remove a TF from a player")
-@option("player", User, description = "The player to remove a TF from", required = True)
-@option("index", int, description = "Which TF to remove", required = True, min_value = 0)
+@option("player", User, description = "The player to remove a TF from")
+@option("index", int, description = "Which TF to remove", min_value = 0)
 async def tfremove(context: ApplicationContext, player: User, index: int):
     """Add the command /<prefix> tfremove <player> <index>
 
@@ -500,8 +500,8 @@ async def tfremove(context: ApplicationContext, player: User, index: int):
     session.close()
 
 @base_game_cmds.command(name = "tfmark", description = "Mark a TF of a player as done")
-@option("player", User, description = "The player to mark a TF of", required = True)
-@option("index", int, description = "Which TF to mark as done", required = True, min_value = 0)
+@option("player", User, description = "The player to mark a TF of")
+@option("index", int, description = "Which TF to mark as done", min_value = 0)
 async def tfmark(context: ApplicationContext, player: User, index: int):
     """Add the command /<prefix> tfmark <player> <index>
 
@@ -539,7 +539,7 @@ async def tfmark(context: ApplicationContext, player: User, index: int):
     session.close()
 
 @base_game_cmds.command(name = "tflist", description = "List the TFs of a player")
-@option("player", User, description = "The player to view the TFs of", required = True)
+@option("player", User, description = "The player to view the TFs of")
 async def tflist(context: ApplicationContext, player: User):
     """Add the command /<prefix> tflist <player>
 
@@ -618,7 +618,7 @@ async def admin_force_end_game(context: ApplicationContext, private: bool):
     session.close()
 
 @game_admin_cmds.command(name = "remove_player", description = "Admin command to forcibly remove a player from a game")
-@option("user", User, description = "User to remove from the game", required = True)
+@option("user", User, description = "User to remove from the game")
 @option("private", bool, description = "Whether to keep the response only visible to you", default = False)
 async def admin_remove_player(context: ApplicationContext, user: User, private: bool):
     """Add the command /admin game remove_player
@@ -645,7 +645,7 @@ async def admin_remove_player(context: ApplicationContext, user: User, private: 
     session.close()
 
 @game_admin_cmds.command(name = "set_chips", description = "Admin command to manually set chips in a game")
-@option("user", User, description = "User whose chips you are editting", required = True)
+@option("user", User, description = "User whose chips you are editting")
 @option("physical", int, description = "The amount of physical chips to set", min_value = 0, default = 0)
 @option("mental", int, description = "The amount of mental chips to set", min_value = 0, default = 0)
 @option("artificial", int, description = "The amount of artificial chips to set", min_value = 0, default = 0)
@@ -681,7 +681,7 @@ async def admin_set_chips(context: ApplicationContext, user: User, physical: int
     session.close()
 
 @game_admin_cmds.command(name = "set_used", description = "Admin command to manually set used chips in a game")
-@option("user", User, description = "User whose used chips you are editting", required = True)
+@option("user", User, description = "User whose used chips you are editting")
 @option("physical", int, description = "The amount of physical chips to set", min_value = 0, default = 0)
 @option("mental", int, description = "The amount of mental chips to set", min_value = 0, default = 0)
 @option("artificial", int, description = "The amount of artificial chips to set", min_value = 0, default = 0)
@@ -747,7 +747,7 @@ async def admin_set_bet(context: ApplicationContext, physical: int, mental: int,
     session.close()
 
 @game_admin_cmds.command(name = "set_stake", description = "Admin command to change the stake of a game in this channel")
-@option("stake", int, description = "What stake to set the game to", required = True, choices = [
+@option("stake", int, description = "What stake to set the game to", choices = [
     OptionChoice("Low Stakes", 0),
     OptionChoice("Normal Stakes", 1),
     OptionChoice("High Stakes", 2),
@@ -781,7 +781,7 @@ async def admin_set_stake(context: ApplicationContext, stake: int, private: bool
     session.close()
 
 @game_admin_cmds.command(name = "set_bet_turn", description = "Admin command to change whose turn it is to bet in a game")
-@option("index", int, description = "Index of player to set bet turn to", required = True, min_value = 0)
+@option("index", int, description = "Index of player to set bet turn to", min_value = 0)
 @option("private", bool, description = "Whether to keep the response only visible to you", default = False)
 async def admin_set_bet_turn(context: ApplicationContext, index: int, private: bool):
     """Add the command /admin game set_bet_turn
@@ -808,8 +808,8 @@ async def admin_set_bet_turn(context: ApplicationContext, index: int, private: b
     session.close()
 
 @game_admin_cmds.command(name = "merge", description = "Admin command to merge two players in a game")
-@option("kept", User, description = "Player that will keep their body", required = True)
-@option("absorbed", User, description = "Player that will be merged into the other", required = True)
+@option("kept", User, description = "Player that will keep their body")
+@option("absorbed", User, description = "Player that will be merged into the other")
 async def admin_merge(context: ApplicationContext, kept: User, absorbed: User):
     """Add the command /admin game merge
     
@@ -849,8 +849,8 @@ async def admin_merge(context: ApplicationContext, kept: User, absorbed: User):
     session.close()
 
 @game_admin_cmds.command(name = "swap", description = "Admin command to swap two players in a game")
-@option("user1", User, description = "Player to be swapped", required = True)
-@option("user2", User, description = "Player to be swapped", required = True)
+@option("user1", User, description = "Player to be swapped")
+@option("user2", User, description = "Player to be swapped")
 async def admin_swap(context: ApplicationContext, user1: User, user2: User):
     """Add the command /admin game swap
     
@@ -876,7 +876,7 @@ async def admin_swap(context: ApplicationContext, user1: User, user2: User):
             temp_tfs = player1.get_tf_entry()
             player1.set_tf_entry(session, player2.get_tf_entry())
             player2.set_tf_entry(session, temp_tfs)
-            
+
             log(get_time() + " >> Admin " + str(context.author) + " swapped players " + str(user1) + " and " + str(user2) + " in [" + str(context.guild) + "], [" + str(context.channel) + "]")
             await ghost_reply(context, "`\"Administrator-level Access detected. Player swap has been processed.\"`", True)
 
