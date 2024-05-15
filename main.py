@@ -44,9 +44,12 @@ else:
     quit()
 
 # Import all modules, setting up event listeners
-from modules.bot import bot_client
-from modules.auxiliary import log, get_time
-from modules import *
+from modules.base.bot import bot_client
+from modules.base.auxiliary import log, get_time
+import modules.misc.chips
+import modules.games.miscgame
+import modules.games.blackjack
+import modules.games.tourney
 
 print("All bot modules successfully loaded!\n")
 

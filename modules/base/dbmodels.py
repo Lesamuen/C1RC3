@@ -9,8 +9,8 @@ from discord import User
 from sqlalchemy import ForeignKey, ForeignKeyConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship, Session
 
-from modules.bot import SQLBase, bot_client
-from modules.auxiliary import InvalidArgumentError, clamp
+from .bot import SQLBase, bot_client
+from .auxiliary import InvalidArgumentError, clamp
 
 
 class ChipAccount(SQLBase):

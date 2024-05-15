@@ -8,7 +8,7 @@ import discord
 from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
-from modules.auxiliary import log, get_time
+from .auxiliary import log, get_time
 
 # Global bot object
 intents = discord.Intents.default()

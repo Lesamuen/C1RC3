@@ -4,10 +4,10 @@ print("Loading module 'chips'...")
 
 from discord import ApplicationContext, option
 
-from modules.bot import bot_client, database_connector
-from modules.auxiliary import guilds, log, get_time, all_zero, ghost_reply
-from modules.dbmodels import ChipAccount
-from modules.emojis import format_chips
+from ..base.bot import bot_client, database_connector
+from ..base.auxiliary import guilds, log, get_time, all_zero, ghost_reply
+from ..base.dbmodels import ChipAccount
+from ..base.emojis import format_chips
 
 chip_cmds = bot_client.create_group("chip", "Commands related to chip-holding accounts out of game", guild_ids = guilds, guild_only = True)
 

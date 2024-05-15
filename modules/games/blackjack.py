@@ -5,12 +5,12 @@ print("Loading module 'blackjack'...")
 from discord import ApplicationContext
 from sqlalchemy.orm import Session
 
-from modules.bot import bot_client, database_connector
-from modules.auxiliary import log, get_time, ghost_reply
-from modules.dbmodels import Blackjack, BlackjackPlayer
-from modules.emojis import standard_deck, format_cards, format_chips
-from modules.game import base_game_cmds
-from modules.admin import admin_cmds
+from ..base.bot import bot_client, database_connector
+from ..base.auxiliary import log, get_time, ghost_reply
+from ..base.dbmodels import Blackjack, BlackjackPlayer
+from ..base.emojis import standard_deck, format_cards, format_chips
+from .game import base_game_cmds
+from ..misc.admin import admin_cmds
 
 # Inherit and register command group to Discord
 bj_cmds = base_game_cmds.copy()
