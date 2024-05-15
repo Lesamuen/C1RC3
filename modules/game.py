@@ -6,11 +6,11 @@ from random import randint
 
 from discord import ApplicationContext, OptionChoice, User, SlashCommandGroup, option
 
-from auxiliary import log, get_time, all_zero, ghost_reply, guilds, InvalidArgumentError
-from dbmodels import Game, Player
-from emojis import format_chips
-from admin import admin_cmds
-from bot import database_connector
+from modules.auxiliary import log, get_time, all_zero, ghost_reply, guilds, InvalidArgumentError
+from modules.dbmodels import Game, Player
+from modules.emojis import format_chips
+from modules.admin import admin_cmds
+from modules.bot import database_connector
 
 chip_conversions = (
     ((0, 1, 0, 0, 0, 0), (10, 0, 0, 0, 0, 0)),

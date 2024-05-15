@@ -2,20 +2,19 @@
 
 import sqlite3
 from traceback import format_exception
-from sys import path as syspath
-syspath.append(syspath[0] + "\\modules")
 
-import bot
-import dbmodels
+import modules.bot
+import modules.dbmodels
 
-#bot.db_update()
+#modules.bot.db_update()
 
 db = sqlite3.connect("database/dbedit.sqlite")
 c = db.cursor()
 
 stmts = [
-    #"SELECT * FROM game",
-    #"ALTER TABLE game ADD COLUMN bet_turn INTEGER NOT NULL DEFAULT 0",
+    #"SELECT * FROM col",
+    #"ALTER TABLE table ADD COLUMN col VARCHAR NOT NULL DEFAULT 'something'",
+    #"SELECT * FROM col",
 ]
 
 for stmt in stmts:

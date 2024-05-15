@@ -6,8 +6,8 @@ from random import randint
 
 from discord import ApplicationContext, User, option
 
-from bot import bot_client
-from auxiliary import perms, guilds, log, get_time, ghost_reply
+from modules.bot import bot_client
+from modules.auxiliary import perms, guilds, log, get_time, ghost_reply
 
 admin_cmds = bot_client.create_group("admin", "Commands that only an admin can use", guild_ids = guilds, guild_only = True)
 

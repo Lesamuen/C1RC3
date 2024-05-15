@@ -4,11 +4,11 @@ print("Loading module 'tourney'...")
 
 from discord import ApplicationContext, option
 
-from bot import bot_client, database_connector
-from auxiliary import log, get_time, ghost_reply
-from dbmodels import Tourney, TourneyPlayer
-from emojis import standard_deck, format_cards, format_chips
-from game import base_game_cmds
+from modules.bot import bot_client, database_connector
+from modules.auxiliary import log, get_time, ghost_reply
+from modules.dbmodels import Tourney, TourneyPlayer
+from modules.emojis import standard_deck, format_cards, format_chips
+from modules.game import base_game_cmds
 
 # Inherit and register command group to Discord
 ty_cmds = base_game_cmds.copy()

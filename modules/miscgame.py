@@ -6,11 +6,11 @@ from random import randint
 
 from discord import ApplicationContext, SlashCommand, option
 
-from bot import bot_client, database_connector
-from auxiliary import guilds, log, get_time, ghost_reply, InvalidArgumentError
-from dbmodels import Misc, MiscPlayer
-from emojis import standard_deck, format_cards, format_chips
-from game import base_game_cmds
+from modules.bot import bot_client, database_connector
+from modules.auxiliary import guilds, log, get_time, ghost_reply, InvalidArgumentError
+from modules.dbmodels import Misc, MiscPlayer
+from modules.emojis import standard_deck, format_cards, format_chips
+from modules.game import base_game_cmds
 
 # Inherit and register command group to Discord
 mg_cmds = base_game_cmds.copy()

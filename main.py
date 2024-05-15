@@ -1,11 +1,7 @@
 """Main bot application file to run directly with Python"""
 
 from traceback import format_exception
-from sys import path as syspath
 from time import sleep
-
-# Allows for other .py files to be found in /modules folder
-syspath.append(syspath[0] + "\\modules")
 
 # Load environment
 import discord
@@ -32,7 +28,7 @@ else:
 if exists("database/db.sqlite"):
     print("Database found!")
 else:
-    print("Database not found!\nPlease run bot.db_init() in a separate script.")
+    print("Database not found!\nPlease run modules.bot.db_init() in a separate script.")
     quit()
 
 if exists("logs"):
@@ -48,15 +44,9 @@ else:
     quit()
 
 # Import all modules, setting up event listeners
-from bot import bot_client
-from auxiliary import log, get_time
-import dbmodels
-import admin
-import chips
-import game
-import miscgame
-import blackjack
-import tourney
+from modules.bot import bot_client
+from modules.auxiliary import log, get_time
+from modules import *
 
 print("All bot modules successfully loaded!\n")
 
