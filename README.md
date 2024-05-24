@@ -8,7 +8,7 @@ py-cord
 SQLAlchemy
 
 ## Pre-Use Steps
-- Bot has only been tested on Windows. Some things might not work on Linux, and especially not on MacOS.
+- Bot has been tested on Windows and Linux, but not on MacOS.
 - Run db_update() or db_reset() from modules/bot.py in db.py to initialize the database
 - Put bot token in settings/bottoken.txt
 - Fill out Discord user IDs in settings/perms.json for admin privileges
