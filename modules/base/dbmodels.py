@@ -1707,7 +1707,7 @@ class Tourney(Game):
                 winners.append(player)
 
         # Break ties by looking at final card; all players should have 1 card unplayed at end of round
-        winners.sort(reverse = True, key = lambda player: player.tiebreaker())
+        winners.sort(reverse = True, key = lambda player: ((player.tiebreaker() % 13) * 4) + (player.tiebreaker() // 13))
 
         # Reward winner; in general scenario, 1 player wins minimum 2 pts, so bet multiplied by pts - 1
         reward = self.get_bet()
