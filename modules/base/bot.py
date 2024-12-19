@@ -21,9 +21,9 @@ bot_client = discord.Bot(intents = intents)
 @bot_client.listen()
 async def on_ready():
     log(get_time() + " >> Successfully logged in as " + str(bot_client.user))
-@bot_client.listen()
-async def on_disconnect():
-    log(get_time() + " >> Lost connection to Discord!")
+# @bot_client.listen()
+# async def on_disconnect():
+#     log(get_time() + " >> Lost connection to Discord!")
 @bot_client.listen()
 async def on_connect():
     log(get_time() + " >> Connected to Discord!")
