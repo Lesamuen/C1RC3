@@ -18,6 +18,46 @@ with open("settings/guilds.json", "r") as file:
     guilds: list[int] = load(file)
     """Contains all guild ids that the bot is to be used in"""
 
+with open("settings/localization_en.json", "r") as file:
+    loc: dict[str, str] = load(file)
+    """Contains log/response messages localization in English"""
+
+def get_loc(id: str, *ins):
+    """Retrieves a predefined localized string (see loc) and inserts values in like f-strings.
+
+    Inside string, {} refers to extra arguments sequentially.
+
+    Missing arguments are replaced with empty string.
+
+    ### Parameters
+    id: str
+        The id of the localized string to retrieve
+    ins: Tuple
+        List of extra arguments to insert into localized string.
+
+    ### Returns
+    Single string with arguments inserted if applicable.
+    
+    ### Raises
+    InvalidArgumentError if invalid ID.
+    """
+    
+    if (foundloc := loc.get(id)) is None:
+        raise InvalidArgumentError
+    
+    out = foundloc.split("{}")
+    for arg in enumerate(ins):
+        # Test to see if too many extra arguments
+        i = arg[0] * 2 + 1
+        if i >= len(out):
+            break
+        out.insert(i, arg[1])
+
+    out = "".join(out)
+
+    return out
+
+
 def get_time() -> str:
     """Return the current system time in extended ISO8601 format; 20 chars long"""
 
