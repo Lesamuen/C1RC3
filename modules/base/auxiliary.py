@@ -90,7 +90,7 @@ async def ghost_reply(context: ApplicationContext, message: str, private: bool =
         Whether the reply should only be visible to the user
     """
     if private:
-        await context.respond(message, ephemeral = True, delete_after = 120)
+        await context.respond(message, ephemeral = True)
     else:
         await context.respond("https://canary.discordapp.com/__development/link/", ephemeral = True, delete_after = 0)
         await context.channel.send(message)
