@@ -550,7 +550,7 @@ async def tflist(context: ApplicationContext, player: User):
 
     session = database_connector()
 
-    cost_types = ["PHYS", "MENT", "ARTI", "SUPE", "MERG", "SWAP"]
+    cost_types = ("PHYS", "MENT", "ARTI", "SUPE", "MERG", "SWAP")
 
     game = expected_type.find_game(session, context.channel_id)
     if game is None:
