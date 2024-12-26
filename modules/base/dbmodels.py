@@ -310,6 +310,8 @@ class Player(SQLBase):
 
     def user(self) -> User:
         """Get associated Discord user
+
+        WARNING: Sometimes Discord servers are funky and it can't find an existing user
         
         ### Returns
         discord.User
@@ -326,7 +328,10 @@ class Player(SQLBase):
             The mention string for the Discord user
         """
 
-        return bot_client.get_user(self.user_id).mention
+        if (user_obj := bot_client.get_user(self.user_id)) is not None:
+            return user_obj.mention
+        else:
+            return "@"
 
     def get_index(self) -> int:
         """Get index of player in corresponding game's player list
