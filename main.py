@@ -47,6 +47,7 @@ else:
 from modules.base.bot import bot_client
 from modules.base.auxiliary import log, get_time
 import modules.misc.chips
+import modules.misc.misc
 import modules.games.miscgame
 import modules.games.blackjack
 import modules.games.tourney

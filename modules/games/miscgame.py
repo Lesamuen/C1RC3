@@ -4,10 +4,10 @@ print("Loading module 'miscgame'...")
 
 from random import randint
 
-from discord import ApplicationContext, SlashCommand, option
+from discord import ApplicationContext, option
 
 from ..base.bot import bot_client, database_connector
-from ..base.auxiliary import guilds, log, get_time, ghost_reply, InvalidArgumentError
+from ..base.auxiliary import log, get_time, ghost_reply, InvalidArgumentError
 from ..base.dbmodels import Misc, MiscPlayer
 from ..base.emojis import standard_deck, format_cards, format_chips
 from .game import base_game_cmds
@@ -144,13 +144,6 @@ async def mg_roll(context: ApplicationContext, amount: int, sides: int, private:
     log(get_time() + " >> " + str(context.author) + " rolled " + str(amount) + "d" + str(sides) + " for " + str(sum) + " in [" + str(context.guild) + "], [" + str(context.channel) + "]")
     
     await ghost_reply(context, message, private)
-
-roll_alias = SlashCommand(mg_roll.callback, name = "roll", description = "Roll some dice (does not require a game)", guild_ids = guilds, guild_only = True)
-"""Add the command /roll
-
-Alias for /mg roll
-"""
-bot_client.add_application_command(roll_alias)
 
 @mg_cmds.command(name = "win_bet", description = "Declare yourself as the winner of the round, according to whatever rules you agreed on")
 async def mg_win_bet(
