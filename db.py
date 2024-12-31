@@ -3,10 +3,10 @@
 import sqlite3
 from traceback import format_exception
 
-import modules.bot
-import modules.dbmodels
+import modules.base.bot as bot
+import modules.base.dbmodels as dbmodels
 
-#modules.bot.db_update()
+#bot.db_update()
 
 db = sqlite3.connect("database/dbedit.sqlite")
 c = db.cursor()
