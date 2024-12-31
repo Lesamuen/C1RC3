@@ -2,9 +2,7 @@
 
 print("Loading module 'admin'...")
 
-from random import randint
-
-from discord import ApplicationContext, User, option
+from discord import ApplicationContext
 
 from ..base.bot import bot_client
 from ..base.auxiliary import perms, guilds, log, get_time, ghost_reply
