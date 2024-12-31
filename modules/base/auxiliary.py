@@ -23,7 +23,7 @@ with open("settings/localization_en.json", "r") as file:
     """Contains log/response messages localization in English"""
 
 def get_loc(id: str, *ins):
-    """Retrieves a predefined localized string (see loc) and inserts values in like f-strings.
+    """Retrieves a predefined localized string (see loc) and inserts string values in like f-strings.
 
     Inside string, {} refers to extra arguments sequentially.
 
@@ -51,7 +51,7 @@ def get_loc(id: str, *ins):
         i = arg[0] * 2 + 1
         if i >= len(out):
             break
-        out.insert(i, arg[1])
+        out.insert(i, str(arg[1]))
 
     out = "".join(out)
 
