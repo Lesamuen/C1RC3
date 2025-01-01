@@ -19,11 +19,11 @@ with open("settings/guilds.json", "r") as file:
     """Contains all guild ids that the bot is to be used in"""
 
 with open("settings/localization_en.json", "r") as file:
-    loc: dict[str, str] = load(file)
+    loc_en: dict[str, str] = load(file)
     """Contains log/response messages localization in English"""
 
-def get_loc(id: str, *ins):
-    """Retrieves a predefined localized string (see loc) and inserts string values in like f-strings.
+def loc(id: str, *ins, loc_used: dict[str, str | list] = loc_en):
+    """Retrieves a predefined localized string and inserts string values in like f-strings.
 
     Inside string, {} refers to extra arguments sequentially.
 
@@ -34,6 +34,8 @@ def get_loc(id: str, *ins):
         The id of the localized string to retrieve
     ins: Tuple
         List of extra arguments to insert into localized string.
+    loc_used: dict[str, str | list]
+        The loaded localization file to use; defaults to English
 
     ### Returns
     Single string with arguments inserted if applicable.
@@ -42,10 +44,10 @@ def get_loc(id: str, *ins):
     InvalidArgumentError if invalid ID.
     """
     
-    if (foundloc := loc.get(id)) is None:
+    if (found_loc := loc_used.get(id)) is None:
         raise InvalidArgumentError
     
-    out = foundloc.split("{}")
+    out = found_loc.split("{}")
     for arg in enumerate(ins):
         # Test to see if too many extra arguments
         i = arg[0] * 2 + 1
@@ -57,6 +59,34 @@ def get_loc(id: str, *ins):
 
     return out
 
+def loc_arr(id: str, val: int, loc_used: dict[str, str | list] = loc_en):
+    """Retrieves a predefined localized string from within an array.
+
+    ### Parameters
+    id: str
+        The id of the localized array to retrieve
+    val: int
+        The id of the string within the array to retrieve
+    loc_used: dict[str, str | list]
+        The loaded localization file to use; defaults to English
+
+    ### Returns
+    Single string retrieved.
+    
+    ### Raises
+    InvalidArgumentError if invalid ID or val.
+    """
+    
+    if (found_loc := loc_used.get(id)) is None:
+        raise InvalidArgumentError
+    
+    if type(found_loc) == str:
+        raise InvalidArgumentError
+    
+    if val >= len(found_loc):
+        raise InvalidArgumentError
+    
+    return found_loc[val]
 
 def get_time() -> str:
     """Return the current system time in extended ISO8601 format; 20 chars long"""
