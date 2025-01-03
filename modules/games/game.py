@@ -26,7 +26,7 @@ chip_conversions = (
     ((0, 0, 0, 0, 0, 1), (0, 0.5, 0, 0, 0, 0)),
 )
 
-base_game_cmds = SlashCommandGroup("game_template", "If you can see this, something went wrong", guild_ids = guilds, guild_only = True)
+base_game_cmds = SlashCommandGroup("game_template", "If you can see this, something went wrong", guild_ids = guilds)
 """Use .copy() to create another group, then change .name, .description, and then set .game_type for each cmd. Then use bot_client.add_application_command to register"""
 
 @base_game_cmds.command(name = "create", description = "Start a game in this channel")

@@ -39,7 +39,7 @@ double_headpats = [
     "https://tenor.com/view/anime-neko-anime-head-pat-anime-head-rub-neko-para-gif-16085488",
 ]
 
-@bot_client.slash_command(name = "good_girl", description = "Reward <3", guild_ids = guilds, guild_only = True)
+@bot_client.slash_command(name = "good_girl", description = "Reward <3", guild_ids = guilds)
 @option("user", User, description = "User to target with love")
 @option("user2", User, description = "Other user to target with love", required = False)
 async def headpat(context: ApplicationContext, user: User, user2: User):
@@ -60,7 +60,7 @@ async def headpat(context: ApplicationContext, user: User, user2: User):
     log(get_time() + " >> " + str(context.author) + " headpatted " + (str(user) + " " + ("and " + str(user2) + " " if user2 is not None else "") if user is not None else "")\
         + "in [" + str(context.guild) + "], [" + str(context.channel) + "]")
 
-roll_alias = SlashCommand(mg_roll.callback, name = "roll", description = "Roll some dice (does not require a game)", guild_ids = guilds, guild_only = True)
+roll_alias = SlashCommand(mg_roll.callback, name = "roll", description = "Roll some dice (does not require a game)", guild_ids = guilds)
 """Add the command /roll
 
 Alias for /mg roll

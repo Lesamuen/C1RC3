@@ -7,7 +7,7 @@ from discord import ApplicationContext
 from ..base.bot import bot_client
 from ..base.auxiliary import perms, guilds, log, get_time, ghost_reply
 
-admin_cmds = bot_client.create_group("admin", "Commands that only an admin can use", guild_ids = guilds, guild_only = True)
+admin_cmds = bot_client.create_group("admin", "Commands that only an admin can use", guild_ids = guilds)
 
 async def check_admin(context: ApplicationContext) -> bool:
     """Pre-check whether a user has the 'admin' permission
