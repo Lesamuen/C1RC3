@@ -39,20 +39,28 @@ def loc(id: str, *ins, loc_used: dict[str, str | list] = loc_en):
 
     ### Returns
     Single string with arguments inserted if applicable.
+
+    "ERROR: LOCALISATION {id} NOT FOUND" if unable to find.
     
     ### Raises
-    InvalidArgumentError if invalid ID.
+    InvalidArgumentError if not a string.
     """
-    
+    if type(id) != str:
+        raise InvalidArgumentError
+
     if (found_loc := loc_used.get(id)) is None:
+        return "".join(["ERROR: LOCALISATION {", id, "} NOT FOUND"])
+    
+    if type(found_loc) != str:
         raise InvalidArgumentError
     
     out = found_loc.split("{}")
     for arg in enumerate(ins):
-        # Test to see if too many extra arguments
         i = arg[0] * 2 + 1
+        # Test to see if too many extra arguments
         if i >= len(out):
             break
+
         out.insert(i, str(arg[1]))
 
     out = "".join(out)
@@ -60,7 +68,7 @@ def loc(id: str, *ins, loc_used: dict[str, str | list] = loc_en):
     return out
 
 def loc_arr(id: str, val: int, loc_used: dict[str, str | list] = loc_en):
-    """Retrieves a predefined localized string from within an array.
+    """Retrieves a predefined localized string from within an array (list or dict).
 
     ### Parameters
     id: str
@@ -77,13 +85,16 @@ def loc_arr(id: str, val: int, loc_used: dict[str, str | list] = loc_en):
     InvalidArgumentError if invalid ID or val.
     """
     
+    # Nothing retrieved
     if (found_loc := loc_used.get(id)) is None:
         raise InvalidArgumentError
     
-    if type(found_loc) == str:
+    # Supposed to be dict or list retrieved
+    if type(found_loc) != dict and type(found_loc) != list:
         raise InvalidArgumentError
     
-    if val >= len(found_loc):
+    # Test depends on if found is dict or list
+    if (type(found_loc) == list and val >= len(found_loc)) or (type(found_loc) == dict and val not in found_loc):
         raise InvalidArgumentError
     
     return found_loc[val]

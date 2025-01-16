@@ -28,7 +28,7 @@ else:
 if exists("database/db.sqlite"):
     print("Database found!")
 else:
-    print("Database not found!\nPlease run modules.bot.db_init() in a separate script.")
+    print("Database not found!\nPlease run modules.base.bot.db_update() in a separate script to initialize the database.")
     quit()
 
 if exists("logs"):
@@ -45,7 +45,7 @@ else:
 
 # Import all modules, setting up event listeners
 from modules.base.bot import bot_client
-from modules.base.auxiliary import log, get_time
+from modules.base.auxiliary import log, get_time, loc
 import modules.misc.chips
 import modules.misc.misc
 import modules.games.miscgame
@@ -58,10 +58,8 @@ print("All bot modules successfully loaded!\n")
 
 while True:
     try:
-        log(get_time() + " >> Initializing connection to Discord...")
+        log(loc("bot.init", get_time()))
         bot_client.run(bot_token)
     except Exception as err:
-        log(get_time() + " >> UNEXPECTED ERROR occurred during bot loop; bot has closed!")
-        log("".join(format_exception(err)))
-        log("                     >> Relaunching bot in 5 minutes...")
+        log(loc("bot.crash", get_time(), "".join(format_exception(err))))
         sleep(300)

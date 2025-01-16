@@ -5,7 +5,7 @@ print("Loading module 'admin'...")
 from discord import ApplicationContext
 
 from ..base.bot import bot_client
-from ..base.auxiliary import perms, guilds, log, get_time, ghost_reply
+from ..base.auxiliary import perms, guilds, log, get_time, ghost_reply, loc
 
 admin_cmds = bot_client.create_group("admin", "Commands that only an admin can use", guild_ids = guilds)
 
@@ -26,8 +26,8 @@ async def check_admin(context: ApplicationContext) -> bool:
     if context.author.id in perms["admin"]:
         return True
     else:
-        await ghost_reply(context, "`\"Request denied. Administrator-level Access required.\"`", True)
-        log(get_time() + " >> " + str(context.author) + " permission denied in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+        log(loc("admin.deny.log", get_time(), context.guild, context.channel, context.author))
+        await ghost_reply(context, loc("admin.deny"), True)
         return False
     
 admin_cmds.checks = [check_admin]
@@ -39,7 +39,7 @@ async def shutdown(context: ApplicationContext):
     Shut C1RC3 down externally
     """
 
-    await context.respond("https://tenor.com/view/anime-dan-machi-sad-sad-face-sorrow-gif-13886240")
-    log(get_time() + " >> Admin " + str(context.author) + " externally shut down C1RC3 from [" + str(context.guild) + "], [" + str(context.channel) + "]")
+    log(loc("admin.shutdown.log", get_time(), context.guild, context.channel, context.author))
+    await context.respond(loc("admin.shutdown"))
     await bot_client.close()
     quit()

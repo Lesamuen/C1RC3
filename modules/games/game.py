@@ -6,7 +6,7 @@ from random import randint
 
 from discord import ApplicationContext, OptionChoice, User, SlashCommandGroup, option
 
-from ..base.auxiliary import log, get_time, all_zero, ghost_reply, guilds, InvalidArgumentError
+from ..base.auxiliary import log, get_time, all_zero, ghost_reply, loc, loc_arr, guilds, InvalidArgumentError
 from ..base.dbmodels import Game, Player
 from ..base.emojis import format_chips
 from ..misc.admin import admin_cmds
@@ -47,20 +47,12 @@ async def create(context: ApplicationContext, stake: int):
 
     game = Game.find_game(session, context.channel_id)
     if game is not None:
-        log(get_time() + " >> " + str(context.author) + " tried to create another game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-        await ghost_reply(context, "`\"There is already a game running at this table.\"`", True)
+        log(loc("gen.create.exists.log", get_time(), context.guild, context.channel, context.author))
+        await ghost_reply(context, loc("gen.create.exists"), True)
     else:
+        log(loc("gen.create.log", get_time(), context.guild, context.channel, context.author, expected_type))
         expected_type.create_game(session, context.channel_id, stake)
-        log(get_time() + " >> " + str(context.author) + " started a " + str(expected_type) + " game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-        message = "*C1RC3 approaches you when you call for a dealer, and takes her place at the dealer's stand.*\n`\"Your request for a "
-        if stake == 0:
-            message += "low "
-        elif stake == 1:
-            message += "normal "
-        elif stake == 2:
-            message += "high "
-        message += "stakes game has been processed. I am C1RC3 #" + str(randint(0, 63)) + ", and I shall be your table's arbitrator today. Please state your name for the record, in order for your participation to be counted.\"`"
-        await ghost_reply(context, message)
+        await ghost_reply(context, loc("gen.create", loc_arr("gen.create.stake", stake), randint(0, 63)))
 
     session.close()
 
@@ -78,26 +70,26 @@ async def join(context: ApplicationContext, name: str):
 
     game: Game = expected_type.find_game(session, context.channel_id)
     if game is None:
-        log(get_time() + " >> " + str(context.author) + " tried to join no game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-        await ghost_reply(context, "`\"There is no game of that type running at this table at the moment.\"`", True)
+        log(loc("gen.join.none.log", get_time(), context.guild, context.channel, context.author))
+        await ghost_reply(context, loc("gen.none"), True)
     else:
         if game.is_full():
-            log(get_time() + " >> " + str(context.author) + " tried to join a full game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-            await ghost_reply(context, "`\"This table is already full.\"`", True)
+            log(loc("gen.join.full.log", get_time(), context.guild, context.channel, context.author))
+            await ghost_reply(context, loc("gen.join.full"), True)
         elif game.is_midround():
             # Can't join game in the middle of a round
-            log(get_time() + " >> " + str(context.author) + " tried to join a game mid-round in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-            await ghost_reply(context, "`\"This table is in the middle of a round; please wait until the round is over before joining.\"`", True)
+            log(loc("gen.join.mid.log", get_time(), context.guild, context.channel, context.author))
+            await ghost_reply(context, loc("gen.join.mid"), True)
         else:
             if game.join_game(session, context.author.id, name) is not None:
-                log(get_time() + " >> " + str(context.author) + " joined a game as " + name + " in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-                await ghost_reply(context, "*C1RC3 nods.* `\"Request accepted. " + name + " is now participating in this game.\"`")
+                log(loc("gen.join.log", get_time(), context.guild, context.channel, context.author, name))
+                await ghost_reply(context, loc("gen.join", name))
                 if len(game.players) == 1:
                     # First to join
-                    await context.channel.send("`\"As the first player, you shall be responsible for initiating the first bet of the game.\"`")
+                    await context.channel.send(loc("gen.join.first"))
             else:
-                log(get_time() + " >> " + str(context.author) + " tried to rejoin a game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-                await ghost_reply(context, "`\"You are already part of this table.\"`", True)
+                log(loc("gen.join.re.log", get_time(), context.guild, context.channel, context.author))
+                await ghost_reply(context, loc("gen.join.re"), True)
 
     session.close()
 
@@ -114,63 +106,50 @@ async def concede(context: ApplicationContext):
     
     game = expected_type.find_game(session, context.channel_id)
     if game is None:
-        log(get_time() + " >> " + str(context.author) + " tried to concede from no game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-        await ghost_reply(context, "`\"There is no game of that type running at this table at the moment.\"`", True)
+        log(loc("gen.lose.none.log", get_time(), context.guild, context.channel, context.author))
+        await ghost_reply(context, loc("gen.none"), True)
     else:
         player = game.is_playing(session, context.author.id)
         if player is None:
-            log(get_time() + " >> " + str(context.author) + " tried to concede from the wrong game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-            await ghost_reply(context, "`\"You cannot concede a game you are not a part of.\"`", True)
+            log(loc("gen.lose.spec.log", get_time(), context.guild, context.channel, context.author))
+            await ghost_reply(context, loc("gen.lose.spec"), True)
         elif game.is_midround():
-            log(get_time() + " >> " + str(context.author) + " tried to concede mid-game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-            await ghost_reply(context, "`\"You cannot concede right now, in the middle of a round.\"`", True)
+            log(loc("gen.lose.mid.log", get_time(), context.guild, context.channel, context.author))
+            await ghost_reply(context, loc("gen.lose.mid"), True)
         else:
-            log(get_time() + " >> " + str(context.author) + " conceded from a game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+            log(loc("gen.lose.log", get_time(), context.guild, context.channel, context.author))
 
             name = player.name
             player.leave(session)
             if game.started:
                 # Game in progress, so check if only one remaining = overall winner
-                message = "`\"Understood. Player " + name + " has officially conceded.\"`\n*C1RC3 snaps her fingers as the magic of the casino flows into "\
-                     + name + ", solidifying their new form. Any of their remaining chips fade as multicolored light shoots out of them, reabsorbed into C1RC3 as her frame shivers."\
-                    " She then pulls them into an open compartment in her abdomen, where it closes shut seamlessly.*\n"
+                log(loc("gen.lose.log", get_time(), context.guild, context.channel, context.author))
+                message = [loc("gen.lose", name, name)]
                 if len(game.players) == 1:
                     winner: Player = game.players[0]
-                    log("                     >> Game ended with winner " + winner.name + ".")
-                    message += "\n*C1RC3 turns to the last player.* `\"Congratulations, " + winner.name + ", you have won against everyone at the table.\n"\
-                        "You may choose to transform back to your original form at the beginning of the game, or keep your current one if it is complete.\n"
-                    if game.stake == 0:
-                        message += "Because this table was playing at low stakes, you unfortunately do not keep these.\"`"\
-                            " *She reaches over and shovels your remaining chips into herself, absorbing their magic as well.*\n"\
-                            "*She then turns to the other players.* `\"The rest of you, please enjoy your temporary forms while they last.\"`"
-                    elif game.stake == 1:
-                        message += "Because this table was playing at normal stakes, you shall receive half of the chips you have used thus far.\"`\n"
-                        roi = winner.get_used()
-                        roi = [n // 2 for n in roi]
-                        message += "*She places her hands on the table and leans forward, while the sound of clinking chips comes from her body. "\
-                            "Eventually, the compartment in her midriff slides open, and out flows a great pile of dull, magicless chips, totalling:*\n# "
-                        message += format_chips(roi)
-                        message += "\n*While she pulls your unused chips back into herself, she explains with an even tone,* "\
-                            "`\"You may come see me or any staff member later to have the magic reinfused into them so you may use them on yourself to change your own form to your liking."\
-                            " Otherwise, you may store them with me.\"`"
-                    elif game.stake == 2:
-                        message += "Because this table was playing at high stakes, you shall receive all of the chips you have used on others thus far.\"`\n"
-                        roi = winner.get_used()
-                        message += "*She places her hands on the table and leans forward, while the sound of clinking chips comes from her body. "\
-                            "Eventually, the compartment in her midriff slides open, and out flows a great pile of dull, magicless chips, totalling:*\n# "
-                        message += format_chips(roi)
-                        message += "\n*While she pulls your unused chips back into herself, she explains with an even tone,*"\
-                            "`\"You may come see me or any staff member later to have the magic reinfused into them so you may use them on yourself to change your own form to your liking."\
-                            " May fortune continue to find you.\"`"
-                    message += "\n*With that, C1RC3 walks off to attend to other tables.*"
+                    log(loc("gen.lose.win.log", winner.name))
+                    message.append(
+                        loc("gen.lose.win",
+                            winner.name,
+                            loc("gen.lose.win.nostake")
+                                if game.stake == 0
+                                else loc("gen.lose.win.stake",
+                                    loc_arr("gen.lose.stake", game.stake - 1),
+                                    loc_arr("gen.lose.stake", game.stake + 1),
+                                    format_chips([n // 2 for n in winner.get_used()]
+                                        if game.stake == 1
+                                        else winner.get_used())
+                                )
+                        )
+                    )
                     game.end(session)
-                await ghost_reply(context, message)
+                await ghost_reply(context, "".join(message))
             else:
                 # Game has not started, so safely left the game; if all left, delete game
-                await ghost_reply(context, "`\"Understood. Player " + name + " has changed their mind.\"`")
+                await ghost_reply(context, loc("gen.lose.cancel", name))
                 if len(game.players) == 0:
-                    log("                     >> Game deleted as all players left.")
-                    await context.channel.send("*With no one left sitting at the table, C1RC3 simply walks off to attend to other tables.*")
+                    log(loc("gen.lose.delete.log"))
+                    await context.channel.send(loc("gen.lose.delete"))
                     game.end(session)
 
     session.close()
@@ -188,16 +167,20 @@ async def identify(context: ApplicationContext):
 
     game = expected_type.find_game(session, context.channel_id)
     if game is None:
-        log(get_time() + " >> " + str(context.author) + " tried to identify players at an empty table in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-        await ghost_reply(context, "`\"There is no game of that type running at this table at the moment.\"`", True)
+        log(loc("gen.id.none.log", get_time(), context.guild, context.channel, context.author))
+        await ghost_reply(context, loc("gen.none"), True)
     else:
-        log(get_time() + " >> " + str(context.author) + " identified players in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-        message = "`\"The unique soul identifications for each player at this table are:\"`\n"
-        for player in game.players:
-            message += "**" + player.name + "**: " + player.mention() + "\n"
-            message += "    __Chips__: " + format_chips(player.get_chips()) + "\n"
-            message += "    __Used__: " + format_chips(player.get_used()) + "\n"
-        await ghost_reply(context, message, True)
+        log(loc("gen.id.log", get_time(), context.guild, context.channel, context.author))
+        ids = "".join([
+            loc("gen.id.player",
+                player.name,
+                player.mention(),
+                format_chips(player.get_chips()),
+                format_chips(player.get_used())
+            )
+            for player in game.players
+        ])
+        await ghost_reply(context, loc("gen.id", ids), True)
 
     session.close()
 
@@ -216,17 +199,17 @@ async def rename(context: ApplicationContext, new_name: str, private: bool):
 
     game = expected_type.find_game(session, context.channel_id)
     if game is None:
-        log(get_time() + " >> " + str(context.author) + " tried to rename with no game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-        await ghost_reply(context, "`\"There is no game of that type running at this table at the moment.\"`", True)
+        log(loc("gen.name.none.log", get_time(), context.guild, context.channel, context.author))
+        await ghost_reply(context, loc("gen.none"), True)
     else:
         player = game.is_playing(session, context.author.id)
         if player is None:
-            log(get_time() + " >> " + str(context.author) + " tried to rename in the wrong game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-            await ghost_reply(context, "`\"You cannot rename yourself in a game you are not a part of.\"`", True)
+            log(loc("gen.name.spec.log", get_time(), context.guild, context.channel, context.author))
+            await ghost_reply(context, loc("gen.name.spec"), True)
         else:
             player.rename(session, new_name)
-            log(get_time() + " >> " + str(context.author) + " renamed to " + new_name + " in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-            await ghost_reply(context, "*C1RC3 nods.* `\"Very well. I will refer to you as " + new_name + " from now on.\"`", private)
+            log(loc("gen.name.log", get_time(), context.guild, context.channel, context.author, new_name))
+            await ghost_reply(context, loc("gen.name", new_name), private)
 
     session.close()
 
@@ -244,16 +227,16 @@ async def chips(context: ApplicationContext, private: bool):
     
     game = expected_type.find_game(session, context.channel_id)
     if game is None:
-        log(get_time() + " >> " + str(context.author) + " tried to view chips with no game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-        await ghost_reply(context, "`\"There is no game of that type running at this table at the moment.\"`", True)
+        log(loc("gen.chips.none.log", get_time(), context.guild, context.channel, context.author))
+        await ghost_reply(context, loc("gen.none"), True)
     else:
         player = game.is_playing(session, context.author.id)
         if player is None:
-            log(get_time() + " >> " + str(context.author) + " tried to view chips in the wrong game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-            await ghost_reply(context, "`\"You do not have any chips for game you are not a part of.\"`", True)
+            log(loc("gen.chips.spec.log", get_time(), context.guild, context.channel, context.author))
+            await ghost_reply(context, loc("gen.chips.spec"), True)
         else:
-            log(get_time() + " >> " + str(context.author) + " viewed chips (" + str(player.get_chips()) + ") in a game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-            await ghost_reply(context, "`\"" + player.name + ", you currently have:\"`\n# " + format_chips(player.get_chips()), private)
+            log(loc("gen.chips.log", get_time(), context.guild, context.channel, context.author, player.get_chips()))
+            await ghost_reply(context, loc("gen.chips", player.name, format_chips(player.get_chips())), private)
 
     session.close()
 
@@ -276,31 +259,31 @@ async def bet(context: ApplicationContext, physical: int, mental: int, artificia
     chips: list[int] = list(locals().values())[1:7]
 
     if all_zero(chips):
-        log(get_time() + " >> " + str(context.author) + " tried to bet nothing in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-        await ghost_reply(context, "`\"You cannot bet nothing.\"`", True)
+        log(loc("gen.bet.zero.log", get_time(), context.guild, context.channel, context.author))
+        await ghost_reply(context, loc("gen.bet.zero"), True)
         return
 
     session = database_connector()
 
     game = expected_type.find_game(session, context.channel_id)
     if game is None:
-        log(get_time() + " >> " + str(context.author) + " tried to bet with no game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-        await ghost_reply(context, "`\"There is no game of that type running at this table at the moment.\"`", True)
+        log(loc("gen.bet.none.log", get_time(), context.guild, context.channel, context.author))
+        await ghost_reply(context, loc("gen.none"), True)
     else:
         player = game.is_playing(session, context.author.id)
         if player is None:
-            log(get_time() + " >> " + str(context.author) + " tried to bet in the wrong game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-            await ghost_reply(context, "`\"You cannot bet in a game you are not a part of.\"`", True)
+            log(loc("gen.bet.spec.log", get_time(), context.guild, context.channel, context.author))
+            await ghost_reply(context, loc("gen.bet.spec"), True)
         elif game.is_midround():
-            log(get_time() + " >> " + str(context.author) + " tried to bet mid-game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-            await ghost_reply(context, "`\"You cannot bet right now, in the middle of a round.\"`", True)
+            log(loc("gen.bet.mid.log", get_time(), context.guild, context.channel, context.author))
+            await ghost_reply(context, loc("gen.bet.mid"), True)
         elif game.get_bet_turn().bet == "[0, 0, 0, 0, 0, 0]" and player != game.get_bet_turn():
-            log(get_time() + " >> " + str(context.author) + " tried to bet out of turn in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-            await ghost_reply(context, "`\"You cannot bet until the initial bet has been decided on.\"`", True)
+            log(loc("gen.bet.turn.log", get_time(), context.guild, context.channel, context.author))
+            await ghost_reply(context, loc("gen.bet.turn"), True)
         else:
-            log(get_time() + " >> " + str(context.author) + " placed bet of " + str(chips) + " in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+            log(loc("gen.bet.log", get_time(), context.guild, context.channel, context.author, chips))
             player.set_bet(session, chips)
-            await ghost_reply(context, "*C1RC3 nods to your request, as she reiterates,* `\"" + player.name + " has placed a bet of:\"`\n## " + format_chips(chips))
+            await ghost_reply(context, loc("gen.bet", player.name, format_chips(chips)))
 
     session.close()
 
@@ -325,30 +308,30 @@ async def use(context: ApplicationContext, physical: int, mental: int, artificia
     session = database_connector()
 
     if all_zero(chips):
-        log(get_time() + " >> " + str(context.author) + " tried to use no chips in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-        await ghost_reply(context, "`\"You cannot use no chips.\"`", True)
+        log(loc("gen.use.zero.log", get_time(), context.guild, context.channel, context.author))
+        await ghost_reply(context, loc("gen.use.zero"), True)
         return
 
     game = expected_type.find_game(session, context.channel_id)
     if game is None:
-        log(get_time() + " >> " + str(context.author) + " tried to use chips with no game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-        await ghost_reply(context, "`\"There is no game of that type running at this table at the moment.\"`", True)
+        log(loc("gen.use.none.log", get_time(), context.guild, context.channel, context.author))
+        await ghost_reply(context, loc("gen.none"), True)
     else:
         player = game.is_playing(session, context.author.id)
         if player is None:
-            log(get_time() + " >> " + str(context.author) + " tried to use chips in the wrong game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-            await ghost_reply(context, "`\"You cannot use chips in a game you are not a part of.\"`", True)
+            log(loc("gen.use.spec.log", get_time(), context.guild, context.channel, context.author))
+            await ghost_reply(context, loc("gen.use.spec"), True)
         elif game.is_midround():
-            log(get_time() + " >> " + str(context.author) + " tried to use chips mid-game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-            await ghost_reply(context, "`\"You cannot use chips right now, in the middle of a round.\"`", True)
+            log(loc("gen.use.mid.log", get_time(), context.guild, context.channel, context.author))
+            await ghost_reply(context, loc("gen.use.mid"), True)
         else:
             success = player.use_chips(session, chips)
             if success:
-                log(get_time() + " >> " + str(context.author) + " used " + str(chips) + " chips in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-                await ghost_reply(context, "`\"" + player.name + " has used:\"`\n## " + format_chips(chips))
+                log(loc("gen.use.log", get_time(), context.guild, context.channel, context.author, chips))
+                await ghost_reply(context, loc("gen.use", player.name, format_chips(chips)))
             else:
-                log(get_time() + " >> " + str(context.author) + " tried to use " + str(chips) + " chips in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-                await ghost_reply(context, "`\"You do not possess enough chips to use that many.\"`", True)
+                log(loc("gen.use.poor.log", get_time(), context.guild, context.channel, context.author, chips))
+                await ghost_reply(context, loc("gen.use.poor"), True)
 
     session.close()
 
@@ -379,16 +362,16 @@ async def convert(context: ApplicationContext, conversion: int, amount: int):
 
     game = expected_type.find_game(session, context.channel_id)
     if game is None:
-        log(get_time() + " >> " + str(context.author) + " tried to convert chips with no game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-        await ghost_reply(context, "`\"There is no game of that type running at this table at the moment.\"`", True)
+        log(loc("gen.conv.none.log", get_time(), context.guild, context.channel, context.author))
+        await ghost_reply(context, loc("gen.none"), True)
     else:
         player = game.is_playing(session, context.author.id)
         if player is None:
-            log(get_time() + " >> " + str(context.author) + " tried to convert chips in the wrong game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-            await ghost_reply(context, "`\"You cannot convert chips in a game you are not a part of.\"`", True)
+            log(loc("gen.conv.spec.log", get_time(), context.guild, context.channel, context.author))
+            await ghost_reply(context, loc("gen.conv.spec"), True)
         elif game.is_midround():
-            log(get_time() + " >> " + str(context.author) + " tried to convert chips mid-game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-            await ghost_reply(context, "`\"You cannot convert chips right now, in the middle of a round.\"`", True)
+            log(loc("gen.conv.mid.log", get_time(), context.guild, context.channel, context.author))
+            await ghost_reply(context, loc("gen.conv.mid"), True)
         else:
             # test to see if conversion results in whole numbers
             consumed, produced = chip_conversions[conversion]
@@ -401,19 +384,19 @@ async def convert(context: ApplicationContext, conversion: int, amount: int):
                     whole = False
 
             if not whole:
-                log(get_time() + " >> " + str(context.author) + " converted illegal amount of chips (" + str(consumed) + " to " + str(produced) + ") in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-                await ghost_reply(context, "`\"That conversion would result in a fractional chip; please pay attention to the conversion ratios.\"`", True)
+                log(loc("gen.conv.frac.log", get_time(), context.guild, context.channel, context.author, consumed, produced))
+                await ghost_reply(context, loc("gen.conv.frac"), True)
             else:
                 # convert to int
                 consumed = [int(x) for x in consumed]
                 produced = [int(x) for x in produced]
                 if player.use_chips(session, consumed, False):
                     player.pay_chips(session, produced)
-                    log(get_time() + " >> " + str(context.author) + " converted " + str(consumed) + " to " + str(produced) + " chips in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-                    await ghost_reply(context, "`\"" + player.name + " has converted:\"`\n## " + format_chips(consumed) + " to " + format_chips(produced))
+                    log(loc("gen.conv.log", get_time(), context.guild, context.channel, context.author, consumed, produced))
+                    await ghost_reply(context, loc("gen.conv", player.name, format_chips(consumed), format_chips(produced)))
                 else:
-                    log(get_time() + " >> " + str(context.author) + " converted more chips than they had (" + str(consumed) + ") in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-                    await ghost_reply(context, "`\"You do not possess enough chips to convert that many.\"`", True)
+                    log(loc("gen.conv.poor.log", get_time(), context.guild, context.channel, context.author, consumed, produced))
+                    await ghost_reply(context, loc("gen.conv.poor"), True)
 
     session.close()
 
@@ -441,22 +424,22 @@ async def tfadd(context: ApplicationContext, player: User, description: str, cos
 
     game = expected_type.find_game(session, context.channel_id)
     if game is None:
-        log(get_time() + " >> " + str(context.author) + " added tf with no game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-        await ghost_reply(context, "`\"There is no game of that type running at this table at the moment.\"`", True)
+        log(loc("gen.tfa.none.log", get_time(), context.guild, context.channel, context.author))
+        await ghost_reply(context, loc("gen.none"), True)
     else:
         author = game.is_playing(session, context.author.id)
         if author is None:
-            log(get_time() + " >> " + str(context.author) + " added tf in the wrong game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-            await ghost_reply(context, "`\"You cannot edit tfs in a game you are not a part of.\"`", True)
+            log(loc("gen.tfa.spec.log", get_time(), context.guild, context.channel, context.author))
+            await ghost_reply(context, loc("gen.tfa.spec"), True)
         else:
             target = game.is_playing(session, player.id)
             if target is None:
-                log(get_time() + " >> " + str(context.author) + " added tf to someone who's not playing in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-                await ghost_reply(context, "`\"You cannot edit the tfs of someone who is not playing.\"`", True)
+                log(loc("gen.tfa.wrong.log", get_time(), context.guild, context.channel, context.author))
+                await ghost_reply(context, loc("gen.tfa.wrong"), True)
             else:
                 target.add_tf_entry(session, description, cost, cost_type)
-                log(get_time() + " >> " + str(context.author) + " added tf " + str([description, cost, cost_type]) + " to " + str(player) + " in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-                await ghost_reply(context, "`\"TF successfully added.\"`", True)
+                log(loc("gen.tfa.log", get_time(), context.guild, context.channel, context.author, [description, cost, cost_type], player))
+                await ghost_reply(context, loc("gen.tfa"), True)
     
     session.close()
 
@@ -475,27 +458,27 @@ async def tfremove(context: ApplicationContext, player: User, index: int):
 
     game = expected_type.find_game(session, context.channel_id)
     if game is None:
-        log(get_time() + " >> " + str(context.author) + " removed tf with no game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-        await ghost_reply(context, "`\"There is no game of that type running at this table at the moment.\"`", True)
+        log(loc("gen.tfr.none.log", get_time(), context.guild, context.channel, context.author))
+        await ghost_reply(context, loc("gen.none"), True)
     else:
         author = game.is_playing(session, context.author.id)
         if author is None:
-            log(get_time() + " >> " + str(context.author) + " removed tf in the wrong game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-            await ghost_reply(context, "`\"You cannot edit tfs in a game you are not a part of.\"`", True)
+            log(loc("gen.tfr.spec.log", get_time(), context.guild, context.channel, context.author))
+            await ghost_reply(context, loc("gen.tfr.spec"), True)
         else:
             target = game.is_playing(session, player.id)
             if target is None:
-                log(get_time() + " >> " + str(context.author) + " removed tf of someone who's not playing in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-                await ghost_reply(context, "`\"You cannot edit the tfs of someone who is not playing.\"`", True)
+                log(loc("gen.tfr.wrong.log", get_time(), context.guild, context.channel, context.author))
+                await ghost_reply(context, loc("gen.tfr.wrong"), True)
             else:
                 try:
                     target.remove_tf_entry(session, index)
                 except InvalidArgumentError:
-                    log(get_time() + " >> " + str(context.author) + " removed tf " + str(index) + " that doesn't exist from " + str(player) + " in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-                    await ghost_reply(context, "`\"You cannot remove a TF that doesn't exist.\"`", True)
+                    log(loc("gen.tfr.fail.log", get_time(), context.guild, context.channel, context.author, index, player))
+                    await ghost_reply(context, loc("gen.tfr.fail"), True)
                 else:
-                    log(get_time() + " >> " + str(context.author) + " removed tf " + str(index) + " from " + str(player) + " in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-                    await ghost_reply(context, "`\"TF successfully removed.\"`", True)
+                    log(loc("gen.tfr.log", get_time(), context.guild, context.channel, context.author, index, player))
+                    await ghost_reply(context, loc("gen.tfr"), True)
     
     session.close()
 
@@ -514,27 +497,27 @@ async def tfmark(context: ApplicationContext, player: User, index: int):
 
     game = expected_type.find_game(session, context.channel_id)
     if game is None:
-        log(get_time() + " >> " + str(context.author) + " marked tf with no game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-        await ghost_reply(context, "`\"There is no game of that type running at this table at the moment.\"`", True)
+        log(loc("gen.tfm.none.log", get_time(), context.guild, context.channel, context.author))
+        await ghost_reply(context, loc("gen.none"), True)
     else:
         author = game.is_playing(session, context.author.id)
         if author is None:
-            log(get_time() + " >> " + str(context.author) + " marked tf in the wrong game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-            await ghost_reply(context, "`\"You cannot edit tfs in a game you are not a part of.\"`", True)
+            log(loc("gen.tfm.spec.log", get_time(), context.guild, context.channel, context.author))
+            await ghost_reply(context, loc("gen.tfm.spec"), True)
         else:
             target = game.is_playing(session, player.id)
             if target is None:
-                log(get_time() + " >> " + str(context.author) + " marked tf of someone who's not playing in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-                await ghost_reply(context, "`\"You cannot edit the tfs of someone who is not playing.\"`", True)
+                log(loc("gen.tfm.wrong.log", get_time(), context.guild, context.channel, context.author))
+                await ghost_reply(context, loc("gen.tfm.wrong"), True)
             else:
                 try:
                     target.toggle_tf_entry(session, index)
                 except InvalidArgumentError:
-                    log(get_time() + " >> " + str(context.author) + " marked tf " + str(index) + " that doesn't exist of " + str(player) + " in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-                    await ghost_reply(context, "`\"You cannot mark a TF that doesn't exist.\"`", True)
+                    log(loc("gen.tfm.fail.log", get_time(), context.guild, context.channel, context.author, index, player))
+                    await ghost_reply(context, loc("gen.tfm.fail"), True)
                 else:
-                    log(get_time() + " >> " + str(context.author) + " marked tf " + str(index) + " of " + str(player) + " in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-                    await ghost_reply(context, "`\"TF successfully marked.\"`", True)
+                    log(loc("gen.tfm.log", get_time(), context.guild, context.channel, context.author, index, player))
+                    await ghost_reply(context, loc("gen.tfm"), True)
     
     session.close()
 
@@ -550,46 +533,38 @@ async def tflist(context: ApplicationContext, player: User):
 
     session = database_connector()
 
-    cost_types = ("PHYS", "MENT", "ARTI", "SUPE", "MERG", "SWAP")
-
     game = expected_type.find_game(session, context.channel_id)
     if game is None:
-        log(get_time() + " >> " + str(context.author) + " viewed tfs with no game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-        await ghost_reply(context, "`\"There is no game of that type running at this table at the moment.\"`", True)
+        log(loc("gen.tfl.none.log", get_time(), context.guild, context.channel, context.author))
+        await ghost_reply(context, loc("gen.none"), True)
     else:
         target = game.is_playing(session, player.id)
         if target is None:
-            log(get_time() + " >> " + str(context.author) + " viewed tfs of someone who's not playing in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-            await ghost_reply(context, "`\"You cannot view the tfs of someone who is not playing.\"`", True)
+            log(loc("gen.tfl.spec.log", get_time(), context.guild, context.channel, context.author))
+            await ghost_reply(context, loc("gen.tfl.spec"), True)
         elif context.author == player:
             # Viewing own tfs
-            message = "*Your current TFs:*\n```\n"
-
-            for entry in target.get_tf_entry():
-                if entry[3]:
-                    message += entry[0] + " (" + str(entry[1]) + " " + cost_types[entry[2]] + ")\n"
-
-            message += "```"
-
-            log(get_time() + " >> " + str(context.author) + " viewed their own tfs in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-            await ghost_reply(context, message, True)
+            log(loc("gen.tfl.self.log", get_time(), context.guild, context.channel, context.author))
+            entries = "".join([
+                loc("gen.tfl.entry.self", entry[0], entry[1], loc_arr("gen.tfl.types", entry[2]))
+                for entry in target.get_tf_entry()
+                if entry[3]
+            ])
+            await ghost_reply(context, loc("gen.tfl.self", entries), True)
         else:
-            message = "*" + target.name + "'s current TFs:*\n```\nTO DO\n"
-
-            for index, entry in enumerate(target.get_tf_entry()):
-                if not entry[3]:
-                    message += "    " + str(index) + ": " + entry[0] + " (" + str(entry[1]) + " " + cost_types[entry[2]] + ")\n"
-
-            message += "\nFINISHED\n"
-
-            for index, entry in enumerate(target.get_tf_entry()):
-                if entry[3]:
-                    message += "    " + str(index) + ": " + entry[0] + " (" + str(entry[1]) + " " + cost_types[entry[2]] + ")\n"
-
-            message += "```"
-
-            log(get_time() + " >> " + str(context.author) + " viewed tfs of " + str(player) + " in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-            await ghost_reply(context, message, True)
+            # Viewing other's tfs
+            log(loc("gen.tfl.other.log", get_time(), context.guild, context.channel, context.author, player))
+            unfinished = "".join([
+                loc("gen.tfl.entry.other", index, entry[0], entry[1], loc_arr("gen.tfl.types", entry[2]))
+                for index, entry in enumerate(target.get_tf_entry())
+                if not entry[3]
+            ])
+            finished = "".join([
+                loc("gen.tfl.entry.other", index, entry[0], entry[1], loc_arr("gen.tfl.types", entry[2]))
+                for index, entry in enumerate(target.get_tf_entry())
+                if entry[3]
+            ])
+            await ghost_reply(context, loc("gen.tfl.other", target.name, unfinished, finished), True)
     
     session.close()
 
@@ -608,12 +583,12 @@ async def admin_force_end_game(context: ApplicationContext, private: bool):
 
     game = Game.find_game(session, context.channel_id)
     if game is None:
-        log(get_time() + " >> Admin " + str(context.author) + " tried to force-end a game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-        await ghost_reply(context, "`\"Administrator-level Access detected. Request failed. There is already no game at this table.\"`", True)
+        log(loc("admin.gen.end.none.log", get_time(), context.guild, context.channel, context.author))
+        await ghost_reply(context, loc("admin.gen.none"), True)
     else:
-        log(get_time() + " >> Admin " + str(context.author) + " force-ended a game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+        log(loc("admin.gen.end.log", get_time(), context.guild, context.channel, context.author))
         game.end(session)
-        await ghost_reply(context, "`\"Administrator-level Access detected. The game running for this table has been forcibly ended.\"`", private)
+        await ghost_reply(context, loc("admin.gen.end"), private)
 
     session.close()
 
@@ -630,16 +605,16 @@ async def admin_remove_player(context: ApplicationContext, user: User, private: 
 
     game = Game.find_game(session, context.channel_id)
     if game is None:
-        log(get_time() + " >> Admin " + str(context.author) + " tried to remove player from no game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-        await ghost_reply(context, "`\"Administrator-level Access detected. Request failed. There is no game at this table.\"`", True)
+        log(loc("admin.gen.kick.none.log", get_time(), context.guild, context.channel, context.author))
+        await ghost_reply(context, loc("admin.gen.none"), True)
     else:
         player = game.is_playing(session, user.id)
         if player is None:
-            log(get_time() + " >> Admin " + str(context.author) + " tried to remove non-existent player in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-            await ghost_reply(context, "`\"Administrator-level Access detected. Request failed. This person is not playing at this table.\"`", True)
+            log(loc("admin.gen.kick.spec.log", get_time(), context.guild, context.channel, context.author))
+            await ghost_reply(context, loc("admin.gen.spec"), True)
         else:
-            log(get_time() + " >> Admin " + str(context.author) + " removed player " + str(user) + " in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-            await ghost_reply(context, "`\"Administrator-level Access detected. Player " + player.name + " has been forcibly removed from this table.\"`", private)
+            log(loc("admin.gen.kick.log", get_time(), context.guild, context.channel, context.author, user))
+            await ghost_reply(context, loc("admin.gen.kick", player.name), private)
             player.leave(session)
 
     session.close()
@@ -666,17 +641,17 @@ async def admin_set_chips(context: ApplicationContext, user: User, physical: int
 
     game = Game.find_game(session, context.channel_id)
     if game is None:
-        log(get_time() + " >> Admin " + str(context.author) + " tried to set chips with no game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-        await ghost_reply(context, "`\"Administrator-level Access detected. Request failed. There is no game at this table.\"`", True)
+        log(loc("admin.gen.chips.none.log", get_time(), context.guild, context.channel, context.author))
+        await ghost_reply(context, loc("admin.gen.none"), True)
     else:
         player = game.is_playing(session, user.id)
         if player is None:
-            log(get_time() + " >> Admin " + str(context.author) + " tried to set chips for a non-player in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-            await ghost_reply(context, "`\"Administrator-level Access detected. Request failed. This person is not playing at this table.\"`", True)
+            log(loc("admin.gen.chips.spec.log", get_time(), context.guild, context.channel, context.author))
+            await ghost_reply(context, loc("admin.gen.spec"), True)
         else:
             player.set_chips(session, chips)
-            log(get_time() + " >> Admin " + str(context.author) + " set chips of " + str(user) + " to " + str(chips) + " in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-            await ghost_reply(context, "`\"Administrator-level Access detected. " + player.name + " now has the following chips:\"`\n## " + format_chips(chips), private)
+            log(loc("admin.gen.chips.log", get_time(), context.guild, context.channel, context.author, user, chips))
+            await ghost_reply(context, loc("admin.gen.chips", player.name, format_chips(chips)), private)
 
     session.close()
 
@@ -702,17 +677,17 @@ async def admin_set_used(context: ApplicationContext, user: User, physical: int,
 
     game = Game.find_game(session, context.channel_id)
     if game is None:
-        log(get_time() + " >> Admin " + str(context.author) + " tried to set used chips with no game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-        await ghost_reply(context, "`\"Administrator-level Access detected. Request failed. There is no game at this table.\"`", True)
+        log(loc("admin.gen.used.none.log", get_time(), context.guild, context.channel, context.author))
+        await ghost_reply(context, loc("admin.gen.none"), True)
     else:
         player = game.is_playing(session, user.id)
         if player is None:
-            log(get_time() + " >> Admin " + str(context.author) + " tried to set used chips for a non-player in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-            await ghost_reply(context, "`\"Administrator-level Access detected. Request failed. This person is not playing at this table.\"`", True)
+            log(loc("admin.gen.used.spec.log", get_time(), context.guild, context.channel, context.author))
+            await ghost_reply(context, loc("admin.gen.spec"), True)
         else:
             player.set_used(session, chips)
-            log(get_time() + " >> Admin " + str(context.author) + " set used chips of " + str(user) + " to " + str(chips) + " in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-            await ghost_reply(context, "`\"Administrator-level Access detected. " + player.name + "'s used chips record has been has been updated to:\"`\n## " + format_chips(chips), private)
+            log(loc("admin.gen.used.log", get_time(), context.guild, context.channel, context.author, user, chips))
+            await ghost_reply(context, loc("admin.gen.spec", player.name, format_chips(chips)), private)
 
     session.close()
 
@@ -737,12 +712,12 @@ async def admin_set_bet(context: ApplicationContext, physical: int, mental: int,
 
     game = Game.find_game(session, context.channel_id)
     if game is None:
-        log(get_time() + " >> Admin " + str(context.author) + " tried to set bet with no game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-        await ghost_reply(context, "`\"Administrator-level Access detected. Request failed. There is no game at this table.\"`", True)
+        log(loc("admin.gen.bet.none.log", get_time(), context.guild, context.channel, context.author))
+        await ghost_reply(context, loc("admin.gen.none"), True)
     else:
         game.set_bet(session, chips)
-        log(get_time() + " >> Admin " + str(context.author) + " set bet to " + str(chips) + " in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-        await ghost_reply(context, "`\"Administrator-level Access detected. The bet in this game has been has been updated to:\"`\n## " + format_chips(chips), private)
+        log(loc("admin.gen.bet.log", get_time(), context.guild, context.channel, context.author, chips))
+        await ghost_reply(context, loc("admin.gen.bet", format_chips(chips)), private)
 
     session.close()
 
@@ -763,20 +738,12 @@ async def admin_set_stake(context: ApplicationContext, stake: int, private: bool
 
     game = Game.find_game(session, context.channel_id)
     if game is None:
-        log(get_time() + " >> Admin " + str(context.author) + " tried to change stake for no game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-        await ghost_reply(context, "`\"Administrator-level Access detected. Request failed. There is no game at this table.\"`", True)
+        log(loc("admin.gen.stake.none.log", get_time(), context.guild, context.channel, context.author))
+        await ghost_reply(context, loc("admin.gen.none"), True)
     else:
-        log(get_time() + " >> Admin " + str(context.author) + " changed stake of game to " + str(stake) + " in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+        log(loc("admin.gen.stake.log", get_time(), context.guild, context.channel, context.author, stake))
         game.set_stake(session, stake)
-        message = "`\"Administrator-level Access detected. The stake of this game has been set to "
-        if stake == 0:
-            message += "Low."
-        elif stake == 1:
-            message += "Normal."
-        elif stake == 2:
-            message += "High."
-        message += "\"`"
-        await ghost_reply(context, message, private)
+        await ghost_reply(context, loc("admin.gen.stake", loc_arr("gen.create.stake", stake)), private)
 
     session.close()
 
@@ -793,17 +760,17 @@ async def admin_set_bet_turn(context: ApplicationContext, index: int, private: b
 
     game = Game.find_game(session, context.channel_id)
     if game is None:
-        log(get_time() + " >> Admin " + str(context.author) + " tried to change bet turn for no game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-        await ghost_reply(context, "`\"Administrator-level Access detected. Request failed. There is no game at this table.\"`", True)
+        log(loc("admin.gen.turn.none.log", get_time(), context.guild, context.channel, context.author))
+        await ghost_reply(context, loc("admin.gen.none"), True)
     else:
         try:
             game.advance_bet_turn(session, index)
         except:
-            log(get_time() + " >> Admin " + str(context.author) + " tried to change bet turn of game out of bounds in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-            await ghost_reply(context, "`\"Administrator-level Access detected. Request failed. Index is out of bounds of player list.\"`", True)
+            log(loc("admin.gen.turn.fail.log", get_time(), context.guild, context.channel, context.author))
+            await ghost_reply(context, loc("admin.gen.turn.fail"), True)
         else:
-            log(get_time() + " >> Admin " + str(context.author) + " changed bet turn of game to " + str(index) + " in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-            await ghost_reply(context, "`\"Administrator-level Access detected. It is now " + game.get_bet_turn().name + "'s turn to initiate the bet.\"`", private)
+            log(loc("admin.gen.turn.log", get_time(), context.guild, context.channel, context.author, index))
+            await ghost_reply(context, loc("admin.gen.turn", game.get_bet_turn().name), private)
 
     session.close()
 
@@ -820,28 +787,27 @@ async def admin_merge(context: ApplicationContext, kept: User, absorbed: User):
 
     game = Game.find_game(session, context.channel_id)
     if game is None:
-        log(get_time() + " >> Admin " + str(context.author) + " tried to merge players for no game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-        await ghost_reply(context, "`\"Administrator-level Access detected. Request failed. There is no game at this table.\"`", True)
+        log(loc("admin.gen.merge.none.log", get_time(), context.guild, context.channel, context.author))
+        await ghost_reply(context, loc("admin.gen.none"), True)
     else:
         player1 = game.is_playing(session, kept.id)
         player2 = game.is_playing(session, absorbed.id)
         if player1 is None or player2 is None:
-            log(get_time() + " >> Admin " + str(context.author) + " tried to merge non-players in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-            await ghost_reply(context, "`\"Administrator-level Access detected. Request failed. One or more of these people is not playing at this table.\"`", True)
+            log(loc("admin.gen.merge.spec.log", get_time(), context.guild, context.channel, context.author))
+            await ghost_reply(context, loc("admin.gen.spec.mult"), True)
         elif game.is_midround():
-            log(get_time() + " >> Admin " + str(context.author) + " tried to merge players midround in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-            await ghost_reply(context, "`\"Administrator-level Access detected. Request failed. I am unable to merge players in the middle of a round.\"`", True)
+            log(loc("admin.gen.merge.mid.log", get_time(), context.guild, context.channel, context.author))
+            await ghost_reply(context, loc("admin.gen.merge.mid"), True)
         else:
-            log(get_time() + " >> Admin " + str(context.author) + " merged players " + str(absorbed) + " into " + str(kept) + " in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-            await ghost_reply(context, "`\"Administrator-level Access detected. Merge request has been processed. " + player2.name + "'s chips and winnings shall be combined with " + player1.name + "'s.\"`")
+            log(loc("admin.gen.merge.log", get_time(), context.guild, context.channel, context.author, absorbed, kept))
             player1.pay_chips(session, player2.get_chips())
             # Jank way of adding used chips without adding new function lol
             player1.pay_chips(session, player2.get_used())
             player1.use_chips(session, player2.get_used())
-            await context.channel.send("`\"" + player1.name + " now has:\"`\n## " + format_chips(player1.get_chips()) + "\n`\"and has used:\"`\n## " + format_chips(player1.get_used()))
+            await ghost_reply(context, loc("admin.gen.merge", player2.name, player1.name, player1.name, format_chips(player1.get_chips()), format_chips(player1.get_used())))
 
             # Combine names
-            player1.rename(session, player1.name + " / " + player2.name)
+            player1.rename(session, "".join([player1.name, " / ", player2.name]))
 
             # Delete old player
             player2.leave(session)
@@ -861,23 +827,24 @@ async def admin_swap(context: ApplicationContext, user1: User, user2: User):
 
     game = Game.find_game(session, context.channel_id)
     if game is None:
-        log(get_time() + " >> Admin " + str(context.author) + " tried to swap players for no game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-        await ghost_reply(context, "`\"Administrator-level Access detected. Request failed. There is no game at this table.\"`", True)
+        log(loc("admin.gen.swap.none.log", get_time(), context.guild, context.channel, context.author))
+        await ghost_reply(context, loc("admin.gen.none"), True)
     else:
         player1 = game.is_playing(session, user1.id)
         player2 = game.is_playing(session, user2.id)
         if player1 is None or player2 is None:
-            log(get_time() + " >> Admin " + str(context.author) + " tried to swap non-players in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-            await ghost_reply(context, "`\"Administrator-level Access detected. Request failed. One or more of these people is not playing at this table.\"`", True)
+            log(loc("admin.gen.swap.spec.log", get_time(), context.guild, context.channel, context.author))
+            await ghost_reply(context, loc("admin.gen.spec.mult"), True)
         elif game.is_midround():
-            log(get_time() + " >> Admin " + str(context.author) + " tried to swap players midround in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-            await ghost_reply(context, "`\"Administrator-level Access detected. Request failed. I am unable to merge players in the middle of a round.\"`", True)
+            log(loc("admin.gen.swap.mid.log", get_time(), context.guild, context.channel, context.author))
+            await ghost_reply(context, loc("admin.gen.swap.mid"), True)
         else:
+            log(loc("admin.gen.swap.log", get_time(), context.guild, context.channel, context.author, user1, user2))
+
             temp_tfs = player1.get_tf_entry()
             player1.set_tf_entry(session, player2.get_tf_entry())
             player2.set_tf_entry(session, temp_tfs)
 
-            log(get_time() + " >> Admin " + str(context.author) + " swapped players " + str(user1) + " and " + str(user2) + " in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-            await ghost_reply(context, "`\"Administrator-level Access detected. Player swap has been processed.\"`", True)
+            await ghost_reply(context, loc("admin.gen.swap", player1.name, player2.name), True)
 
     session.close()

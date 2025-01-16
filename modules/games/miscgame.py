@@ -7,7 +7,7 @@ from random import randint
 from discord import ApplicationContext, option
 
 from ..base.bot import bot_client, database_connector
-from ..base.auxiliary import log, get_time, ghost_reply, InvalidArgumentError
+from ..base.auxiliary import log, loc, get_time, ghost_reply, InvalidArgumentError
 from ..base.dbmodels import Misc, MiscPlayer
 from ..base.emojis import standard_deck, format_cards, format_chips
 from .game import base_game_cmds
@@ -36,12 +36,12 @@ async def mg_shuffle(
     
     game: Misc = Misc.find_game(session, context.channel_id)
     if game is None:
-        log(get_time() + " >> " + str(context.author) + " tried to shuffle for no Misc game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-        await ghost_reply(context, "`\"There is no Misc game running at this table at the moment.\"`", True)
+        log(loc("mg.shuffle.none.log", get_time(), context.guild, context.channel, context.author))
+        await ghost_reply(context, loc("mg.none"), True)
     else:
+        log(loc("mg.shuffle.log", get_time(), context.guild, context.channel, context.author))
         game.shuffle(session)
-        log(get_time() + " >> " + str(context.author) + " shuffled a deck in a Misc game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-        await ghost_reply(context, "*C1RC3 places all of the cards into a compartment that slides open in her arm, and shuts it. A moment of whirring later, she opens it again and pulls out a newly shuffled deck, setting it down on the table.*")
+        await ghost_reply(context, loc("mg.shuffle"))
 
     session.close()
 
@@ -58,31 +58,35 @@ async def mg_deck(context: ApplicationContext, peek: bool, private: bool):
     
     game: Misc = Misc.find_game(session, context.channel_id)
     if game is None:
-        log(get_time() + " >> " + str(context.author) + " drew for a Misc game with no game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-        await ghost_reply(context, "`\"There is no Misc game running at this table at the moment.\"`", True)
+        log(loc("mg.deck.none.log", get_time(), context.guild, context.channel, context.author))
+        await ghost_reply(context, loc("mg.none"), True)
     else:
-        log(get_time() + " >> " + str(context.author) + " checked Misc deck in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+        log(loc("mg.deck.log", get_time(), context.guild, context.channel, context.author))
         deck = game.get_deck()
-        message = "`\"There are " + str(len(deck)) + " cards remaining.\"`"
+        message = [loc("mg.deck", len(deck))]
         player = game.is_playing(session, context.author.id)
         if peek:
             deck = deck[::-1]
             if player is None or private:
                 if (len(deck) > 26):
-                    message += "\n## " + format_cards(standard_deck, deck[:26]) + "...\n*" + str(len(deck) - 26) + " cards have been omitted.*"
+                    message.append(loc("mg.deck.big", format_cards(standard_deck, deck[:26]), len(deck) - 26))
                 else:
-                    message += "\n## " + format_cards(standard_deck, deck)
-                await ghost_reply(context, message, True)
+                    message.append(loc("mg.deck.small", format_cards(standard_deck, deck)))
+                await ghost_reply(context, "".join(message), True)
                 if private and player is not None:
-                    await context.channel.send("`\"" + player.name + " has peeked at the deck.\"`")
+                    # Player is playing, so other players should be let known
+                    await context.channel.send(loc("mg.deck.peek", player.name))
             else:
-                await ghost_reply(context, message)
                 for i in range(len(deck) // 13):
-                    await context.channel.send("## " + format_cards(standard_deck, deck[i * 13 : (i + 1) * 13]))
+                    # 13 cards per row
+                    message.append(loc("mg.deck.small", format_cards(standard_deck, deck[i * 13 : (i + 1) * 13])))
                 if len(deck) % 13 > 0:
-                    await context.channel.send("## " + format_cards(standard_deck, deck[(len(deck) // 13) * 13:]))
+                    # Last cards, not full 13
+                    message.append(loc("mg.deck.small", format_cards(standard_deck, deck[(len(deck) // 13) * 13:])))
+                await ghost_reply(context, "".join(message))
         else:
-            await ghost_reply(context, message, (private or (player is None)))
+            # Just counting cards left
+            await ghost_reply(context, "".join(message), (private or (player is None)))
 
     session.close()
 
@@ -99,26 +103,26 @@ async def mg_draw(context: ApplicationContext, amount: int, private: bool):
     
     game: Misc = Misc.find_game(session, context.channel_id)
     if game is None:
-        log(get_time() + " >> " + str(context.author) + " drew for a Misc game with no game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-        await ghost_reply(context, "`\"There is no Misc game running at this table at the moment.\"`", True)
+        log(loc("mg.draw.none.log", get_time(), context.guild, context.channel, context.author))
+        await ghost_reply(context, loc("mg.none"), True)
     else:
         player: MiscPlayer = game.is_playing(session, context.author.id)
         if player is None:
-            log(get_time() + " >> " + str(context.author) + " drew cards in a game they're not part of in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-            await ghost_reply(context, "`\"You cannot be dealt cards in a game you are not a part of.\"`", True)
+            log(loc("mg.draw.spec.log", get_time(), context.guild, context.channel, context.author))
+            await ghost_reply(context, loc("mg.draw.spec"), True)
         else:
             try:
                 drawn = game.draw(session, amount)
             except InvalidArgumentError:
-                log(get_time() + " >> " + str(context.author) + " failed to draw " + str(amount) + " cards in a Misc game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-                await ghost_reply(context, "`\"There are only " + str(len(game.get_deck())) + " cards left in the deck right now.\"`")
+                log(loc("mg.draw.fail.log", get_time(), context.guild, context.channel, context.author, amount))
+                await ghost_reply(context, loc("mg.draw.fail", len(game.get_deck())))
             else:
-                log(get_time() + " >> " + str(context.author) + " drew " + str(drawn) + " in a Misc game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+                log(loc("mg.draw.log", get_time(), context.guild, context.channel, context.author, drawn))
                 if private:
-                    await context.respond("`\"" + player.name + " has drawn:\"`\n# " + format_cards(standard_deck, drawn), ephemeral = True)
-                    await context.channel.send("`\"" + player.name + " has drawn " + str(amount) + " cards.\"`")
+                    await context.respond(loc("mg.draw", player.name, format_cards(standard_deck, drawn)), ephemeral = True)
+                    await context.channel.send(loc("mg.draw.hide", player.name, amount))
                 else:
-                    await ghost_reply(context, "`\"" + player.name + " has drawn:\"`\n# " + format_cards(standard_deck, drawn))
+                    await ghost_reply(context, loc("mg.draw", player.name, format_cards(standard_deck, drawn)))
 
     session.close()
 
@@ -131,19 +135,12 @@ async def mg_roll(context: ApplicationContext, amount: int, sides: int, private:
     
     Roll an amount of dice
     """
+    dice = [randint(1, sides) for i in range(amount)]
+    total = sum(dice)
 
-    message = "*You have rolled " + str(amount) + "d" + str(sides) + ":*\n"
-    sum = randint(1, sides)
-    message += "## " + str(sum)
-    if amount > 1:
-        for i in range(amount - 1):
-            roll = randint(1, sides)
-            sum += roll
-            message += ", " + str(roll)
-        message += " = " + str(sum)
-    log(get_time() + " >> " + str(context.author) + " rolled " + str(amount) + "d" + str(sides) + " for " + str(sum) + " in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+    log(loc("mg.roll.log", get_time(), context.guild, context.channel, context.author, amount, sides, total))
     
-    await ghost_reply(context, message, private)
+    await ghost_reply(context, loc("mg.roll", amount, sides, dice[0], "".join(["".join([", ", str(die)]) for die in dice[1:]]), total), private)
 
 @mg_cmds.command(name = "win_bet", description = "Declare yourself as the winner of the round, according to whatever rules you agreed on")
 async def mg_win_bet(
@@ -158,23 +155,20 @@ async def mg_win_bet(
     
     game: Misc = Misc.find_game(session, context.channel_id)
     if game is None:
-        log(get_time() + " >> " + str(context.author) + " tried to win with no Misc game in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-        await ghost_reply(context, "`\"There is no Misc game running at this table at the moment.\"`", True)
+        log(loc("mg.win.none.log", get_time(), context.guild, context.channel, context.author))
+        await ghost_reply(context, loc("mg.none"), True)
     else:
         player: MiscPlayer = game.is_playing(session, context.author.id)
         if player is None:
-            log(get_time() + " >> " + str(context.author) + " tried to win in a Misc game they're not part of in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-            await ghost_reply(context, "`\"You cannot win in a Misc game you are not a part of.\"`", True)
+            log(loc("mg.win.spec.log", get_time(), context.guild, context.channel, context.author))
+            await ghost_reply(context, loc("mg.win.spec"), True)
         elif not game.is_midround():
-            log(get_time() + " >> " + str(context.author) + " tried to win in a Misc game outside of a round in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-            await ghost_reply(context, "`\"You cannot win in a round that hasn't started yet.\"`", True)
+            log(loc("mg.win.out.log", get_time(), context.guild, context.channel, context.author))
+            await ghost_reply(context, loc("mg.win.out"), True)
         else:
+            log(loc("mg.win.log", get_time(), context.guild, context.channel, context.author))
             game.end_round(session, player.user_id)
-            message = "`\"The Casino congratulates " + player.name + " for winning this round.\"`"\
-                "\n*C1RC3 opens a compartment in her abdomen where a pile of fresh chips lays, and pushes it over to " + player.name + ", making a sizeable pile of:*\n"\
-                + "# " + format_chips(player.get_chips())
-            message += "\n`\"" + game.get_bet_turn().name + " shall decide the next initial bet.\"`"
-            await ghost_reply(context, message)
+            await ghost_reply(context, loc("mg.win", player.name, player.name, format_chips(player.get_chips()), game.get_bet_turn().name))
 
     session.close()
 
@@ -185,18 +179,16 @@ async def mg_start_round(context: ApplicationContext):
 
     game: Misc = Misc.find_game(session, context.channel_id)
 
+    # Game must exist, and bets must be placed outside of round
     if game is not None and not game.is_midround() and game.bets_aligned():
-        log(get_time() + " >> The Misc game round has started in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+        log(loc("mg.start.log", get_time(), context.guild, context.channel))
         bet_placed = game.players[0].get_bet()
         game.set_bet(session, bet_placed)
         
-        await context.channel.send("`\"The players have agreed on a bet. The round has begun.\"`\n")
+        await context.channel.send(loc("mg.start"))
         
         # Ping everyone for beginning of round
-        mention = ""
-        for player in game.players:
-            mention += player.mention() + " "
-        await context.channel.send(mention, delete_after = 0)
+        await context.channel.send(" ".join([player.mention() for player in game.players]), delete_after = 0)
 
     session.close()
 

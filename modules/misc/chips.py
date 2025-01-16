@@ -5,7 +5,7 @@ print("Loading module 'chips'...")
 from discord import ApplicationContext, option
 
 from ..base.bot import bot_client, database_connector
-from ..base.auxiliary import guilds, log, get_time, all_zero, ghost_reply
+from ..base.auxiliary import guilds, log, loc, get_time, all_zero, ghost_reply
 from ..base.dbmodels import ChipAccount
 from ..base.emojis import format_chips
 
@@ -25,13 +25,11 @@ async def open_account(context: ApplicationContext, name: str, private: bool):
     success: bool = ChipAccount.create_account(session, context.author.id, name)
 
     if success:
-        log(get_time() + " >> " + str(context.author) + " opened an account under the name \"" + name
-             + "\" in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-        await ghost_reply(context, "*C1RC3 nods.* `\"Request accepted and processed. An account has been opened under the name '" + name + "'.\"`", private)
+        log(loc("chips.open.log", get_time(), context.guild, context.channel, context.author, name))
+        await ghost_reply(context, loc("chips.open", name), private)
     else:
-        log(get_time() + " >> " + str(context.author) + " tried to open a duplicate account under the name \"" + name + "\" in ["
-             + str(context.guild) + "], [" + str(context.channel) + "]")
-        await ghost_reply(context, "`\"Request denied. An account already exists under the name '" + name + "'.\"`", True)
+        log(loc("chips.open.dupe.log", get_time(), context.guild, context.channel, context.author, name))
+        await ghost_reply(context, loc("chips.open.dupe", name), True)
 
     session.close()
 
@@ -50,37 +48,35 @@ async def change_name(context: ApplicationContext, name: str, new_name: str, pri
     # Attempt to retrieve account
     account = ChipAccount.find_account(session, name)
     if account is None:
-        log(get_time() + " >> " + str(context.author) + " failed to find account \"" + name + "\" in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-        await ghost_reply(context, "`\"Request failed. No account exists under that name.\"`", True)
+        log(loc("chips.none.log", get_time(), context.guild, context.channel, context.author, name))
+        await ghost_reply(context, loc("chips.none"), True)
         session.close()
         return
     
     # Check if name isn't changing
     if name == new_name:
-        log(get_time() + " >> " + str(context.author) + " didn't change name of account \"" + name + "\" at all in ["
-             + str(context.guild) + "], [" + str(context.channel) + "]")
-        await ghost_reply(context, "`\"Request failed. That is already the name your account is under.\"`", True)
+        log(loc("chips.name.same.log", get_time(), context.guild, context.channel, context.author, name))
+        await ghost_reply(context, loc("chips.name.same"), True)
         session.close()
         return
 
     # Check if account with new name already exists
     if ChipAccount.find_account(session, new_name):
-        log(get_time() + " >> " + str(context.author) + " failed to change name of account \"" + name + "\" in ["
-             + str(context.guild) + "], [" + str(context.channel) + "]")
-        await ghost_reply(context, "`\"Request failed. An account already exists under the name '" + new_name + "'.\"`", True)
+        log(loc("chips.name.dupe.log", get_time(), context.guild, context.channel, context.author, name, new_name))
+        await ghost_reply(context, loc("chips.dupe", new_name), True)
         session.close()
         return
 
-    # Check if account belongs to the person sending the command
-    if account.owner_id == context.author.id:
-        log(get_time() + " >> " + str(context.author) + " changed name of account \"" + name + "\" to \"" + new_name
-             + "\" in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-        account.change_name(session, new_name)
-        await ghost_reply(context, "*You feel a small tingle all over your body as C1RC3 scans your magical signature, and her face flashes green for a moment.*\n`\"Request approved. The account under '" + name + "' is now under the name '" + new_name + "'.\"`", private)
-    else:
-        log(get_time() + " >> " + str(context.author) + " tried to change name of other's account \"" + name + "\" in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-        await ghost_reply(context, "`\"Request denied. This account does not belong to you.\"`", True)
+    # Check if account doesn't belong to the person sending the command
+    if account.owner_id != context.author.id:
+        log(loc("chips.name.other.log", get_time(), context.guild, context.channel, context.author, name))
+        await ghost_reply(context, loc("chips.other"), True)
+        session.close()
+        return
 
+    log(loc("chips.name.log", get_time(), context.guild, context.channel, context.author, name, new_name))
+    account.change_name(session, new_name)
+    await ghost_reply(context, loc("chips.name", name, new_name), private)
     session.close()
 
 @chip_cmds.command(name = "balance", description = "Check how many chips you have in an account.")
@@ -97,24 +93,20 @@ async def balance(context: ApplicationContext, name: str, private: bool):
     # Attempt to retrieve account
     account = ChipAccount.find_account(session, name)
     if account is None:
-        log(get_time() + " >> " + str(context.author) + " failed to find account \"" + name + "\" in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-        await ghost_reply(context, "`\"Request failed. No account exists under that name.\"`", True)
+        log(loc("chips.none.log", get_time(), context.guild, context.channel, context.author, name))
+        await ghost_reply(context, loc("chips.none"), True)
         session.close()
         return
 
     # Check if account belongs to the person sending the command
-    if account.owner_id == context.author.id:
-        log(get_time() + " >> " + str(context.author) + " checked their account \"" + name
-             + "\" in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-        
-        response = "*You feel a small tingle all over your body as C1RC3 scans your magical signature, and her face flashes green for a moment.*"\
-            "\n`\"Request approved. The account under the name '" + account.name + "' currently contains:\"`\n# "
-        response += format_chips(account.get_bal())
+    if account.owner_id != context.author.id:
+        log(loc("chips.bal.other.log", get_time(), context.guild, context.channel, context.author, name))
+        await ghost_reply(context, loc("chips.other"), True)
+        session.close()
+        return
 
-        await ghost_reply(context, response, private)
-    else:
-        log(get_time() + " >> " + str(context.author) + " tried to access other's account \"" + name + "\" in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-        await ghost_reply(context, "`\"Request denied. This account does not belong to you.\"`", True)
+    log(loc("chips.bal.log", get_time(), context.guild, context.channel, context.author, name))
+    await ghost_reply(context, loc("chips.bal", name, format_chips(account.get_bal())), private)
 
     session.close()
 
@@ -138,8 +130,8 @@ async def deposit(context: ApplicationContext, name: str, private: bool, physica
 
     # If every single parameter is 0
     if all_zero(chips):
-        log(get_time() + " >> " + str(context.author) + " tried to deposit nothing in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-        await ghost_reply(context, "`\"...Request accepted. You have deposited nothing.\"`", True)
+        log(loc("chips.depo.zero.log", get_time(), context.guild, context.channel, context.author))
+        await ghost_reply(context, loc("chips.depo.zero"), True)
         return
 
     session = database_connector()
@@ -147,27 +139,21 @@ async def deposit(context: ApplicationContext, name: str, private: bool, physica
     # Attempt to retrieve account
     account = ChipAccount.find_account(session, name)
     if account is None:
-        log(get_time() + " >> " + str(context.author) + " failed to find account \"" + name + "\" in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-        await ghost_reply(context, "`\"Request failed. No account exists under that name.\"`", True)
-        session.close()
-        return
+        log(loc("chips.none.log", get_time(), context.guild, context.channel, context.author))
+        await ghost_reply(context, loc("chips.none"), True)
 
     # Check if account belongs to the person sending the command
-    if account.owner_id == context.author.id:
-        log(get_time() + " >> " + str(context.author) + " deposited " + str(chips) 
-             + " chips to their account \"" + name + "\" in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-        
-        account.deposit(session, chips)
-        
-        response = "*You feel a small tingle all over your body as C1RC3 scans your magical signature, and her face flashes green for a moment.*"\
-            "\n`\"Request approved.\"`\n*The chips you are holding gently glow before evaporating into golden light that shoots over to C1RC3, infusing into her. Her body quivers with pleasure, but she shows no emotion in her automated state.*\n"\
-                "`\"The account under the name '" + account.name + "' now contains:\"`\n# "
-        response += format_chips(account.get_bal())
+    if account.owner_id != context.author.id:
+        log(loc("chips.depo.other.log", get_time(), context.guild, context.channel, context.author, name))
+        await ghost_reply(context, loc("chips.other"), True)
+        session.close()
+        return
+    
+    log(loc("chips.depo.log", get_time(), context.guild, context.channel, context.author, chips, name))
+    
+    account.deposit(session, chips)
 
-        await ghost_reply(context, response, private)
-    else:
-        log(get_time() + " >> " + str(context.author) + " tried to access other's account \"" + name + "\" in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-        await ghost_reply(context, "`\"Request denied. This account does not belong to you.\"`", True)
+    await ghost_reply(context, loc("chips.depo", name, format_chips(account.get_bal())), private)
 
     session.close()
 
@@ -192,8 +178,8 @@ async def withdraw(
 
     # If every single parameter is 0
     if all_zero(chips):
-        log(get_time() + " >> " + str(context.author) + " tried to withdraw nothing in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-        await ghost_reply(context, "`\"...Request accepted. You have withdrawn nothing.\"`", True)
+        log(loc("chips.with.zero.log", get_time(), context.guild, context.channel, context.author))
+        await ghost_reply(context, loc("chips.with.zero"), True)
         return
 
     session = database_connector()
@@ -201,30 +187,26 @@ async def withdraw(
     # Attempt to retrieve account
     account = ChipAccount.find_account(session, name)
     if account is None:
-        log(get_time() + " >> " + str(context.author) + " failed to find account \"" + name + "\" in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-        await ghost_reply(context, "`\"Request failed. No account exists under that name.\"`", True)
+        log(loc("chips.none.log", get_time(), context.guild, context.channel, context.author, name))
+        await ghost_reply(context, loc("chips.none"), True)
         session.close()
         return
 
     # Check if account belongs to the person sending the command
-    if account.owner_id == context.author.id:
-        success: bool = account.withdraw(session, chips)
+    if account.owner_id != context.author.id:
+        log(loc("chips.with.other.log", get_time(), context.guild, context.channel, context.author, name))
+        await ghost_reply(context, loc("chips.other"), True)
+        session.close()
+        return
 
-        if success:
-            log(get_time() + " >> " + str(context.author) + " withdrew " + str(chips) 
-                + " chips from their account \"" + name + "\" in [" + str(context.guild) + "], [" + str(context.channel) + "]")
+    success: bool = account.withdraw(session, chips)
 
-            response = "*You feel a small tingle all over your body as C1RC3 scans your magical signature, and her face flashes green for a moment.*\n"\
-                "`\"Request approved.\"`\n*Golden light begins to condense from nowhere into C1RC3's body as she visibly shivers. A hidden compartment in her midriff suddenly slides open, containing a pile of the chips you requested.*\n"\
-                "`\"The account under the name '" + account.name + "' now contains:\"`\n# "
-            response += format_chips(account.get_bal())
-
-            await ghost_reply(context, response, private)
-        else:
-            log(get_time() + " >> " + str(context.author) + " withdrew too many chips from their account \"" + name + "\" in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-            await ghost_reply(context, "`\"Request denied. You do not have enough chips in your account for that withdrawal.\"`", True)
+    if not success:
+        log(loc("chips.with.fail.log", get_time(), context.guild, context.channel, context.author, name))
+        await ghost_reply(context, loc("chips.with.fail"), True)
     else:
-        log(get_time() + " >> " + str(context.author) + " tried to access other's account \"" + name + "\" in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-        await ghost_reply(context, "`\"Request denied. This account does not belong to you.\"`", True)
+        log(loc("chips.with.log", get_time(), context.guild, context.channel, context.author, chips, name))
+
+        await ghost_reply(context, loc("chips.with", name, format_chips(account.get_bal())), private)
 
     session.close()

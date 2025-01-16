@@ -8,7 +8,7 @@ import discord
 from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
-from .auxiliary import log, get_time
+from .auxiliary import log, get_time, loc
 
 # Global bot object
 intents = discord.Intents.default()
@@ -20,18 +20,17 @@ bot_client = discord.Bot(intents = intents)
 
 @bot_client.listen()
 async def on_ready():
-    log(get_time() + " >> Successfully logged in as " + str(bot_client.user))
+    log(loc("bot.login", get_time(), bot_client.user))
 # @bot_client.listen()
 # async def on_disconnect():
-#     log(get_time() + " >> Lost connection to Discord!")
+#     log(loc("bot.disconnect", get_time()))
 @bot_client.listen()
 async def on_connect():
-    log(get_time() + " >> Connected to Discord!")
+    log(loc("bot.reconnect", get_time()))
 @bot_client.listen()
 async def on_application_command_error(context: discord.ApplicationContext, exception: discord.DiscordException):
-    log(get_time() + " >> UNEXPECTED ERROR occurred while handling " + str(context.author) + "'s command in [" + str(context.guild) + "], [" + str(context.channel) + "]")
-    log("".join(format_exception(exception)))
-    await context.respond("*C1RC3's face is briefly replaced by a bright red exclamation mark.* `\"AN ERROR HAS OCCURED. PLEASE CONTACT YOUR LOCAL ADMINISTRATOR FOR ASSISTANCE IN DIAGNOSIS.\"`")
+    log(loc("error.log", get_time(), context.guild, context.channel, context.author, "".join(format_exception(exception))))
+    await context.respond(loc("error"))
 
 
 # Database stuff (SQLite and SQLAlchemy)

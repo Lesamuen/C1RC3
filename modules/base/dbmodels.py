@@ -890,7 +890,8 @@ class Game(SQLBase):
         return True
 
     def end_round(self, session: Session):
-        """Do general round end logic
+        """Do general round end logic;
+        resets bets and advances bet turn order
         
         To be called at end of subclassed functions
 
@@ -1155,29 +1156,27 @@ class BlackjackPlayer(Player):
             Whether to give raw hand value without 5-card charlies or busting
 
         ### Returns
-        22
-            5-Card Charlie
-        0
-            Hand value over 21 (bust)
-        1-21
-            Total value of the hand
+        If raw:
+            Total value of hand, aces applicable
+        If not raw:
+            Busted: 0
+            No Hand: 1
+            Normal: 2
+            Blackjack: 3
+            5-Card Charlie: 4
         """
 
         hand = self.get_hand(hidden)
-        val = 0
 
         # Remove suits and convert to direct value
-        for i in range(len(hand)):
-            if hand[i] == 52:
-                hand[i] = 1
-                continue
-            hand[i] = hand[i] % 13 + 2
-            if hand[i] >= 11 and hand[i] <= 13:
-                hand[i] = 10
-            elif hand[i] == 14:
-                hand[i] = 11
-        for i in hand:
-            val += i
+        # 52 is hidden card; value is at least 1
+        hand = [
+            1 if i == 52
+            else 11 if i % 13 + 2 == 14
+            else min(i % 13 + 2, 10)
+            for i in hand
+        ]
+        val = sum(hand)
         
         # Try to reduce aces if busting
         while val > 21 and 11 in hand:
@@ -1186,12 +1185,17 @@ class BlackjackPlayer(Player):
 
         if raw:
             return val
+        
+        if len(hand) == 0:
+            return 1
+        elif len(hand) >= 5:
+            return 4
         elif val > 21:
             return 0
-        elif len(hand) >= 5:
-            return 22
+        elif val == 21:
+            return 3
         else:
-            return val
+            return 2
         
     def busted(self) -> bool:
         """Returns whether the player has busted"""
@@ -1221,7 +1225,7 @@ class Blackjack(Game):
         Shuffle all cards back into the deck
     draw(session: sqlalchemy.orm.Session, amount: int = 1) -> list[int] | int
         Draw a single or multiple cards
-    start_round(session: sqlalchemy.orm.Session, players: list[int] = None) -> bool
+    start_round(session: sqlalchemy.orm.Session, players: list[BlackjackPlayer] = None) -> bool
         Deal the initial two cards to each player given and rotate turn order
     get_turn() -> BlackjackPlayer
         Get player whose turn it is
@@ -1229,8 +1233,8 @@ class Blackjack(Game):
         Test whether every player has stood/busted
     next_turn(session: sqlalchemy.orm.Session) -> None
         Advance the turn counter
-    end_round(session: sqlalchemy.orm.Session) -> tuple[str, list[tuple[int, str]]]:
-        Give the winner the winnings, returning index/name of winner(s); more than 1 means tie
+    end_round(session: sqlalchemy.orm.Session) -> tuple[int, tuple[BlackjackPlayer]]:
+        Give the winner the winnings, returning winner(s); more than 1 means tie
     get_deck() -> list[int]
         Get the current deck unjsonified
     """
@@ -1292,13 +1296,13 @@ class Blackjack(Game):
         session.commit()
         return cards
 
-    def start_round(self, session: Session, players: list[int] = None) -> bool:
+    def start_round(self, session: Session, players: list[BlackjackPlayer] = None) -> bool:
         """Deal the initial two cards to each player given and rotate turn order
         
         ### Parameters
         session: sqlalchemy.orm.Session
             Database session scope
-        players: list[int]
+        players: list[BlackjackPlayer]
             List of users to give cards to, by index in Player list; if omitted, then all players are dealt hands
 
         ### Returns
@@ -1308,27 +1312,26 @@ class Blackjack(Game):
             Deck was not shuffled
         """
 
+        # Store shuffled bool to return later
         if shuffled := (len(loads(self.deck)) <= 26):
             self.shuffle(session)
 
         if players is None:
-            players = range(len(self.players))
+            players = self.players
 
         drawn: list[int] = self.draw(session, 2 * len(players))
-        for i in range(len(self.players)):
-            if i in players:
-                self.players[i].state = "hit"
-                self.players[i].hand = dumps(drawn[-2:])
+        for player in self.players:
+            if player in players:
+                # Draw two cards off the deck and delete them
+                player.state = "hit"
+                player.hand = dumps(drawn[-2:])
                 del drawn[-2:]
             else:
-                self.players[i].state = "bust"
-                self.players[i].hand = "[]"
+                # Don't give a hand; it's a tie round and this player's not part of it
+                player.state = "bust"
+                player.hand = "[]"
 
-        self.round_turn = (self.round_turn + 1) % len(self.players)
-        self.curr_turn = self.round_turn
-
-        if self.players[self.curr_turn].state == "bust":
-            self.next_turn(session)
+        self.next_turn(session)
 
         session.commit()
 
@@ -1380,55 +1383,55 @@ class Blackjack(Game):
         """
 
         self.curr_turn = (self.curr_turn + 1) % len(self.players)
+        # Don't let it land on someone who can't hit to advance the turn
         while self.players[self.curr_turn].state != "hit":
             self.curr_turn = (self.curr_turn + 1) % len(self.players)
 
         session.commit()
 
-    def end_round(self, session: Session) -> tuple[str, list[tuple[int, str]]]:
-        """Give the winner the winnings, returning index/name of winner(s); more than 1 means tie
+    def end_round(self, session: Session) -> tuple[int, tuple[BlackjackPlayer, ...]]:
+        """Give the winner the winnings, returning winner(s); more than 1 means tie
         
-        If tie, instead multiply bet by 3, or 9 on 21 tie; apply bet limits
+        If tie, instead multiply bet by 3, or 9 on blackjack/5-card tie; apply bet limits
         
         ### Parameters
         session: sqlalchemy.orm.Session
             Database session scope
 
         ### Returns
+        A tuple:
         Index 0
-            Win condition string for special dialogue; n = norm, b = blackjack, f = five card charlie
+            Win condition for special dialogue; 0 = norm, 1 = blackjack, 2 = five card charlie
         Index 1
-            List of winners by user id--name pairs
+            List of winners
         """
 
         # Compare final hands
-        end_vals: list[int] = []
-        for player in self.players:
-            end_vals.append(player.hand_value())
-
+        end_vals: list[int] = [player.hand_value() for player in self.players]
         winner_val = max(end_vals)
-        winners = []
-        for i in range(len(end_vals)):
-            if end_vals[i] == winner_val:
-                winners.append((i, self.players[i].name))
+        win_con = winner_val - 2
 
-        if winner_val == 22:
-            win_con = "f"
-        elif winner_val == 21:
-            win_con = "b"
-        else:
-            win_con = "n"
+        # Test for the need for a normal value test, if no blackjack or 5-card
+        if winner_val == 2:
+            end_vals = [
+                player.hand_value(raw = True) 
+                    if not player.busted() 
+                    else 0 
+                for player in self.players
+            ]
+            winner_val = max(end_vals)
+
+        winners = [self.players[i] for i in range(len(end_vals)) if end_vals[i] == winner_val]
 
         # If more than 1 winner, then tie occurred
         if len(winners) == 1:
             # Give winner the bet value, then reset bets
-            winner: BlackjackPlayer = self.players[winners[0][0]]
-            winner.pay_chips(session, loads(self.current_bet))
+            winners[0].pay_chips(session, loads(self.current_bet))
             super().end_round(session)
         else:
             # Multiply bet
             bet = loads(self.current_bet)
-            if winner_val == 21:
+            if win_con > 0:
                 for i in range(len(bet)):
                     bet[i] *= 9
             else:
@@ -1441,7 +1444,7 @@ class Blackjack(Game):
             self.current_bet = dumps(bet)
             session.commit()
         
-        return (win_con, winners)
+        return (win_con, tuple(winners))
 
     def get_deck(self) -> list[int]:
         """Get the current deck unjsonified
