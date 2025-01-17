@@ -328,7 +328,7 @@
     "bj.end.con": ["(Busted)", "", "", "(Blackjack)", "(5-Card Charlie)"],
     "bj.end.con.win": ["", "with a Blackjack", "with a 5-card Charlie"],
     "bj.end.win": "`\"The Casino congratulates {} for winning this round{}.\"`\n*C1RC3 opens a compartment in her abdomen where a pile of fresh chips lays, and pushes it over to {}, bumping their total chips to:*\n# {}\n`\"{} shall decide the next initial bet.\"`",
-    "bj.end.tie": "`\"{}you have tied{}! The new bet has been multiplied to:\"`\n# {}\n`\"Each winner will now be given a new hand.\"`\n{}*She begins to draw cards from the deck, deftly placing them down in front of each winner of the previous round.*\n{}`\"The first turn goes to {} this round.\"`",
+    "bj.end.tie": "`\"{}, you have tied{}! The new bet has been multiplied to:\"`\n# {}\n`\"Each winner will now be given a new hand.\"`\n{}*She begins to draw cards from the deck, deftly placing them down in front of each winner of the previous round.*\n{}`\"The first turn goes to {} this round.\"`",
     "bj.start.hand": "## __{}__\n# {}\n",
     "bj.reshuffle": "*Before C1RC3 begins to draw cards, she places all of the cards into a compartment that slides open in her arm, and shuts it. A moment of whirring later, she opens it again and pulls out a newly shuffled deck.*\n",
     "bj.reshuffle.log": "                     >> Deck was reshuffled",

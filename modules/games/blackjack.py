@@ -105,8 +105,8 @@ async def bj_hit(
             await ghost_reply(context, loc("bj.hit", player.name, format_cards(standard_deck, drawn)))
 
             busted = not player.add_card(session, drawn[0])
-            if (not busted and len(player.get_hand()) == 5) or (busted and game.is_all_done()):
-                # End round immediately on 5-card charlie or if all but one busted
+            if busted and game.is_all_done():
+                # End round if all but one busted
                 await bj_end_round(context, session, game)
             else:
                 game.next_turn(session)
@@ -206,7 +206,7 @@ async def bj_end_round(context: ApplicationContext, session: Session, game: Blac
         await context.channel.send("".join([
             loc("bj.end", hands),
             loc("bj.end.tie",
-                "".join(["".join([winner.name, ", "]) for winner in winners]),
+                ", ".join([winner.name for winner in winners]),
                 loc_arr("bj.end.con.win", win_con),
                 format_chips(game.get_bet()),
                 # Should only log reshuffle if reshuffle occurred
