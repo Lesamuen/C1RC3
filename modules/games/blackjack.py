@@ -184,7 +184,7 @@ async def bj_end_round(context: ApplicationContext, session: Session, game: Blac
                 if len(player.get_hand()) == 0
                 else format_cards(standard_deck, player.get_hand()),
             player.hand_value(raw = True),
-            loc_arr("bj.end.con", player.hand_value)
+            loc_arr("bj.end.con", player.hand_value())
             )
         for player in game.players
     ])
