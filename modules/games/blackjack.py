@@ -191,7 +191,7 @@ async def bj_end_round(context: ApplicationContext, session: Session, game: Blac
     
     # End the round
     win_con, winners = game.end_round(session)
-    log(loc("end.log", get_time(), context.guild, context.channel, [str(winner.user()) for winner in winners]))
+    log(loc("bj.end.log", get_time(), context.guild, context.channel, [str(winner.user()) for winner in winners]))
     if len(winners) == 1:
         # Round ended with single winner
         await context.channel.send("".join([loc("bj.end", hands), loc("bj.end.win",
